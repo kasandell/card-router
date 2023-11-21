@@ -21,9 +21,13 @@ mod card;
 mod category;
 mod membership;
 mod transaction;
+mod schema;
 mod user;
 mod wallet;
 mod middleware;
+
+#[cfg(test)]
+mod test;
 
 
 async fn manual_hello() -> impl Responder {
@@ -52,7 +56,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::new("%a %{User-Agent}i"))
             //.wrap(api_key_validation::ApiKeyValidation)
             //.app_data(web::Data::new(state.clone()))
-            .route("/hey", web::get().to(manual_hello))
+            .service(web::scope("/user").configure(user::config::config))
+            .route("/hey/", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
