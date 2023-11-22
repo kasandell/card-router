@@ -56,6 +56,16 @@ impl User {
         Ok(user)
     }
 
+    pub fn find_by_internal_id(id: i32) -> Result<Self, ApiError> {
+        let mut conn = db::connection()?;
+
+        let user = users::table
+            .filter(users::id.eq(id))
+            .first(&mut conn)?;
+
+        Ok(user)
+    }
+
     pub fn create(user: UserMessage) -> Result<Self, ApiError> {
         let mut conn = db::connection()?;
 
