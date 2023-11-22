@@ -2,8 +2,8 @@ use crate::util::db;
 use lazy_static::lazy_static;
 use std::sync::{Arc, Mutex};
 use dotenv::dotenv;
-use actix_web::{test::{self, TestRequest}, App, web, body::to_bytes, web::Bytes};
-use serde_json::{json, Value, Result};
+use actix_web::web::Bytes;
+use serde_json::Value;
 
 lazy_static! {
    static ref INITIATED: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));

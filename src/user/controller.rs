@@ -1,15 +1,10 @@
 use actix_web::{
     web,
     get,
-    put,
     post,
-    delete,
     HttpResponse,
-    Responder
 };
-use serde_json::json;
 use uuid::Uuid;
-
 use crate::api_error::ApiError;
 use super::entity::{User, UserMessage};
 

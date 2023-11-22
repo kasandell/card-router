@@ -1,20 +1,21 @@
 use crate::api_error::ApiError;
 use crate::util::db;
 use crate::schema::users;
+use actix_web::web;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, AsChangeset)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct UserMessage {
     pub email: String,
     pub password: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug)]
-#[table_name = "users"]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable)]
+#[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
     pub public_id: Uuid,
@@ -25,7 +26,8 @@ pub struct User {
 }
 
 #[derive(Serialize, Deserialize, Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
+
 pub struct InsertableUser {
     pub public_id: Uuid,
     pub email: String,
