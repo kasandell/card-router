@@ -16,13 +16,3 @@ pub fn init() {
        *initiated = true;
    }
 }
-
-trait BodyTest {
-    fn as_str(&self) -> &str;
-}
-
-impl BodyTest for Bytes {
-    fn as_str(&self) -> &str {
-        std::str::from_utf8(self).unwrap()
-    }
-}

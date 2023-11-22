@@ -2,9 +2,10 @@ use super::controller;
 use actix_web::web;
 
 pub fn config(cfg: &mut web::ServiceConfig) -> () {
-    cfg.service(controller::find)
-    .service(controller::create)
-    .service(controller::list);
+    cfg
+    .service(controller::list)
+    .service(controller::find)
+    .service(controller::create);
     /*
     cfg.service(web::resource("{action_id}/approve/").route(web::post().to(controller::approve)))
         .service(web::resource("{action_id}/deny/").route(web::post().to(controller::deny)))

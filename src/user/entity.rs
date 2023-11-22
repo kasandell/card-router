@@ -13,7 +13,7 @@ pub struct UserMessage {
     pub password: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Debug)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -45,7 +45,6 @@ impl User {
     }
 
     pub fn find(id: Uuid) -> Result<Self, ApiError> {
-        println!("IN find");
         let mut conn = db::connection()?;
 
         let user = users::table
