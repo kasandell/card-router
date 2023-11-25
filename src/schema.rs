@@ -1,6 +1,17 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    category (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     credit_card (id) {
         id -> Int4,
         public_id -> Uuid,
@@ -38,6 +49,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    mcc_mapping (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        mcc_code -> Int4,
+        category_id -> Int4,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Int4,
         public_id -> Uuid,
@@ -63,13 +85,16 @@ diesel::table! {
 
 diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
+diesel::joinable!(mcc_mapping -> category (category_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    category,
     credit_card,
     credit_card_issuer,
     credit_card_type,
+    mcc_mapping,
     users,
     wallet,
 );
