@@ -10,6 +10,7 @@ use uuid::Uuid;
 
 #[derive(Identifiable, Serialize, Deserialize, Queryable, Debug)]
 #[diesel(belongs_to(User))]
+#[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
 pub struct Wallet {
     pub id: i32,
@@ -18,25 +19,30 @@ pub struct Wallet {
     pub stripe_payment_method_id: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub credit_card_id: i32,
 }
 
 #[derive(Serialize, Deserialize, Insertable, Debug)]
 #[diesel(belongs_to(User))]
+#[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
 pub struct InsertableCard {
     pub public_id: Uuid,
     pub user_id: i32,
     pub stripe_payment_method_id: String,
     pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime
+    pub updated_at: NaiveDateTime,
+    pub credit_card_id: i32,
 }
 
 #[derive(Serialize, Deserialize, AsChangeset)]
 #[diesel(belongs_to(User))]
+#[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
 pub struct NewCard {
     pub user_id: i32,
-    pub stripe_payment_method_id: String
+    pub stripe_payment_method_id: String,
+    pub credit_card_id: i32
 }
 
 impl Wallet {
@@ -68,6 +74,7 @@ impl From<NewCard> for InsertableCard {
             stripe_payment_method_id: card.stripe_payment_method_id,
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
+            credit_card_id: card.credit_card_id,
         }
     }
 }

@@ -20,7 +20,8 @@ use super::{
 async fn add_card(info: web::Json<request::AddCardRequest>) -> Result<HttpResponse, ApiError> {
     let new_card = NewCard {
         user_id: 1, // TODO: populate from request
-        stripe_payment_method_id: info.into_inner().stripe_payment_method_id
+        stripe_payment_method_id: info.into_inner().stripe_payment_method_id,
+        credit_card_id: 1
     };
     let inserted_card = Wallet::insert_card(new_card)?;
     Ok(HttpResponse::Ok().json(inserted_card))

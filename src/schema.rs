@@ -57,11 +57,13 @@ diesel::table! {
         stripe_payment_method_id -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+        credit_card_id -> Int4,
     }
 }
 
 diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
+diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
