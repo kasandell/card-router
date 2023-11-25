@@ -14,7 +14,7 @@ use dotenv::dotenv;
 mod util;
 mod api_error;
 mod constant;
-mod card;
+mod credit_card_type;
 mod category;
 mod membership;
 mod transaction;
@@ -54,6 +54,7 @@ async fn main() -> std::io::Result<()> {
             //.wrap(api_key_validation::ApiKeyValidation)
             //.app_data(web::Data::new(state.clone()))
             .service(web::scope("/user").configure(user::config::config))
+            .service(web::scope("/wallet").configure(wallet::config::config))
             .route("/hey/", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?

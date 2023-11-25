@@ -1,6 +1,43 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    credit_card (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
+        credit_card_type_id -> Int4,
+        credit_card_issuer_id -> Int4,
+        #[max_length = 255]
+        card_image_url -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    credit_card_issuer (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    credit_card_type (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        #[max_length = 255]
+        name -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Int4,
         public_id -> Uuid,
@@ -23,9 +60,14 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
+diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
 diesel::joinable!(wallet -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    credit_card,
+    credit_card_issuer,
+    credit_card_type,
     users,
     wallet,
 );

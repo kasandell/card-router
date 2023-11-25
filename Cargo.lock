@@ -3,32 +3,6 @@
 version = 3
 
 [[package]]
-name = "CardRouter"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "chrono",
- "diesel",
- "diesel-derive-enum",
- "diesel_migrations",
- "dotenv",
- "env_logger",
- "futures-util",
- "lazy_static",
- "log",
- "num",
- "num-derive",
- "num-traits",
- "r2d2",
- "r2d2_postgres",
- "serde",
- "serde_json",
- "serde_with",
- "thiserror",
- "uuid",
-]
-
-[[package]]
 name = "actix-codec"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -379,6 +353,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74d80203ea6b29df88012294f62733de21cfeab47f17b41af3a38bc30a03ee72"
 dependencies = [
  "bytes",
+]
+
+[[package]]
+name = "card_router"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "chrono",
+ "diesel",
+ "diesel-derive-enum",
+ "diesel_migrations",
+ "dotenv",
+ "env_logger",
+ "futures-util",
+ "lazy_static",
+ "log",
+ "num",
+ "num-derive",
+ "num-traits",
+ "r2d2",
+ "r2d2_postgres",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "thiserror",
+ "uuid",
 ]
 
 [[package]]

@@ -1,7 +1,6 @@
 use crate::api_error::ApiError;
 use crate::util::db;
 use crate::schema::users;
-use actix_web::web;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
