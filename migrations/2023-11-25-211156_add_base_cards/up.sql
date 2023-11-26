@@ -1,4 +1,3 @@
--- Your SQL goes here
 INSERT INTO credit_card_issuer(id, "name") VALUES (1, 'Chase'), (2, 'Bilt'), (3, 'CapitalOne');
 INSERT INTO credit_card_type(id, "name") VALUES (1, 'Visa'), (2, 'MasterCard'), (3, 'American Express');
 INSERT INTO 

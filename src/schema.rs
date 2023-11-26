@@ -60,6 +60,26 @@ diesel::table! {
 }
 
 diesel::table! {
+    passthrough_card (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        #[max_length = 255]
+        passthrough_card_status -> Varchar,
+        is_active -> Nullable<Bool>,
+        user_id -> Int4,
+        #[max_length = 255]
+        token -> Varchar,
+        expiration -> Date,
+        #[max_length = 4]
+        last_four -> Varchar,
+        #[max_length = 255]
+        passthrough_card_type -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Int4,
         public_id -> Uuid,
@@ -86,6 +106,7 @@ diesel::table! {
 diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
 diesel::joinable!(mcc_mapping -> category (category_id));
+diesel::joinable!(passthrough_card -> users (user_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 
@@ -95,6 +116,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     credit_card_issuer,
     credit_card_type,
     mcc_mapping,
+    passthrough_card,
     users,
     wallet,
 );
