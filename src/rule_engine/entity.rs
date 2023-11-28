@@ -1,10 +1,18 @@
-use crate::schema::rule;
+use crate::schema::rule::{points_multiplier, cashback_percentage_bips};
+use crate::schema::{
+    rule
+};
 use chrono::NaiveDate;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
 use crate::api_error::ApiError;
+use crate::util::math::{
+    get_cents_of_cashback,
+    get_number_of_points
+};
+use crate::credit_card_type::entity::CreditCard;
 
 use super::constant::RuleStatus;
 
@@ -33,6 +41,17 @@ impl Rule {
             .filter(rule::credit_card_id.eq_any(ids))
             .load::<Rule>(&mut conn)?;
         Ok(rules)
+    }
+
+    pub fn get_reward_amount_unitless(&self, amount_cents: i32) -> i32 {
+        //assumes points are 1 cent so we use either cashback cents or points depending on what we have
+        if let Some(pm) = self.points_multiplier {
+            get_number_of_points(amount_cents, pm)
+        } else if let Some(cpb)  = self.cashback_percentage_bips {
+            get_cents_of_cashback(amount_cents, cpb)
+        } else {
+            0
+        }
     }
 
     pub fn is_valid(&self) -> bool {
