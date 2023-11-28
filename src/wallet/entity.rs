@@ -1,4 +1,9 @@
-use crate::schema::wallet;
+use crate::{schema::{
+    wallet,
+    credit_card,
+    credit_card_issuer,
+    credit_card_type
+}, credit_card_type::entity::{CreditCardType,CreditCard,CreditCardIssuer}};
 use crate::util::db;
 use crate::api_error::ApiError;
 use crate::user::entity::User;
@@ -8,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 
-#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug)]
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
@@ -53,6 +58,22 @@ impl Wallet {
             wallet::user_id.eq(user.id)
         ).load::<Wallet>(&mut conn)?;
         Ok(cards) 
+    }
+
+    pub fn find_all_for_user_with_card_info(user: User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, ApiError> {
+        let mut conn = db::connection()?;
+        let cards = wallet::table
+        .inner_join(
+            credit_card::table
+                .inner_join(credit_card_issuer::table)
+                .inner_join(credit_card_type::table)
+        )
+        .filter(
+            wallet::user_id.eq(user.id)
+        )
+        .select((Wallet::as_select(), CreditCard::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
+        .load::<(Wallet, CreditCard, CreditCardType, CreditCardIssuer)>(&mut conn)?;
+        Ok(cards)
     }
 
     pub fn insert_card(card: NewCard) -> Result<Self, ApiError> {

@@ -89,6 +89,8 @@ diesel::table! {
         rule_mcc -> Nullable<Varchar>,
         #[max_length = 255]
         merchant_name -> Nullable<Varchar>,
+        points_multiplier -> Nullable<Int4>,
+        cashback_percentage_bips -> Nullable<Int4>,
         #[max_length = 255]
         recurring_day_of_month -> Nullable<Varchar>,
         start_date -> Nullable<Date>,
