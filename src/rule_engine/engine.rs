@@ -10,7 +10,7 @@ use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardTy
 use crate::api_error::ApiError;
 use crate::util::date::adjust_recurring_to_date;
 use chrono::{NaiveDate, Utc};
-use std::collections::{HashMap, Entry};
+use std::collections::{HashMap, hash_map::Entry};
 use crate::util::specialized::dedup_wallet;
 
 
@@ -42,27 +42,26 @@ impl Engine {
 
     fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, ordered_rules: &Vec<Rule>) -> Result<Vec<&'a Wallet>, ApiError> {
         // join cards to the rules in order, then filter to unique cards
-        let card_id_map: HashMap<i32, Wallet> = HashMap::new();
+        let mut card_id_map: HashMap<i32, &Wallet> = HashMap::new();
         for card in cards {
             let key = card.2.id;
             match card_id_map.entry(key) {
-                Entry::Vacant(e) => { e.insert(card.0); },
+                Entry::Vacant(e) => { e.insert(&card.0); },
                 Entry::Occupied(mut e) => { continue; }
             }
 
         }
-        Ok(
             //each card should show up once
-            dedup_wallet(
-                ordered_rules
+        let mut wallet: Vec<&Wallet> = ordered_rules
                     .iter()
                     //get the card to use based on this rule
-                    .map(|&rule| card_id_map.get(&rule.credit_card_id))
+                    .map(|rule| card_id_map.get(&rule.credit_card_id))
                     //remove any None
                     .filter_map(|rule| rule)
-                    .collect()
-            )
-        )
+                    .map(|rule| *rule)
+                    .collect();
+        dedup_wallet(&mut wallet);
+        Ok(wallet)
     }
 
 
