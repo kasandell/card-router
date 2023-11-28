@@ -52,7 +52,8 @@ diesel::table! {
     mcc_mapping (id) {
         id -> Int4,
         public_id -> Uuid,
-        mcc_code -> Int4,
+        #[max_length = 4]
+        mcc_code -> Varchar,
         category_id -> Int4,
         created_at -> Timestamp,
         updated_at -> Timestamp,
@@ -76,6 +77,24 @@ diesel::table! {
         passthrough_card_type -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rule (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        credit_card_id -> Int4,
+        #[max_length = 4]
+        rule_mcc -> Nullable<Varchar>,
+        #[max_length = 255]
+        merchant_name -> Nullable<Varchar>,
+        #[max_length = 255]
+        recurring_day_of_month -> Nullable<Varchar>,
+        start_date -> Nullable<Date>,
+        end_date -> Nullable<Date>,
+        #[max_length = 255]
+        rule_status -> Varchar,
     }
 }
 
@@ -107,6 +126,7 @@ diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
 diesel::joinable!(mcc_mapping -> category (category_id));
 diesel::joinable!(passthrough_card -> users (user_id));
+diesel::joinable!(rule -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 
@@ -117,6 +137,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     credit_card_type,
     mcc_mapping,
     passthrough_card,
+    rule,
     users,
     wallet,
 );

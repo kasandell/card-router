@@ -15,6 +15,7 @@ mod util;
 mod api_error;
 mod constant;
 mod credit_card_type;
+mod rule_engine;
 mod category;
 mod membership;
 mod transaction;

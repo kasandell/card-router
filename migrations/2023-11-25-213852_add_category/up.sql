@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS category(
 CREATE TABLE IF NOT EXISTS mcc_mapping (
     id SERIAL PRIMARY KEY,
     public_id UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
-    mcc_code INT UNIQUE NOT NULL,
+    mcc_code VARCHAR(4) UNIQUE NOT NULL,
     category_id INT NOT NULL REFERENCES category(id),
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
