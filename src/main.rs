@@ -26,6 +26,8 @@ mod middleware;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_helper;
 
 
 async fn manual_hello() -> impl Responder {

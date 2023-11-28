@@ -1,13 +1,10 @@
-use crate::schema::{
-    rule
-};
+use crate::schema::rule;
 use chrono::NaiveDate;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
 use crate::api_error::ApiError;
-use crate::credit_card_type::entity::CreditCard;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable)]
 #[diesel(table_name = rule)]

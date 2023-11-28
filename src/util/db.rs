@@ -1,8 +1,7 @@
 use crate::api_error::ApiError;
 use diesel::pg::PgConnection;
-use diesel::r2d2::{ConnectionManager};
+use diesel::r2d2::{ConnectionManager,CustomizeConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use diesel::prelude::*;
 use std::env;
 use lazy_static::lazy_static;
 
@@ -25,8 +24,14 @@ lazy_static! {
             true => 1,
             false => 10,
         };
-        r2d2::Builder::new().max_size(pool_size).build(manager).expect("Failed to create db pool")
-        //Pool::new(manager).expect("Failed to create db pool")
+        let mut builder = r2d2::Pool::builder();
+        if cfg!(test) {
+            println!("RUNNING TEST POOL");
+            warn!("Running test pool");
+            builder = builder.connection_customizer(Box::new(TestConnectionCustomizer));
+        }
+        info!("Initializing connnection pool with {} connections", pool_size);
+        builder.max_size(pool_size).build(manager).expect("Failed to create db pool")
     };
 }
 
@@ -34,13 +39,26 @@ pub fn init() {
     info!("Initializing DB");
     lazy_static::initialize(&POOL);
     let mut conn = connection().expect("Failed to get db connection");
-    if cfg!(test) {
-        conn.begin_test_transaction().expect("Failed to start transaction");
-    }
     run_migration(&mut conn);
+    info!("Initialized DB");
 }
 
 pub fn connection() -> Result<DbConnection, ApiError> {
     POOL.get()
         .map_err(|e| ApiError::new(500, format!("Failed getting db connection: {}", e)))
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TestConnectionCustomizer;
+
+impl<C, E> CustomizeConnection<C, E> for TestConnectionCustomizer
+where
+    C: diesel::Connection,
+{
+    fn on_acquire(&self, conn: &mut C) -> Result<(), E> {
+        conn.begin_test_transaction()
+            .expect("Failed to start test transaction");
+
+        Ok(())
+    }
 }

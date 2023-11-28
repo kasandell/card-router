@@ -5,22 +5,19 @@ mod tests {
         config::config
     };
     use crate::test::BodyTest;
-    use actix_web::{test::{self, TestRequest}, App, web, body::to_bytes, web::Bytes};
-    use serde_json::{json, Value, Result};
+    use actix_web::{test::{self, TestRequest}, App, body::to_bytes};
+    use serde_json::json;
 
     #[actix_web::test]
     async fn test_dupe_create() {
         crate::test::init();
-
         let request_body = json!({
             "email": "test@example.com",
             "password": "test",
         });
 
         let mut app = test::init_service(App::new().configure(config)).await;
-
         let resp = TestRequest::post().uri("/").set_json(&request_body).send_request(&mut app).await;
-        println!("{:?}", resp.status());
         assert!(resp.status().is_success(), "Failed to create user");
         let user: User = test::read_body_json(resp).await;
         assert_eq!(user.email, "test@example.com", "Found wrong user");
@@ -29,6 +26,7 @@ mod tests {
         let resp = TestRequest::post().uri("/").set_json(&request_body).send_request(&mut app).await;
         assert!(resp.status().is_client_error(), "Should not be possible to create user with same email twice");
         User::delete(user.public_id);
+        assert!(User::find(user.public_id).is_err())
     }
 
     #[actix_web::test]
@@ -40,16 +38,14 @@ mod tests {
                 password: "password".to_owned()
             }
         );
-
+        let public_id = user.as_ref().expect("User should exist").public_id;
         let mut app = test::init_service(App::new().configure(config)).await;
-
         let resp = TestRequest::get().uri("/list/").send_request(&mut app).await;
-
         let body = to_bytes(resp.into_body()).await.unwrap();
         let body_json = body.as_json();
         assert!(body_json.is_array());
         assert_eq!(body_json.as_array().unwrap().len(), 1);
-        println!("{:?}", user);
-        User::delete(user.unwrap().public_id);
+        User::delete(public_id);
+        assert!(User::find(public_id).is_err())
     }
 }

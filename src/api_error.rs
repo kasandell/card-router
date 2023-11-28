@@ -35,16 +35,18 @@ impl From<DieselError> for ApiError {
 
 impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
-        println!("{}", self.message.clone());
         let status_code = match StatusCode::from_u16(self.status_code) {
             Ok(status_code) => status_code,
             Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         let message = match status_code.as_u16() < 500 {
-            true => self.message.clone(),
+            true => {
+                warn!("{}: {}", self.status_code, self.message);
+                self.message.clone()
+            },
             false => {
-                error!("{}", self.message);
+                error!("{}: {}", self.status_code, self.message);
                 "Internal server error".to_string()
             },
         };
