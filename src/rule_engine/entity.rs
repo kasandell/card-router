@@ -1,4 +1,3 @@
-use crate::schema::rule::{points_multiplier, cashback_percentage_bips};
 use crate::schema::rule;
 use super::request::CreateRuleRequest;
 use chrono::NaiveDate;
@@ -11,8 +10,6 @@ use crate::util::math::{
     get_cents_of_cashback,
     get_number_of_points
 };
-use crate::credit_card_type::entity::CreditCard;
-
 use super::constant::RuleStatus;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug)]
@@ -107,6 +104,23 @@ impl Rule {
         } else {
             false
         }
+    }
+
+    #[cfg(test)]
+    pub fn delete(id: i32) -> Result<usize, ApiError> {
+        let mut conn = db::connection()?;
+
+        let res = diesel::delete(
+                rule::table
+                    .filter(rule::id.eq(id))
+            )
+            .execute(&mut conn)?;
+        Ok(res)
+    }
+
+    #[cfg(test)]
+    pub fn delete_self(&self) -> Result<usize, ApiError> {
+        Rule::delete(self.id)
     }
 }
 

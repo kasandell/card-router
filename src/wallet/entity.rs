@@ -2,7 +2,7 @@ use crate::{schema::{
     wallet,
     credit_card,
     credit_card_issuer,
-    credit_card_type
+    credit_card_type, category::public_id
 }, credit_card_type::entity::{CreditCardType,CreditCard,CreditCardIssuer}};
 use crate::util::db;
 use crate::api_error::ApiError;
@@ -84,6 +84,23 @@ impl Wallet {
         .get_result(&mut conn)?;
         Ok(inserted_card)
 
+    }
+
+    #[cfg(test)]
+    pub fn delete(id: i32) -> Result<usize, ApiError> {
+        let mut conn = db::connection()?;
+
+        let res = diesel::delete(
+                wallet::table
+                    .filter(wallet::id.eq(id))
+            )
+            .execute(&mut conn)?;
+        Ok(res)
+    }
+
+    #[cfg(test)]
+    pub fn delete_self(&self) -> Result<usize, ApiError> {
+        Wallet::delete(self.id)
     }
 }
 

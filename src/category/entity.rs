@@ -59,19 +59,21 @@ impl Category {
         Ok(cat)
     }
 
-    pub fn delete(id: Uuid) -> Result<usize, ApiError> {
+    #[cfg(test)]
+    pub fn delete(id: i32) -> Result<usize, ApiError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
                 category::table
-                    .filter(category::public_id.eq(id))
+                    .filter(category::id.eq(id))
             )
             .execute(&mut conn)?;
         Ok(res)
     }
 
+    #[cfg(test)]
     pub fn delete_self(&self) -> Result<usize, ApiError> {
-        Category::delete(self.public_id)
+        Category::delete(self.id)
     }
 }
 
@@ -84,18 +86,20 @@ impl MccMapping {
         Ok(map)
     }
 
-    pub fn delete(id: Uuid) -> Result<usize, ApiError> {
+    #[cfg(test)]
+    pub fn delete(id: i32) -> Result<usize, ApiError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
                 mcc_mapping::table
-                    .filter(mcc_mapping::public_id.eq(id))
+                    .filter(mcc_mapping::id.eq(id))
             )
             .execute(&mut conn)?;
         Ok(res)
     }
 
+    #[cfg(test)]
     pub fn delete_self(&self) -> Result<usize, ApiError> {
-        MccMapping::delete(self.public_id)
+        MccMapping::delete(self.id)
     }
 }

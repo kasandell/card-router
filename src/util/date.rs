@@ -2,13 +2,13 @@ use crate::rule_engine::constant::DayOfMonth;
 use chrono::{NaiveDate, Duration, Datelike};
 
 pub fn first_of_month(date: NaiveDate) -> NaiveDate {
-    NaiveDate::from_ymd(date.year(), date.month(), 1)
+    NaiveDate::from_ymd_opt(date.year(), date.month(), 1).expect("should create date")
 }
 
 pub fn last_of_month(date: NaiveDate) -> NaiveDate {
     match date.month() {
-        12 => NaiveDate::from_ymd(date.year() + 1, 1, 1) - Duration::days(1),
-        _ => NaiveDate::from_ymd(date.year(), date.month() + 1, 1) - Duration::days(1)
+        12 => NaiveDate::from_ymd_opt(date.year() + 1, 1, 1).expect("should create date") - Duration::days(1),
+        _ => NaiveDate::from_ymd_opt(date.year(), date.month() + 1, 1).expect("should create date") - Duration::days(1)
     }
 }
 

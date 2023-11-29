@@ -87,20 +87,22 @@ impl User {
         Ok(user)
     }
 
-    pub fn delete(id: Uuid) -> Result<usize, ApiError> {
+    #[cfg(test)]
+    pub fn delete(id: i32) -> Result<usize, ApiError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
                 users::table
-                    .filter(users::public_id.eq(id))
+                    .filter(users::id.eq(id))
             )
             .execute(&mut conn)?;
 
         Ok(res)
     }
 
+    #[cfg(test)]
     pub fn delete_self(&self) -> Result<usize, ApiError> {
-        User::delete(self.public_id)
+        User::delete(self.id)
     }
 }
 

@@ -1,17 +1,6 @@
-use super::{
-    entity::Rule,
-    request::CreateRuleRequest
-};
-
 #[cfg(test)]
 mod entity_tests {
-    use crate::{test_helper::initialize_user, schema::rule};
-    use actix_web::{test::{self, TestRequest}, App, body::to_bytes};
-    use serde_json::json;
-    use crate::wallet::entity::{
-        InsertableCard,
-        Wallet
-    };
+    use crate::test_helper::initialize_user;
     use crate::rule_engine::{
         request::CreateRuleRequest,
         entity::Rule,
@@ -23,7 +12,6 @@ mod entity_tests {
         MccMapping,
         InsertableMccMapping
     };
-    use crate::user::entity::User;
 
     #[actix_web::test]
     async fn test_create_rule() {
@@ -61,9 +49,10 @@ mod entity_tests {
         assert!(rule.recurring_day_of_month.is_none());
         assert!(rule.start_date.is_none());
         assert!(rule.end_date.is_none());
-        user.delete_self();
-        mcc_mapping.delete_self();
-        category.delete_self();
+        user.delete_self().expect("should delete");
+        Rule::delete(rule.id).expect("should delete");
+        mcc_mapping.delete_self().expect("should delete");
+        category.delete_self().expect("should delete");
 
     }
 }

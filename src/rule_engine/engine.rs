@@ -2,16 +2,14 @@ use std::cmp::Ordering;
 
 use super::constant::DayOfMonth;
 use super::entity::Rule;
-use crate::asa_request;
-use crate::{asa_request::entity::AsaRequest, schema::rule::recurring_day_of_month};
+use crate::asa_request::entity::AsaRequest;
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
 use crate::api_error::ApiError;
 use crate::util::date::adjust_recurring_to_date;
-use chrono::{NaiveDate, Utc};
+use chrono::Utc;
 use std::collections::{HashMap, hash_map::Entry};
-use crate::util::specialized::dedup_wallet;
 
 
 type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
