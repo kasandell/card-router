@@ -26,7 +26,7 @@ mod tests {
 
         let resp = TestRequest::post().uri("/").set_json(&request_body).send_request(&mut app).await;
         assert!(resp.status().is_client_error(), "Should not be possible to create user with same email twice");
-        User::delete(user.public_id);
+        user.delete_self();
         assert!(User::find(user.public_id).is_err())
     }
 
@@ -38,15 +38,15 @@ mod tests {
                 email: "test@example.com".to_owned(),
                 password: "password".to_owned()
             }
-        );
-        let public_id = user.as_ref().expect("User should exist").public_id;
+        ).expect("User should exist");
+        let public_id = user.public_id;
         let mut app = test::init_service(App::new().configure(config)).await;
         let resp = TestRequest::get().uri("/list/").send_request(&mut app).await;
         let body = to_bytes(resp.into_body()).await.unwrap();
         let body_json = body.as_json();
         assert!(body_json.is_array());
         assert_eq!(body_json.as_array().unwrap().len(), 1);
-        User::delete(public_id);
+        user.delete_self();
         assert!(User::find(public_id).is_err())
     }
 }

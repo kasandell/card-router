@@ -58,6 +58,21 @@ impl Category {
         .get_result(&mut conn)?;
         Ok(cat)
     }
+
+    pub fn delete(id: Uuid) -> Result<usize, ApiError> {
+        let mut conn = db::connection()?;
+
+        let res = diesel::delete(
+                category::table
+                    .filter(category::public_id.eq(id))
+            )
+            .execute(&mut conn)?;
+        Ok(res)
+    }
+
+    pub fn delete_self(&self) -> Result<usize, ApiError> {
+        Category::delete(self.public_id)
+    }
 }
 
 impl MccMapping {
@@ -67,5 +82,20 @@ impl MccMapping {
         .values(mapping)
         .get_result(&mut conn)?;
         Ok(map)
+    }
+
+    pub fn delete(id: Uuid) -> Result<usize, ApiError> {
+        let mut conn = db::connection()?;
+
+        let res = diesel::delete(
+                mcc_mapping::table
+                    .filter(mcc_mapping::public_id.eq(id))
+            )
+            .execute(&mut conn)?;
+        Ok(res)
+    }
+
+    pub fn delete_self(&self) -> Result<usize, ApiError> {
+        MccMapping::delete(self.public_id)
     }
 }

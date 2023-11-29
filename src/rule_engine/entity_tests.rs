@@ -61,7 +61,9 @@ mod entity_tests {
         assert!(rule.recurring_day_of_month.is_none());
         assert!(rule.start_date.is_none());
         assert!(rule.end_date.is_none());
-        User::delete(user.public_id);
+        user.delete_self();
+        mcc_mapping.delete_self();
+        category.delete_self();
 
     }
 }

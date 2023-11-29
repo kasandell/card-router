@@ -98,6 +98,10 @@ impl User {
 
         Ok(res)
     }
+
+    pub fn delete_self(&self) -> Result<usize, ApiError> {
+        User::delete(self.public_id)
+    }
 }
 
 impl From<UserMessage> for InsertableUser {
