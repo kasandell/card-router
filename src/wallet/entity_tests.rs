@@ -2,6 +2,7 @@
 mod entity_tests {
     use crate::wallet::entity::{Wallet, NewCard};
     use crate::test_helper::initialize_user;
+    use crate::user::entity::User;
 
     #[actix_web::test]
     async fn test_dupe_create() {
@@ -21,5 +22,6 @@ mod entity_tests {
         assert_eq!(stripe_pmt_id, card.stripe_payment_method_id);
         assert_eq!(1, card.credit_card_id);
         assert!(!card.public_id.is_nil());
+        User::delete(user.public_id);
     }
 }

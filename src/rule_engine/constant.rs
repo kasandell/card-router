@@ -1,22 +1,22 @@
 #[derive(Debug, PartialEq)]
 pub enum RuleStatus {
-    VALID,
-    INVALID
+    ACTIVE,
+    INACTIVE
 }
 
 impl RuleStatus {
-    fn as_str(&self) -> String {
+    pub fn as_str(&self) -> String {
         match self {
-            RuleStatus::VALID => "VALID".to_string(),
-            RuleStatus::INVALID => "INVALID".to_string(),
+            RuleStatus::ACTIVE => "ACTIVE".to_string(),
+            RuleStatus::INACTIVE => "INACTIVE".to_string(),
         }
     }
 
     pub fn from_str(str: &str) -> Self {
         match str {
-            "VALID" => RuleStatus::VALID,
-            "INVALID" => RuleStatus::INVALID,
-            _ => RuleStatus::INVALID
+            "ACTIVE" => RuleStatus::ACTIVE,
+            "INACTIVE" => RuleStatus::INACTIVE,
+            _ => RuleStatus::ACTIVE
         }
     }
 }
@@ -28,7 +28,7 @@ pub enum DayOfMonth {
 }
 
 impl DayOfMonth {
-    fn as_str(&self) -> String {
+    pub fn as_str(&self) -> String {
         match self {
             DayOfMonth::FIRST => "FIRST".to_string(),
             DayOfMonth::LAST => "LAST".to_string(),

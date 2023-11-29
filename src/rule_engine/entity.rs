@@ -1,7 +1,6 @@
 use crate::schema::rule::{points_multiplier, cashback_percentage_bips};
-use crate::schema::{
-    rule
-};
+use crate::schema::rule;
+use super::request::CreateRuleRequest;
 use chrono::NaiveDate;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -15,6 +14,21 @@ use crate::util::math::{
 use crate::credit_card_type::entity::CreditCard;
 
 use super::constant::RuleStatus;
+
+#[derive(Serialize, Deserialize, Queryable, Insertable, Debug)]
+#[diesel(table_name = rule)]
+#[diesel(belongs_to(CreditCard))]
+struct InsertableRule {
+    pub credit_card_id: i32,
+    pub rule_mcc: Option<String>,
+    pub merchant_name: Option<String>,
+    pub points_multiplier: Option<i32>,
+    pub cashback_percentage_bips: Option<i32>,
+    pub recurring_day_of_month: Option<String>,
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+    pub rule_status: String
+}
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable)]
 #[diesel(table_name = rule)]
@@ -34,7 +48,15 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn get_rules_for_card_ids(ids: Vec<i32>) -> Result<Vec<Self>, ApiError> {
+    pub fn create(new_rule: CreateRuleRequest) -> Result<Self, ApiError> {
+        let mut conn = db::connection()?;
+        let rule = diesel::insert_into(rule::table)
+            .values(InsertableRule::from(new_rule))
+            .get_result(&mut conn)?;
+        Ok(rule)
+    }
+
+    pub fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, ApiError> {
         let mut conn = db::connection()?;
 
         let rules = rule::table
@@ -62,7 +84,7 @@ impl Rule {
     }
 
     fn is_active_rule(&self) -> bool {
-        RuleStatus::from_str(&self.rule_status) == RuleStatus::VALID
+        RuleStatus::from_str(&self.rule_status) == RuleStatus::ACTIVE
     }
 
     fn is_valid_mcc_merchant_name(&self) -> bool {
@@ -75,13 +97,31 @@ impl Rule {
     }
 
     fn is_valid_date_combo(&self) -> bool {
-        //can either be a recurring date once a month, or have a start and end frame
+        //can either be a recurring date once a month, or have a start and end frame, or always active (no dates)
         if self.recurring_day_of_month.is_some() {
-            self.start_date.is_none() & self.end_date.is_none()
+            self.start_date.is_none() && self.end_date.is_none()
         } else if self.start_date.is_some() {
-            self.end_date.is_some() & self.recurring_day_of_month.is_none()
+            self.end_date.is_some() && self.recurring_day_of_month.is_none()
+        } else if self.start_date.is_none() && self.end_date.is_none() && self.recurring_day_of_month.is_none() {
+            true
         } else {
             false
+        }
+    }
+}
+
+impl From<CreateRuleRequest> for InsertableRule {
+    fn from(request: CreateRuleRequest) -> Self {
+        InsertableRule { 
+            credit_card_id: request.credit_card_id,
+            rule_mcc: request.rule_mcc,
+            merchant_name: request.merchant_name,
+            points_multiplier: request.points_multiplier,
+            cashback_percentage_bips: request.cashback_percentage_bips,
+            recurring_day_of_month: request.recurring_day_of_month,
+            start_date: request.start_date,
+            end_date: request.end_date,
+            rule_status: RuleStatus::ACTIVE.as_str()
         }
     }
 }

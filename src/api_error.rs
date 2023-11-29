@@ -42,11 +42,11 @@ impl ResponseError for ApiError {
 
         let message = match status_code.as_u16() < 500 {
             true => {
-                warn!("{}: {}", self.status_code, self.message);
+                println!("{}: {}", self.status_code, self.message);
                 self.message.clone()
             },
             false => {
-                error!("{}: {}", self.status_code, self.message);
+                println!("{}: {}", self.status_code, self.message);
                 "Internal server error".to_string()
             },
         };
