@@ -17,7 +17,7 @@ struct Engine {
 }
 
 impl Engine {
-    fn charge_in_order(request: AsaRequest, user: User) -> Result<(), ApiError> {
+    pub fn charge_in_order(request: AsaRequest, user: User) -> Result<(), ApiError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
@@ -100,7 +100,7 @@ impl Engine {
 
 
     fn filter_rule_for_request(rule: &Rule, asa_request: &AsaRequest) -> bool {
-        Engine::filter_rule_by_merchant(rule, asa_request) && Engine::filter_rule_by_date(rule, asa_request)
+        Engine::filter_rule_by_merchant(rule, asa_request) && Engine::filter_rule_by_date(rule)
     }
 
     fn filter_rule_by_merchant(rule: &Rule, asa_request: &AsaRequest) -> bool {
@@ -113,7 +113,7 @@ impl Engine {
         }
     }
 
-    fn filter_rule_by_date(rule: &Rule, asa_request: &AsaRequest) -> bool{
+    fn filter_rule_by_date(rule: &Rule) -> bool{
         let today = Utc::now().naive_utc().date();
         if rule.recurring_day_of_month.is_some() {
             let Some(day_of_month) = rule.recurring_day_of_month.as_ref() else { return false; };

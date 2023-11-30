@@ -78,6 +78,7 @@ impl Rule {
         && self.is_valid_mcc_merchant_name()
         && self.is_valid_cashback_points()
         && self.is_valid_date_combo()
+        && self.is_valid_date_range()
     }
 
     fn is_active_rule(&self) -> bool {
@@ -104,6 +105,15 @@ impl Rule {
         } else {
             false
         }
+    }
+
+    fn is_valid_date_range(&self) -> bool {
+        if let Some(start) = self.start_date {
+            if let Some(end) = self.end_date {
+                return start <= end;
+            }
+        }
+        true
     }
 
     #[cfg(test)]
