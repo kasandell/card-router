@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 
-#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable)]
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
@@ -51,7 +51,7 @@ pub struct NewCard {
 }
 
 impl Wallet {
-    pub fn find_all_for_user(user: User) -> Result<Vec<Self>, ApiError> {
+    pub fn find_all_for_user(user: &User) -> Result<Vec<Self>, ApiError> {
         let mut conn = db::connection()?;
         //let cards = Wallet::belonging_to(&user).load::<Wallet>(&mut conn)?;
         let cards = wallet::table.filter(
@@ -60,7 +60,7 @@ impl Wallet {
         Ok(cards) 
     }
 
-    pub fn find_all_for_user_with_card_info(user: User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, ApiError> {
+    pub fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, ApiError> {
         let mut conn = db::connection()?;
         let cards = wallet::table
         .inner_join(

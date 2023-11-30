@@ -30,7 +30,7 @@ async fn add_card(info: web::Json<request::AddCardRequest>) -> Result<HttpRespon
 #[get("/list-cards/")]
 async fn list_cards() -> Result<HttpResponse, ApiError> {
     let cards = Wallet::find_all_for_user(
-        User::find_by_internal_id(1)?
+        &(User::find_by_internal_id(1)?)
     )?;
     Ok(HttpResponse::Ok().json(cards))
 }

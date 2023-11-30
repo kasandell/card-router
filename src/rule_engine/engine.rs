@@ -18,17 +18,17 @@ pub struct RuleEngine {
 }
 
 impl RuleEngine {
-    pub fn charge_in_order(request: AsaRequest, user: User) -> Result<(), ApiError> {
+    pub fn order_user_cards_for_request(request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ApiError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
         let cards = Wallet::find_all_for_user_with_card_info(user)?;
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
-        let mut rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids)?;
+        let rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids)?;
         info!("Using {} rules", rules.len());
         let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, request.amount)?;
-        Ok(())
+        Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
 
     pub fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ApiError> {
@@ -59,11 +59,7 @@ impl RuleEngine {
                 Entry::Vacant(_) => 0,
                 Entry::Occupied(e) => *e.get()
             };
-            if a_score > b_score {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
+            b_score.cmp(&a_score)
         });
         Ok(cards_only)
     }
@@ -76,8 +72,6 @@ impl RuleEngine {
                 .collect()
         )
     }
-
-
 
     fn filter_rule_for_request(rule: &Rule, asa_request: &AsaRequest) -> bool {
         RuleEngine::filter_rule_by_merchant(rule, asa_request) && RuleEngine::filter_rule_by_date(rule)
@@ -96,13 +90,18 @@ impl RuleEngine {
     fn filter_rule_by_date(rule: &Rule) -> bool{
         let today = Utc::now().naive_utc().date();
         if rule.recurring_day_of_month.is_some() {
+            info!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());
             let Some(day_of_month) = rule.recurring_day_of_month.as_ref() else { return false; };
             let recur = DayOfMonth::from_str(
                 &day_of_month
             );
             let expected_date = adjust_recurring_to_date(today, recur);
             expected_date == today
+        } else if rule.start_date.is_none() && rule.end_date.is_none() && rule.recurring_day_of_month.is_none() {
+            info!("Rule {} has no dates so is always valid", rule.id);
+            true
         } else {
+            info!("Filtering rule id {} by start {:?} end {:?}", rule.id, rule.start_date.as_ref(), rule.end_date.as_ref());
             let start_date = rule.start_date.unwrap();
             let end_date = rule.end_date.unwrap();
             start_date <= today 
