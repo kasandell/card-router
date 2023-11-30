@@ -3,7 +3,7 @@ use crate::schema::{
     credit_card_issuer,
     credit_card_type
 };
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -42,4 +42,54 @@ pub struct CreditCardIssuer {
     pub name: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime
+}
+
+
+#[cfg(test)]
+impl CreditCard {
+    pub fn create_test_credit_card(
+        id: i32,
+        name: String,
+        credit_card_type_id: i32,
+        credit_card_issuer_id: i32
+    ) -> Self {
+        CreditCard { 
+            id: id, 
+            public_id: Uuid::new_v4(), 
+            name: name,
+            credit_card_type_id: credit_card_type_id,
+            credit_card_issuer_id: credit_card_issuer_id,
+            card_image_url: "".to_string(),
+            created_at: Utc::now().naive_utc(), 
+            updated_at: Utc::now().naive_utc()
+        }
+    }
+}
+
+#[cfg(test)]
+impl CreditCardIssuer {
+    pub fn create_test_credit_card_issuer(id: i32, name: String) -> Self {
+        CreditCardIssuer { 
+            id: id, 
+            public_id: Uuid::new_v4(), 
+            name: name,
+            created_at: Utc::now().naive_utc(), 
+            updated_at: Utc::now().naive_utc()
+        }
+    }
+
+}
+
+#[cfg(test)]
+impl CreditCardType {
+    pub fn create_test_credit_card_type(id: i32, name: String) -> Self {
+        CreditCardType { 
+            id: id, 
+            public_id: Uuid::new_v4(), 
+            name: name,
+            created_at: Utc::now().naive_utc(), 
+            updated_at: Utc::now().naive_utc()
+        }
+    }
+
 }

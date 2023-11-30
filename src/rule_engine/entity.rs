@@ -149,3 +149,27 @@ impl From<CreateRuleRequest> for InsertableRule {
         }
     }
 }
+
+#[cfg(test)]
+impl Rule {
+    pub fn create_test_rule_dateless_mcc_points(
+        id: i32, 
+        credit_card_id: i32,
+        mcc: String,
+        points_multiplier: i32
+    ) -> Self {
+        Rule {
+            id: id,
+            public_id: Uuid::new_v4(),
+            credit_card_id: credit_card_id,
+            rule_mcc: Some(mcc),
+            merchant_name: None,
+            points_multiplier: Some(points_multiplier),
+            cashback_percentage_bips: None,
+            recurring_day_of_month: None,
+            start_date: None,
+            end_date: None,
+            rule_status: RuleStatus::ACTIVE.as_str()
+        }
+    }
+}

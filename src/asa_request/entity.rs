@@ -80,3 +80,35 @@ pub struct EntryMode {
     pub cardholder: String,
     pub card: String
 }
+
+
+#[cfg(test)]
+pub fn create_example_asa(amount_cents: i32, mcc_code: String) -> AsaRequest {
+    AsaRequest {
+        amount: amount_cents,
+        acquirer_fee: 0,
+        authorization_amount: 0,
+        avs: Avs { address: "test address".to_string(), zipcode: "10017".to_string() },
+        card: Card {},
+        cardholder_authentication: CardholderAuthentication {},
+        cash_amount: 0,
+        conversion_rate: 0.0,
+        created: "2023-12-01".to_string(),
+        events: Vec::new(),
+        funding: Vec::new(),
+        merchant_amount: 0,
+        merchant_currency: "USD".to_string(),
+        merchant: Merchant { acceptor_id: "1".to_string(), city: "New York".to_string(), country: "USA".to_string(), descriptor: "test merchant".to_string(), mcc: mcc_code, state: "NY".to_string() },
+        network: "Visa".to_string(),
+        network_risk_score: 0,
+        pos: POS { 
+            terminal: Terminal { attended: true, operator: "".to_string(), on_premise: true, pin_capability: "yes".to_string(), type_: "pos".to_string(), partial_approval_capable: true }, 
+            entry_mode: EntryMode { pan: "".to_string(), pin_entered: true, cardholder: "".to_string(), card: "1234".to_string() }
+        },
+        settled_amount: 0,
+        status: "new".to_string(),
+        token: "test_token".to_string(),
+        token_info: TokenInfo {}
+    }
+
+}

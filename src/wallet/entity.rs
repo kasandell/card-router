@@ -116,3 +116,22 @@ impl From<NewCard> for InsertableCard {
         }
     }
 }
+
+#[cfg(test)]
+impl Wallet {
+    pub fn create_test_wallet(
+        id: i32,
+        user_id: i32,
+        credit_card_id: i32
+    ) -> Self {
+        Wallet {
+            id: id,
+            public_id: Uuid::new_v4(),
+            user_id: user_id,
+            stripe_payment_method_id: Uuid::new_v4().to_string(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+            credit_card_id: credit_card_id
+        }
+    }
+}

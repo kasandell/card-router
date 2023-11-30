@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
 
-use super::constant::DayOfMonth;
+use super::constant::{DayOfMonth, RuleStatus};
 use super::entity::Rule;
+use crate::asa_request;
 use crate::asa_request::entity::AsaRequest;
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
@@ -12,11 +13,11 @@ use chrono::Utc;
 use std::collections::{HashMap, hash_map::Entry};
 
 
-type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
-struct Engine {
+pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
+pub struct RuleEngine {
 }
 
-impl Engine {
+impl RuleEngine {
     pub fn charge_in_order(request: AsaRequest, user: User) -> Result<(), ApiError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
@@ -24,19 +25,19 @@ impl Engine {
         //wallet, credit_card, credit_card_type, credit_card_issuer
         let cards = Wallet::find_all_for_user_with_card_info(user)?;
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
-        let mut rules = Engine::find_and_filter_rules(&request, &card_type_ids)?;
+        let mut rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids)?;
         info!("Using {} rules", rules.len());
-        let ordered_cards = Engine::get_card_order_from_rules(&cards, &rules, request.amount)?;
-
+        let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, request.amount)?;
         Ok(())
     }
 
-    fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, ordered_rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ApiError> {
+    pub fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ApiError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
+        Precondition: expect rules to be pre-filtered
          */
         let mut max_reward_map: HashMap<i32, i32> = HashMap::new();
-        for rule in ordered_rules {
+        for rule in rules {
             let reward_amount = rule.get_reward_amount_unitless(amount_cents);
             match max_reward_map.entry(rule.credit_card_id) {
                 Entry::Vacant(e) => {e.insert(reward_amount);}
@@ -59,40 +60,19 @@ impl Engine {
                 Entry::Occupied(e) => *e.get()
             };
             if a_score > b_score {
-                Ordering::Greater
-            } else {
                 Ordering::Less
+            } else {
+                Ordering::Greater
             }
         });
         Ok(cards_only)
-        /*
-        // join cards to the rules in order, then filter to unique cards
-        let mut card_id_map: HashMap<i32, &Wallet> = HashMap::new();
-        for card in cards {
-            let key = card.2.id;
-            match card_id_map.entry(key) {
-                Entry::Vacant(e) => { e.insert(&card.0); },
-                Entry::Occupied(mut e) => { continue; }
-            }
-        }
-        let mut wallet: Vec<&Wallet> = ordered_rules
-                    .iter()
-                    //get the card to use based on this rule
-                    .map(|rule| card_id_map.get(&rule.credit_card_id))
-                    //remove any None
-                    .filter_map(|rule| rule)
-                    .map(|rule| *rule)
-                    .collect();
-        dedup_wallet(&mut wallet);
-        Ok(wallet)
-        */
     }
 
     fn find_and_filter_rules(request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ApiError> {
         Ok(
             Rule::get_rules_for_card_ids(card_type_ids)?
                 .into_iter()
-                .filter(|rule| rule.is_valid() && Engine::filter_rule_for_request(&rule, &request))
+                .filter(|rule| rule.is_valid() && RuleEngine::filter_rule_for_request(&rule, &request))
                 .collect()
         )
     }
@@ -100,7 +80,7 @@ impl Engine {
 
 
     fn filter_rule_for_request(rule: &Rule, asa_request: &AsaRequest) -> bool {
-        Engine::filter_rule_by_merchant(rule, asa_request) && Engine::filter_rule_by_date(rule)
+        RuleEngine::filter_rule_by_merchant(rule, asa_request) && RuleEngine::filter_rule_by_date(rule)
     }
 
     fn filter_rule_by_merchant(rule: &Rule, asa_request: &AsaRequest) -> bool {
