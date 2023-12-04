@@ -1,5 +1,7 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
+use adyen_checkout::apis::payments_api::PostPaymentsError;
+use adyen_checkout::apis::Error as AdyenCheckoutError;
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde_json::{json, Error as SerdeError};
@@ -36,10 +38,17 @@ impl From<DieselError> for ApiError {
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
         match error {
-            err => ApiError::new(500, format!("Diesel error: {}", err)),
+            err => ApiError::new(500, format!("Serde Error error: {}", err)),
         }
     }
+}
 
+impl <T> From<AdyenCheckoutError<T>> for ApiError {
+    fn from(error: AdyenCheckoutError<T>) -> ApiError {
+        match error {
+            err => ApiError::new(500, format!("Adyen error: {}", err)),
+        }
+    }
 }
 
 impl ResponseError for ApiError {
