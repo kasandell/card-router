@@ -117,10 +117,30 @@ diesel::table! {
         public_id -> Uuid,
         user_id -> Int4,
         #[max_length = 255]
-        stripe_payment_method_id -> Varchar,
+        payment_method_id -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
         credit_card_id -> Int4,
+        wallet_card_attempt_id -> Int4,
+    }
+}
+
+diesel::table! {
+    wallet_card_attempt (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        user_id -> Int4,
+        credit_card_id -> Int4,
+        #[max_length = 255]
+        expected_reference_id -> Varchar,
+        #[max_length = 255]
+        psp_id -> Nullable<Varchar>,
+        #[max_length = 255]
+        status -> Varchar,
+        #[max_length = 255]
+        recurring_detail_reference -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
@@ -131,6 +151,9 @@ diesel::joinable!(passthrough_card -> users (user_id));
 diesel::joinable!(rule -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
+diesel::joinable!(wallet -> wallet_card_attempt (wallet_card_attempt_id));
+diesel::joinable!(wallet_card_attempt -> credit_card (credit_card_id));
+diesel::joinable!(wallet_card_attempt -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     category,
@@ -142,4 +165,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     rule,
     users,
     wallet,
+    wallet_card_attempt,
 );

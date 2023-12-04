@@ -29,3 +29,4 @@ log = "0.4.20"
 adyen-payment = { version = "68.0.0", path = "../adyen-openapi/clients/payment" }
 adyen-checkout = { version = "71.0.0", path = "../adyen-openapi/clients/checkout" }
 futures = "0.3.29"
+adyen-webhooks = { version = "1.0.0", path = "../adyen-openapi/clients/webhooks" }

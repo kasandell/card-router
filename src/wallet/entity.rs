@@ -21,7 +21,7 @@ pub struct Wallet {
     pub id: i32,
     pub public_id: Uuid,
     pub user_id: i32,
-    pub stripe_payment_method_id: String,
+    pub payment_method_id: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub credit_card_id: i32,
@@ -34,7 +34,7 @@ pub struct Wallet {
 pub struct InsertableCard {
     pub public_id: Uuid,
     pub user_id: i32,
-    pub stripe_payment_method_id: String,
+    pub payment_method_id: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub credit_card_id: i32,
@@ -46,7 +46,7 @@ pub struct InsertableCard {
 #[diesel(table_name = wallet)]
 pub struct NewCard {
     pub user_id: i32,
-    pub stripe_payment_method_id: String,
+    pub payment_method_id: String,
     pub credit_card_id: i32
 }
 
@@ -109,7 +109,7 @@ impl From<NewCard> for InsertableCard {
         InsertableCard {
             public_id: Uuid::new_v4(),
             user_id: card.user_id,
-            stripe_payment_method_id: card.stripe_payment_method_id,
+            payment_method_id: card.payment_method_id,
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
             credit_card_id: card.credit_card_id,
@@ -128,7 +128,7 @@ impl Wallet {
             id: id,
             public_id: Uuid::new_v4(),
             user_id: user_id,
-            stripe_payment_method_id: Uuid::new_v4().to_string(),
+            payment_method_id: Uuid::new_v4().to_string(),
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
             credit_card_id: credit_card_id

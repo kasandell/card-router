@@ -12,13 +12,13 @@ mod entity_tests {
         let card = Wallet::insert_card(
             NewCard {
                 user_id: user.id,
-                stripe_payment_method_id: stripe_pmt_id.to_string(),
+                payment_method_id: stripe_pmt_id.to_string(),
                 credit_card_id: 1 // should be populated already
             }
         );
         assert!(card.is_ok());
         let card = card.expect("Card should be ok");
-        assert_eq!(stripe_pmt_id, card.stripe_payment_method_id);
+        assert_eq!(stripe_pmt_id, card.payment_method_id);
         assert_eq!(1, card.credit_card_id);
         assert!(!card.public_id.is_nil());
         card.delete_self().expect("should delete");

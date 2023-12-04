@@ -21,8 +21,8 @@ pub struct ChargeService {}
 
 
 impl ChargeService {
-    pub fn charge_card_on_file(request: ChargeCardRequest) -> Result<PaymentResponse, ApiError> {
-        let response = executor::block_on(post_payments(
+    pub async fn charge_card_on_file(request: ChargeCardRequest) -> Result<PaymentResponse, ApiError> {
+        Ok(post_payments(
             &Configuration {
                 api_key: Some(
                     ApiKey { 
@@ -63,8 +63,7 @@ impl ChargeService {
                 shopper_statement: Some(
                     request.statement
                 ),
-                social_security_number: None, splits: None, store: None, store_payment_method: None, telephone_number: None, three_ds2_request_data: None, three_ds_authentication_only: None, trusted_shopper: None })));
-        Ok(response?)
+                social_security_number: None, splits: None, store: None, store_payment_method: None, telephone_number: None, three_ds2_request_data: None, three_ds_authentication_only: None, trusted_shopper: None })).await?)
     }
 }
 

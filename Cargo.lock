@@ -223,6 +223,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "adyen-webhooks"
+version = "1.0.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_with 2.3.3",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "ahash"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -394,6 +407,7 @@ dependencies = [
  "actix-web",
  "adyen-checkout",
  "adyen-payment",
+ "adyen-webhooks",
  "chrono",
  "diesel",
  "diesel-derive-enum",

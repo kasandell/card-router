@@ -25,6 +25,7 @@ mod schema;
 mod user;
 mod wallet;
 mod middleware;
+mod webhooks;
 
 #[cfg(test)]
 mod test;
