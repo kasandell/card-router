@@ -11,6 +11,7 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
 use dotenv::dotenv;
 
+mod adyen_service;
 mod asa_request;
 mod util;
 mod api_error;

@@ -2,7 +2,7 @@ use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{json, Error as SerdeError};
 use std::fmt;
 
 #[derive(Debug, Deserialize)]
@@ -31,6 +31,15 @@ impl From<DieselError> for ApiError {
             err => ApiError::new(500, format!("Diesel error: {}", err)),
         }
     }
+}
+
+impl From<SerdeError> for ApiError {
+    fn from(error: SerdeError) -> ApiError {
+        match error {
+            err => ApiError::new(500, format!("Diesel error: {}", err)),
+        }
+    }
+
 }
 
 impl ResponseError for ApiError {
