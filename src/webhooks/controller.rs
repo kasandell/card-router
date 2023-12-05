@@ -4,6 +4,7 @@ use actix_web::{
     post,
     HttpResponse,
 };
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::api_error::ApiError;
 use adyen_webhooks::models::{
@@ -13,12 +14,14 @@ use adyen_webhooks::models::{
 
 
 #[post("/adyen-webhook/")]
-async fn adyen_webhook(notification: web::Json<RecurringContractNotificationRequest>) -> Result<NotificationResponse, ApiError> {
+async fn adyen_webhook(notification: web::Json<RecurringContractNotificationRequest>) -> Result<HttpResponse, ApiError> {
 
     Ok(
-        NotificationResponse {
-            notification_response: Some("[accepted]".to_string())
-        }
+        HttpResponse::Ok().json(
+            NotificationResponse {
+                notification_response: Some("[accepted]".to_string())
+            }
+        )
     )
 
 }

@@ -10,6 +10,7 @@ impl WalletCardAttemptStatus {
             "PENDING" => WalletCardAttemptStatus::PENDING,
             "FAILED" => WalletCardAttemptStatus::FAILED,
             "MATCHED" => WalletCardAttemptStatus::MATCHED,
+            _ => WalletCardAttemptStatus::PENDING
         }
     }
 

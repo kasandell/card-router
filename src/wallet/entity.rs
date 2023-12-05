@@ -24,7 +24,7 @@ pub struct WalletCardAttempt {
     pub user_id: i32,
     pub credit_card_id: i32,
     pub expected_reference_id: String,
-    pub psp_id: String,
+    pub psp_id: Option<String>,
     pub status: String,
     pub recurring_detail_reference: Option<String>,
     pub created_at: NaiveDateTime,
@@ -44,8 +44,10 @@ pub struct InsertableCardAttempt {
 }
 
 #[derive(Serialize, Deserialize, AsChangeset, Clone)]
+#[diesel(table_name = wallet_card_attempt)]
 pub struct UpdateCardAttempt {
     pub recurring_detail_reference: String,
+    pub psp_id: String,
     pub status: String
 }
 
@@ -62,6 +64,7 @@ pub struct Wallet {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub credit_card_id: i32,
+    pub wallet_card_attempt_id: i32,
 }
 
 #[derive(Serialize, Deserialize, Insertable, Debug)]
@@ -75,6 +78,7 @@ pub struct InsertableCard {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub credit_card_id: i32,
+    pub wallet_card_attempt_id: i32,
 }
 
 #[derive(Serialize, Deserialize, AsChangeset)]
@@ -84,7 +88,8 @@ pub struct InsertableCard {
 pub struct NewCard {
     pub user_id: i32,
     pub payment_method_id: String,
-    pub credit_card_id: i32
+    pub credit_card_id: i32,
+    pub wallet_card_attempt_id: i32,
 }
 
 impl Wallet {
@@ -150,6 +155,7 @@ impl From<NewCard> for InsertableCard {
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
             credit_card_id: card.credit_card_id,
+            wallet_card_attempt_id: card.wallet_card_attempt_id
         }
     }
 }
@@ -174,10 +180,10 @@ impl Wallet {
 }
 
 impl WalletCardAttempt {
-    pub fn insert(card_attempt: InsertableCardAttempt) -> Result<Self, Error> {
+    pub fn insert(card_attempt: InsertableCardAttempt) -> Result<Self, ApiError> {
         let mut conn = db::connection()?;
 
-        let wallet = diesel::insert_into(wallet_card_attempt)
+        let wallet = diesel::insert_into(wallet_card_attempt::table)
         .values(card_attempt)
         .get_result::<WalletCardAttempt>(&mut conn)?;
         Ok(wallet)
@@ -187,7 +193,7 @@ impl WalletCardAttempt {
         let mut conn = db::connection()?;
 
         let card_attempt = wallet_card_attempt::table
-            .filter(wallet_card_attempt::psp_reference.eq(id))
+            .filter(wallet_card_attempt::expected_reference_id.eq(reference))
             .first(&mut conn)?;
 
         Ok(card_attempt)
@@ -199,8 +205,7 @@ impl WalletCardAttempt {
         let wallet = diesel::update(wallet_card_attempt::table)
             .filter(wallet_card_attempt::id.eq(id))
             .set(card)
-            .get_result(&mut conn)?;
-
+            .get_result::<WalletCardAttempt>(&mut conn)?;
         Ok(wallet)
     }
 }
