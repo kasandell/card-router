@@ -1,5 +1,6 @@
 use crate::{schema::{
     wallet,
+    wallet_card_attempt,
     credit_card,
     credit_card_issuer,
     credit_card_type, category::public_id
@@ -11,6 +12,42 @@ use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone)]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(CreditCard))]
+#[diesel(table_name = wallet_card_attempt)]
+pub struct WalletCardAttempt {
+    pub id: i32,
+    pub public_id: Uuid,
+    pub user_id: i32,
+    pub credit_card_id: i32,
+    pub expected_reference_id: String,
+    pub psp_id: String,
+    pub status: String,
+    pub recurring_detail_reference: Option<String>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}
+
+#[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Clone)]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(CreditCard))]
+#[diesel(table_name = wallet_card_attempt)]
+pub struct InsertableCardAttempt {
+    pub id: i32,
+    pub user_id: i32,
+    pub credit_card_id: i32,
+    pub expected_reference_id: String,
+    pub psp_id: String,
+}
+
+#[derive(Serialize, Deserialize, AsChangeset, Clone)]
+pub struct UpdateCardAttempt {
+    pub recurring_detail_reference: String,
+    pub status: String
+}
 
 
 #[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone)]
@@ -133,5 +170,37 @@ impl Wallet {
             updated_at: Utc::now().naive_utc(),
             credit_card_id: credit_card_id
         }
+    }
+}
+
+impl WalletCardAttempt {
+    pub fn insert(card_attempt: InsertableCardAttempt) -> Result<Self, Error> {
+        let mut conn = db::connection()?;
+
+        let wallet = diesel::insert_into(wallet_card_attempt)
+        .values(card_attempt)
+        .get_result::<WalletCardAttempt>(&mut conn)?;
+        Ok(wallet)
+    }
+
+    pub fn find_by_reference_id(reference: String) -> Result<Self, ApiError> {
+        let mut conn = db::connection()?;
+
+        let card_attempt = wallet_card_attempt::table
+            .filter(wallet_card_attempt::psp_reference.eq(id))
+            .first(&mut conn)?;
+
+        Ok(card_attempt)
+    }
+
+    pub fn update_card(id: i32, card: UpdateCardAttempt) -> Result<Self, ApiError> {
+        let mut conn = db::connection()?;
+
+        let wallet = diesel::update(wallet_card_attempt::table)
+            .filter(wallet_card_attempt::id.eq(id))
+            .set(card)
+            .get_result(&mut conn)?;
+
+        Ok(wallet)
     }
 }

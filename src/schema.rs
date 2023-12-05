@@ -138,7 +138,7 @@ diesel::table! {
         #[max_length = 255]
         status -> Varchar,
         #[max_length = 255]
-        recurring_detail_reference -> Varchar,
+        recurring_detail_reference -> Nullable<Varchar>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
