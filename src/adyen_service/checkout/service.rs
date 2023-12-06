@@ -21,7 +21,9 @@ pub struct ChargeService {}
 
 
 impl ChargeService {
-    pub async fn charge_card_on_file(request: ChargeCardRequest) -> Result<PaymentResponse, ApiError> {
+    pub async fn charge_card_on_file(
+        request: ChargeCardRequest
+    ) -> Result<PaymentResponse, ApiError> {
         Ok(post_payments(
             &Configuration {
                 api_key: Some(
