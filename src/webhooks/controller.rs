@@ -15,7 +15,7 @@ use crate::webhooks::adyen_handler::AdyenHandler;
 
 #[post("/adyen-webhook/")]
 async fn adyen_webhook(notification: web::Json<RecurringContractNotificationRequest>) -> Result<HttpResponse, ApiError> {
-    AdyenHandler::handle(notification.to_inner()).await?;
+    AdyenHandler::handle(notification.into_inner()).await?;
     Ok(
         HttpResponse::Ok().json(
             NotificationResponse {

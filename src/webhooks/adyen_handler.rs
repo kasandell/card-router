@@ -40,7 +40,7 @@ impl AdyenHandler {
                 info!("Match from reference {}: new card {}", merchant_reference, psp_reference);
                 let card = WalletCardAttempt::find_by_reference_id(merchant_reference)?;
                 info!("Found wallet card attempt id {}", card.id);
-                WalletCardAttempt::update_card(card.id, UpdateCardAttempt {
+                let ret = WalletCardAttempt::update_card(card.id, UpdateCardAttempt {
                     recurring_detail_reference: psp_reference.clone(), 
                     psp_id: original_psp,
                     status: WalletCardAttemptStatus::MATCHED.as_str()

@@ -10,7 +10,7 @@ mod tests {
         RuleEngine,
         WalletDetail
     };
-    use crate::wallet::entity::{Wallet, NewCard};
+    use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
     use crate::rule_engine::entity::Rule;
     use crate::asa_request::entity::{AsaRequest, create_example_asa};
     use chrono::Utc;
@@ -96,9 +96,25 @@ mod tests {
     async fn test_order_user_cards_for_request() {
         crate::test::init();
         let user = initialize_user();
-        let stripe_payment_method_id_1 = "s_1234";
-        let stripe_payment_method_id_2 = "s_1235";
+        let payment_method_id_1 = "s_1234";
+        let payment_method_id_2 = "s_1235";
         let rule_mcc = "0000";
+
+        let att1 = WalletCardAttempt::insert(
+            InsertableCardAttempt {
+                user_id: user.id,
+                credit_card_id: 1,
+                expected_reference_id: "a".to_string()
+            }
+        ).expect("expect attempt to create");
+
+        let att2 = WalletCardAttempt::insert(
+            InsertableCardAttempt {
+                user_id: user.id,
+                credit_card_id: 2,
+                expected_reference_id: "b".to_string()
+            }
+        ).expect("expect attempt to create");
 
         let category = Category::create(
             InsertableCategory {
@@ -115,15 +131,17 @@ mod tests {
         let card_1 = Wallet::insert_card(
             NewCard {
                 user_id: user.id,
-                stripe_payment_method_id: stripe_payment_method_id_1.to_string(),
-                credit_card_id: 1
+                payment_method_id: payment_method_id_1.to_string(),
+                credit_card_id: 1,
+                wallet_card_attempt_id: att1.id
             }
         ).expect("Should insert card");
         let card_2 = Wallet::insert_card(
             NewCard {
                 user_id: user.id,
-                stripe_payment_method_id: stripe_payment_method_id_2.to_string(),
-                credit_card_id: 2
+                payment_method_id: payment_method_id_2.to_string(),
+                credit_card_id: 2,
+                wallet_card_attempt_id: att2.id
             }
         ).expect("Should insert card");
         let should_be_filtered_rule = Rule::create(
@@ -174,13 +192,15 @@ mod tests {
         assert_eq!(cards[0].id, card_2.id);
         assert_eq!(cards[1].credit_card_id, 1);
         assert_eq!(cards[1].id, card_1.id);
-        card_2_rule.delete_self();
-        card_1_rule.delete_self();
-        should_be_filtered_rule.delete_self();
-        card_1.delete_self();
-        card_2.delete_self();
-        mcc_mapping.delete_self();
-        category.delete_self();
-        user.delete_self();
+        card_2_rule.delete_self().expect("should delete");
+        card_1_rule.delete_self().expect("should delete");
+        should_be_filtered_rule.delete_self().expect("should delete");
+        card_1.delete_self().expect("should delete");
+        card_2.delete_self().expect("should delete");
+        att1.delete_self().expect("should delete");
+        att2.delete_self().expect("should delete");
+        mcc_mapping.delete_self().expect("should delete");
+        category.delete_self().expect("should delete");
+        user.delete_self().expect("should delete");
     }
 }

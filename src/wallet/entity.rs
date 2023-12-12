@@ -36,11 +36,9 @@ pub struct WalletCardAttempt {
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet_card_attempt)]
 pub struct InsertableCardAttempt {
-    pub id: i32,
     pub user_id: i32,
     pub credit_card_id: i32,
     pub expected_reference_id: String,
-    pub psp_id: String,
 }
 
 #[derive(Serialize, Deserialize, AsChangeset, Clone)]
@@ -174,7 +172,8 @@ impl Wallet {
             payment_method_id: Uuid::new_v4().to_string(),
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
-            credit_card_id: credit_card_id
+            credit_card_id: credit_card_id,
+            wallet_card_attempt_id: 0
         }
     }
 }
@@ -207,5 +206,22 @@ impl WalletCardAttempt {
             .set(card)
             .get_result::<WalletCardAttempt>(&mut conn)?;
         Ok(wallet)
+    }
+
+    #[cfg(test)]
+    pub fn delete(id: i32) -> Result<usize, ApiError> {
+        let mut conn = db::connection()?;
+
+        let res = diesel::delete(
+            wallet_card_attempt::table
+                .filter(wallet_card_attempt::id.eq(id))
+        )
+            .execute(&mut conn)?;
+        Ok(res)
+    }
+
+    #[cfg(test)]
+    pub fn delete_self(&self) -> Result<usize, ApiError> {
+        WalletCardAttempt::delete(self.id)
     }
 }
