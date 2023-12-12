@@ -31,6 +31,7 @@ mod webhooks;
 mod test;
 #[cfg(test)]
 mod test_helper;
+mod charge_engine;
 
 
 async fn manual_hello() -> impl Responder {

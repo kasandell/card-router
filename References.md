@@ -17,6 +17,7 @@ openapi-generator generate -g rust \
 https://docs.adyen.com/online-payments/tokenization/create-and-use-tokens/#test-and-go-live
 https://docs.adyen.com/development-resources/testing/test-card-numbers/
 https://github.com/Adyen/adyen-openapi
+https://docs.adyen.com/api-explorer/Checkout/69/post/payments/_paymentPspReference_/cancels
 going to need to modify wallet architecture -> add card attempt or something similar, then when we see a webhook come in with matching ref number, we tie to that
 
 

@@ -9,10 +9,15 @@ use adyen_checkout::{
 };
 use serde_json::to_value;
 use std::env;
+use std::future::Future;
+use adyen_checkout::apis::modifications_api::{post_cancels, post_payments_payment_psp_reference_cancels, PostCancelsError};
+use adyen_checkout::models::{PaymentCancelRequest, PaymentCancelResponse, StandalonePaymentCancelResponse};
 use futures::executor;
+use uuid::Uuid;
 
 
-use crate::{api_error::ApiError, constant::env_key};
+use crate::constant::env_key;
+use super::error::Error;
 
 use super::request::ChargeCardRequest;
 
@@ -23,7 +28,7 @@ pub struct ChargeService {}
 impl ChargeService {
     pub async fn charge_card_on_file(
         request: ChargeCardRequest
-    ) -> Result<PaymentResponse, ApiError> {
+    ) -> Result<PaymentResponse, Error> {
         Ok(post_payments(
             &Configuration {
                 api_key: Some(
@@ -59,13 +64,41 @@ impl ChargeService {
                 ),
                 platform_chargeback_logic: None, recurring_expiry: None, recurring_frequency: None,
                 recurring_processing_model: Some(adyen_checkout::models::payment_request::RecurringProcessingModel::CardOnFile),
-                redirect_from_issuer_method: None, redirect_to_issuer_method: None, reference: request.reference,
+                redirect_from_issuer_method: None, redirect_to_issuer_method: None,
+                reference: request.reference,
                 return_url: "".to_string(),
                 risk_data: None, session_validity: None, shopper_email: None, shopper_ip: None, shopper_interaction: None, shopper_locale: None, shopper_name: None, shopper_reference: None,
                 shopper_statement: Some(
                     request.statement
                 ),
                 social_security_number: None, splits: None, store: None, store_payment_method: None, telephone_number: None, three_ds2_request_data: None, three_ds_authentication_only: None, trusted_shopper: None })).await?)
+    }
+
+    pub async fn cancel_transaction(
+        psp_reference: String,
+    ) -> Result<PaymentCancelResponse, Error> {
+        Ok(
+            post_payments_payment_psp_reference_cancels(
+                &Configuration {
+                    api_key: Some(
+                        ApiKey {
+                            prefix: None,
+                            key: env::var(env_key::ADYEN_API_KEY).expect("api key should exist")
+                        }
+                    ),
+                    ..Default::default()
+                },
+                &psp_reference,
+                Some(to_value(Uuid::new_v4().to_string())?),
+                Some(
+                    PaymentCancelRequest {
+                        application_info: None,
+                        merchant_account: env::var(env_key::ADYEN_MERCHANT_ACCOUNT_NAME).expect("merchant account should exist"),
+                        reference: Some(Uuid::new_v4().to_string()),
+                    }
+                )
+            )
+        )
     }
 }
 

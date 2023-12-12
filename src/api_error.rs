@@ -1,11 +1,12 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
-use adyen_checkout::apis::payments_api::PostPaymentsError;
 use adyen_checkout::apis::Error as AdyenCheckoutError;
+use adyen_service::checkout::error::Error as AdyenServiceError;
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde_json::{json, Error as SerdeError};
 use std::fmt;
+use crate::adyen_service;
 
 #[derive(Debug, Deserialize)]
 pub struct ApiError {
@@ -50,6 +51,14 @@ impl <T> From<AdyenCheckoutError<T>> for ApiError {
         }
     }
 }
+
+impl From<AdyenServiceError> for ApiError {
+    fn from(value: AdyenServiceError) -> Self {
+        ApiError::new(500, "Service error".to_string());
+
+    }
+}
+
 
 impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {

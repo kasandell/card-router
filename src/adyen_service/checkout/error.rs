@@ -1,0 +1,28 @@
+use std::fmt;
+use serde::Deserialize;
+use adyen_checkout::apis::Error as AdyenError;
+
+#[derive(Debug, Deserialize)]
+pub struct Error {
+    pub message: String,
+}
+
+impl Error {
+    pub fn new(message: String) -> Error {
+        Error { message }
+    }
+}
+
+impl Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.message.as_str())
+    }
+}
+
+impl <T> From<AdyenError<T>> for Error {
+    fn from(error: AdyenError<T>) -> Error {
+        match error {
+            err => Error::new(format!("Adyen checkout error: {}", err)),
+        }
+    }
+}
