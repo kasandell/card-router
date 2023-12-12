@@ -23,3 +23,9 @@ going to need to modify wallet architecture -> add card attempt or something sim
 
 # Testing
 Run with `cargo test -- --nocapture --test-threads=1`
+
+# Env
+DATABASE_URL=""
+ADYEN_API_KEY=""
+ADYEN_MERCHANT_ACCOUNT_NAME=""
+
