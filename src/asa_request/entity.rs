@@ -1,4 +1,5 @@
 //TODO: placeholder until lithic gets back about generating openapi
+#[derive(Debug, Clone)]
 pub struct AsaRequest {
     pub amount: i32,
     pub acquirer_fee: i32,
@@ -23,18 +24,22 @@ pub struct AsaRequest {
     pub token_info: TokenInfo
 }
 
+#[derive(Debug, Clone)]
 pub struct Card {
-
+    pub token: String
 }
 
+#[derive(Debug, Clone)]
 pub struct CardholderAuthentication {
 
 }
 
+#[derive(Debug, Clone)]
 pub struct TokenInfo {
 
 }
 
+#[derive(Debug, Clone)]
 pub struct Merchant {
     pub acceptor_id: String,
     pub city: String,
@@ -44,27 +49,32 @@ pub struct Merchant {
     pub state: String
 }
 
+#[derive(Debug, Clone)]
 pub struct Avs {
     pub address: String,
     pub zipcode: String,
 
 }
 
+#[derive(Debug, Clone)]
 pub struct Event {
 
 }
 
+#[derive(Debug, Clone)]
 pub struct Funding {
     pub amount: i32,
     pub token: String,
     pub type_: String
 }
 
+#[derive(Debug, Clone)]
 pub struct POS {
     pub terminal: Terminal,
     pub entry_mode: EntryMode
 }
 
+#[derive(Debug, Clone)]
 pub struct Terminal {
     pub attended: bool,
     pub operator: String,
@@ -74,6 +84,7 @@ pub struct Terminal {
     pub partial_approval_capable: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct EntryMode {
     pub pan: String,
     pub pin_entered: bool,
@@ -89,7 +100,9 @@ pub fn create_example_asa(amount_cents: i32, mcc_code: String) -> AsaRequest {
         acquirer_fee: 0,
         authorization_amount: 0,
         avs: Avs { address: "test address".to_string(), zipcode: "10017".to_string() },
-        card: Card {},
+        card: Card {
+            token: "abc123".to_string()
+        },
         cardholder_authentication: CardholderAuthentication {},
         cash_amount: 0,
         conversion_rate: 0.0,
