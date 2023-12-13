@@ -3,7 +3,7 @@ use crate::{schema::{
     wallet_card_attempt,
     credit_card,
     credit_card_issuer,
-    credit_card_type, category::public_id
+    credit_card_type
 }, credit_card_type::entity::{CreditCardType,CreditCard,CreditCardIssuer}};
 use crate::util::db;
 use crate::api_error::ApiError;

@@ -6,7 +6,7 @@ pub enum WalletCardAttemptStatus {
 
 impl WalletCardAttemptStatus {
     pub fn from_str(status: &str) -> WalletCardAttemptStatus {
-        match (status) {
+        match status {
             "PENDING" => WalletCardAttemptStatus::PENDING,
             "FAILED" => WalletCardAttemptStatus::FAILED,
             "MATCHED" => WalletCardAttemptStatus::MATCHED,
@@ -15,7 +15,7 @@ impl WalletCardAttemptStatus {
     }
 
     pub fn as_str(&self) -> String {
-        match (self) {
+        match self {
             WalletCardAttemptStatus::PENDING => "PENDING".to_string(),
             WalletCardAttemptStatus::FAILED => "FAILED".to_string(),
             WalletCardAttemptStatus::MATCHED => "MATCHED".to_string(),

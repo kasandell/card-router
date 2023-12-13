@@ -1,14 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::user::{
-        entity::{User, UserMessage},
-        config::config
-    };
-    use crate::test::BodyTest;
-    use actix_web::{test::{self, TestRequest}, App, body::to_bytes};
     use adyen_webhooks::models::{Amount, RecurringContractNotificationRequestItem, RecurringContractNotificationRequestItemWrapper};
     use adyen_webhooks::models::recurring_contract_notification_request_item::EventCode;
-    use serde_json::json;
     use crate::wallet::entity::{InsertableCardAttempt, Wallet, WalletCardAttempt};
     use crate::test_helper::initialize_user;
     use crate::wallet::constant::WalletCardAttemptStatus;
@@ -28,7 +21,7 @@ mod tests {
             }
         ).expect("should create");
         assert_eq!(att1.status, WalletCardAttemptStatus::PENDING.as_str());
-        let resp = AdyenHandler::handle_item(
+        let _ = AdyenHandler::handle_item(
             RecurringContractNotificationRequestItemWrapper {
                 notification_request_item: Some(
                     Box::new(

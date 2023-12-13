@@ -1,4 +1,3 @@
-//use super::controller;
 use actix_web::web;
 
 use super::controller;

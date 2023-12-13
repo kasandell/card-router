@@ -1,15 +1,11 @@
 use adyen_webhooks::models::{
     RecurringContractNotificationRequest, 
     RecurringContractNotificationRequestItemWrapper, 
-    RecurringContractNotificationRequestItem,
     recurring_contract_notification_request_item::EventCode,
-    RecurringContractNotificationAdditionalData
 };
-use diesel::helper_types::Update;
 
 use crate::wallet::entity::{
     WalletCardAttempt,
-    InsertableCardAttempt,
     UpdateCardAttempt,
     NewCard,
     Wallet
@@ -24,7 +20,7 @@ impl AdyenHandler {
     pub async fn handle(request: RecurringContractNotificationRequest) -> Result<(), ApiError> {
         if let Some(notification_items) = request.notification_items.to_owned() {
             notification_items.iter().for_each(|item| {
-                AdyenHandler::handle_item(item.clone());
+                let _ = AdyenHandler::handle_item(item.clone());
                 return ().into();
             });
         }
@@ -45,7 +41,7 @@ impl AdyenHandler {
                     psp_id: original_psp,
                     status: WalletCardAttemptStatus::MATCHED.as_str()
                 })?;
-                info!("Updated to matched");
+                info!("Updated to matched: {}", ret.status);
                 let user_card = Wallet::insert_card(
                     NewCard {
                         user_id: card.user_id,

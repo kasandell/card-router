@@ -1,7 +1,5 @@
 use std::fmt;
 use serde::Deserialize;
-use adyen_checkout::apis::Error as AdyenCheckoutError;
-use serde_json::Error as SerdeError;
 
 #[derive(Debug, Deserialize)]
 pub struct Error {

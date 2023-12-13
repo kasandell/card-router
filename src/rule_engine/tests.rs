@@ -4,7 +4,6 @@ mod tests {
     use crate::credit_card_type::entity::{CreditCardType, CreditCardIssuer, CreditCard};
     use crate::rule_engine::constant::DayOfMonth;
     use crate::rule_engine::request::CreateRuleRequest;
-    use crate::schema::rule;
     use crate::test_helper::initialize_user;
     use crate::rule_engine::engine::{
         RuleEngine,
@@ -12,7 +11,7 @@ mod tests {
     };
     use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
     use crate::rule_engine::entity::Rule;
-    use crate::asa_request::entity::{AsaRequest, create_example_asa};
+    use crate::asa_request::entity::create_example_asa;
     use chrono::Utc;
 
     #[actix_web::test]

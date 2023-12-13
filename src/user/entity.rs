@@ -5,7 +5,6 @@ use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::wallet::entity::Wallet;
 
 #[derive(Serialize, Deserialize, AsChangeset)]
 #[diesel(table_name = users)]

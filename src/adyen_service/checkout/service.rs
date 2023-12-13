@@ -1,5 +1,4 @@
 use std::env;
-use std::future::Future;
 
 use adyen_checkout::{
     apis::{

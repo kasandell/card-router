@@ -46,7 +46,7 @@ mod tests {
         let body_json = body.as_json();
         assert!(body_json.is_array());
         assert_eq!(body_json.as_array().unwrap().len(), 1);
-        user.delete_self();
+        user.delete_self().expect("Should delete");
         assert!(User::find(public_id).is_err())
     }
 }

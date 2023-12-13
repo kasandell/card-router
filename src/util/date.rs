@@ -17,6 +17,5 @@ pub fn adjust_recurring_to_date(date: NaiveDate, day_of_month: DayOfMonth) -> Na
     match day_of_month {
         DayOfMonth::FIRST => first_of_month(date),
         DayOfMonth::LAST => last_of_month(date),
-        _ => last_of_month(date)
     }
 }

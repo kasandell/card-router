@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod entity_tests {
-    use chrono::{NaiveDate, Utc, Duration};
+    use chrono::{Utc, Duration};
     use uuid::Uuid;
-    use crate::api_error::ApiError;
     use crate::rule_engine::constant::DayOfMonth;
     use crate::test_helper::initialize_user;
     use crate::rule_engine::{
