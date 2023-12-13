@@ -47,7 +47,7 @@ impl Engine {
     }
 
     pub async fn charge_wallet(
-        self,
+        &self,
         user: &User,
         wallet: &Vec<Wallet>,
         amount_cents: i32,

@@ -206,6 +206,29 @@ mod tests {
         assert!(res);
     }
 
+    #[actix_web::test]
+    async fn test_charge_user_wallet_no_cards_fails() {
+        let mut charge_service = MockAdyenChargeServiceTrait::new();
+        let user_id = 1;
+        let amount_cents = 100;
+        let mcc = "7184";
+        let statement = "test statement";
+
+        let user = User::create_test_user(
+            user_id
+        );
+
+        let engine = Engine::new_with_service(Box::new(charge_service));
+        let res = engine.charge_wallet(
+            &user,
+            &vec![],
+            amount_cents,
+            mcc,
+            "test statement"
+        ).await.expect("NO error");
+        assert!(!res);
+    }
+
 
     #[actix_web::test]
     async fn test_charge_user_wallet_second_card() {

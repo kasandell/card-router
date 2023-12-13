@@ -16,8 +16,13 @@ pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
 pub struct RuleEngine {
 }
 
-impl RuleEngine {
-    pub fn order_user_cards_for_request(request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ApiError> {
+#[mockall::automock]
+pub trait RuleEngineTrait {
+    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ApiError>;
+}
+
+impl RuleEngineTrait for RuleEngine {
+    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ApiError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
@@ -29,7 +34,12 @@ impl RuleEngine {
         let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, request.amount)?;
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
+}
 
+impl RuleEngine {
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ApiError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get

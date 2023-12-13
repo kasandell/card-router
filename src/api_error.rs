@@ -2,6 +2,7 @@ use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use adyen_checkout::apis::Error as AdyenCheckoutError;
 use adyen_service::checkout::error::Error as AdyenServiceError;
+use crate::charge_engine::error::Error as ChargeEngineError;
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde_json::{json, Error as SerdeError};
@@ -54,6 +55,13 @@ impl <T> From<AdyenCheckoutError<T>> for ApiError {
 
 impl From<AdyenServiceError> for ApiError {
     fn from(_: AdyenServiceError) -> Self {
+        ApiError::new(500, "Service error".to_string())
+
+    }
+}
+
+impl From<ChargeEngineError> for ApiError {
+    fn from(_: ChargeEngineError) -> Self {
         ApiError::new(500, "Service error".to_string())
 
     }

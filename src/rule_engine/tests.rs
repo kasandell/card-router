@@ -7,6 +7,7 @@ mod tests {
     use crate::test_helper::initialize_user;
     use crate::rule_engine::engine::{
         RuleEngine,
+        RuleEngineTrait,
         WalletDetail
     };
     use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
@@ -182,7 +183,8 @@ mod tests {
             }
         ).expect("rule should be created");
 
-        let cards = RuleEngine::order_user_cards_for_request(
+        let rule_engine = RuleEngine::new();
+        let cards = rule_engine.order_user_cards_for_request(
             create_example_asa(30000, "0000".to_string()),
             &user
         ).expect("should get cards");
