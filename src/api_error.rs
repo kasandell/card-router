@@ -54,7 +54,7 @@ impl <T> From<AdyenCheckoutError<T>> for ApiError {
 
 impl From<AdyenServiceError> for ApiError {
     fn from(value: AdyenServiceError) -> Self {
-        ApiError::new(500, "Service error".to_string());
+        ApiError::new(500, "Service error".to_string())
 
     }
 }

@@ -5,6 +5,7 @@ use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::wallet::entity::Wallet;
 
 #[derive(Serialize, Deserialize, AsChangeset)]
 #[diesel(table_name = users)]
@@ -103,6 +104,20 @@ impl User {
     #[cfg(test)]
     pub fn delete_self(&self) -> Result<usize, ApiError> {
         User::delete(self.id)
+    }
+
+    #[cfg(test)]
+    pub fn create_test_user(
+        id: i32,
+    ) -> Self {
+        User {
+            id: id,
+            public_id: Uuid::new_v4(),
+            email: "test@test.com".to_string(),
+            password: "TestPassword".to_string(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+        }
     }
 }
 
