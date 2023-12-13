@@ -23,6 +23,7 @@ going to need to modify wallet architecture -> add card attempt or something sim
 
 # Testing
 Run with `cargo test -- --nocapture --test-threads=1`
+https://danielbunte.medium.com/a-guide-to-testing-and-mocking-in-rust-a73d022b4075
 
 # Env
 DATABASE_URL=""

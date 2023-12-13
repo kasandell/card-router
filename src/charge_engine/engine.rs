@@ -30,6 +30,7 @@ lazy_static! {
     );
 }
 
+// TODO: probably need this to be a threadsafe singleton to avoid reinit everywhere
 impl Engine {
 
     pub fn new() -> Self {
@@ -52,7 +53,7 @@ impl Engine {
         amount_cents: i32,
         mcc: &str,
         statement: &str,
-    ) -> Result<(), Error> {
+    ) -> Result<bool, Error> {
         // iterate through the users wallet, charging one and ONLY ONE card
         let idempotency_key = Uuid::new_v4();
         let mut success_charge = false;
@@ -71,7 +72,7 @@ impl Engine {
                 success_charge = charge_attempt;
             }
         }
-        Ok(())
+        Ok(success_charge)
     }
 
     pub async fn charge_card_with_cleanup(
