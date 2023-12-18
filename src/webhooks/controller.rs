@@ -10,6 +10,7 @@ use adyen_webhooks::models::{
     RecurringContractNotificationRequest,
     NotificationResponse
 };
+use lithic_client::models::AsaClientResponse;
 use crate::webhooks::adyen_handler::AdyenHandler;
 use crate::webhooks::lithic_handler::LithicHandler;
 
@@ -28,7 +29,7 @@ async fn adyen_webhook(notification: web::Json<RecurringContractNotificationRequ
 
 #[post("/lithic-asa-webhook/")]
 async fn lithic_asa_webhook(asa: web::Json<AsaRequest>) -> Result<HttpResponse, ApiError> {
-    let handler = LithicHandler {};
+    let handler = LithicHandler::new();
     Ok(
         HttpResponse::Ok().json(
             handler.handle(asa.into_inner()).await?
