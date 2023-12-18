@@ -5,11 +5,13 @@ use actix_web::{
 };
 
 use crate::api_error::ApiError;
+use crate::asa::request::AsaRequest;
 use adyen_webhooks::models::{
     RecurringContractNotificationRequest,
     NotificationResponse
 };
 use crate::webhooks::adyen_handler::AdyenHandler;
+use crate::webhooks::lithic_handler::LithicHandler;
 
 
 #[post("/adyen-webhook/")]
@@ -22,5 +24,14 @@ async fn adyen_webhook(notification: web::Json<RecurringContractNotificationRequ
             }
         )
     )
+}
 
+#[post("/lithic-asa-webhook/")]
+async fn lithic_asa_webhook(asa: web::Json<AsaRequest>) -> Result<HttpResponse, ApiError> {
+    let handler = LithicHandler {};
+    Ok(
+        HttpResponse::Ok().json(
+            handler.handle(asa.into_inner()).await?
+        )
+    )
 }

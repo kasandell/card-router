@@ -12,7 +12,7 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 
 mod adyen_service;
-mod asa_request;
+mod asa;
 mod util;
 mod api_error;
 mod constant;
@@ -62,6 +62,7 @@ async fn main() -> std::io::Result<()> {
             //.app_data(web::Data::new(state.clone()))
             .service(web::scope("/user").configure(user::config::config))
             .service(web::scope("/wallet").configure(wallet::config::config))
+            .service(web::scope("/webhook").configure(webhooks::config::config))
             .route("/hey/", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?

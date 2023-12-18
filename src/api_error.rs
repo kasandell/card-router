@@ -9,7 +9,7 @@ use serde_json::{json, Error as SerdeError};
 use std::fmt;
 use crate::adyen_service;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ApiError {
     pub status_code: u16,
     pub message: String,

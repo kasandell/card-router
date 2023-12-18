@@ -4,26 +4,26 @@ use adyen_webhooks::models::{
     recurring_contract_notification_request_item::EventCode,
 };
 use lazy_static::lazy_static;
-use crate::adyen_service::checkout::service::{AdyenChargeServiceTrait, ChargeService, MockAdyenChargeServiceTrait};
-
+use crate::adyen_service::checkout::service::{AdyenChargeServiceTrait, ChargeService};
 use crate::wallet::entity::{
     WalletCardAttempt,
     UpdateCardAttempt,
     NewCard,
     Wallet
 };
-
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::api_error::ApiError;
 use crate::charge_engine::engine::Engine as ChargeEngine;
-use crate::asa_request::entity::AsaRequest;
+use crate::asa::request::AsaRequest;
 use crate::rule_engine::engine::RuleEngine;
 use crate::user::entity::User;
+use crate::rule_engine::engine::RuleEngineTrait;
+
 #[cfg(test)]
-use crate::rule_engine::engine::{
-    RuleEngineTrait,
-    MockRuleEngineTrait
-};
+use crate::rule_engine::engine:: MockRuleEngineTrait;
+#[cfg(test)]
+use crate::adyen_service::checkout::service::MockAdyenChargeServiceTrait;
+use crate::asa::response::{AsaResponse, AsaResponseResult};
 
 pub struct LithicHandler {
     pub charge_engine: ChargeEngine,
@@ -64,7 +64,7 @@ impl LithicHandler {
             rule_engine: rule_engine
         }
     }
-    pub async fn handle(&self, request: AsaRequest) -> Result<bool, ApiError>{
+    pub async fn handle(&self, request: AsaRequest) -> Result<AsaResponse, ApiError>{
         // TODO: do a reverse lookup based on the card token to get the user
         info!("Identifying user by card");
         let user = User {
@@ -91,6 +91,13 @@ impl LithicHandler {
             &request.merchant.descriptor
         ).await?;
         info!("Charging success {} for userId={}", result, user.id);
-        Ok(result)
+        Ok(
+            AsaResponse {
+                token: request.token,
+                result: if result {AsaResponseResult::Approved} else {AsaResponseResult::UnauthorizedMerchant},
+                avs_result: None,
+                balance: None,
+            }
+        )
     }
 }

@@ -12,7 +12,7 @@ mod tests {
     };
     use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
     use crate::rule_engine::entity::Rule;
-    use crate::asa_request::entity::create_example_asa;
+    use crate::asa::request::create_example_asa;
     use chrono::Utc;
 
     #[actix_web::test]

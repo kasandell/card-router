@@ -1,5 +1,6 @@
+use serde::{Deserialize, Serialize};
 //TODO: placeholder until lithic gets back about generating openapi
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AsaRequest {
     pub amount: i32,
     pub acquirer_fee: i32,
@@ -24,22 +25,22 @@ pub struct AsaRequest {
     pub token_info: TokenInfo
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Card {
     pub token: String
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CardholderAuthentication {
 
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TokenInfo {
 
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Merchant {
     pub acceptor_id: String,
     pub city: String,
@@ -49,32 +50,32 @@ pub struct Merchant {
     pub state: String
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Avs {
     pub address: String,
     pub zipcode: String,
 
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Event {
 
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Funding {
     pub amount: i32,
     pub token: String,
     pub type_: String
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct POS {
     pub terminal: Terminal,
     pub entry_mode: EntryMode
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Terminal {
     pub attended: bool,
     pub operator: String,
@@ -84,7 +85,7 @@ pub struct Terminal {
     pub partial_approval_capable: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EntryMode {
     pub pan: String,
     pub pin_entered: bool,
