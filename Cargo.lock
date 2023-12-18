@@ -423,6 +423,7 @@ dependencies = [
  "futures",
  "futures-util",
  "lazy_static",
+ "lithic_client",
  "log",
  "mockall",
  "num",
@@ -1163,6 +1164,19 @@ name = "linux-raw-sys"
 version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "969488b55f8ac402214f3f5fd243ebb7206cf82de60d3172994707a4bcc2b829"
+
+[[package]]
+name = "lithic_client"
+version = "1.0.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_with 2.3.3",
+ "url",
+ "uuid",
+]
 
 [[package]]
 name = "local-channel"

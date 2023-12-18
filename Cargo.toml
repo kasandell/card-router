@@ -31,3 +31,4 @@ adyen-checkout = { version = "71.0.0", path = "../adyen-openapi/clients/checkout
 futures = "0.3.29"
 adyen-webhooks = { version = "1.0.0", path = "../adyen-openapi/clients/webhooks" }
 mockall = "0.12.0"
+lithic_client = { version = "1.0.0", path = "../lithic-openapi/clients/lithic" }

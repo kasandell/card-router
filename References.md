@@ -7,6 +7,9 @@ https://cloudmaker.dev/actix-integration-tests/
 
 # Lithic 
 https://github.com/lithic-com/asa-demo-python/blob/main/webhook/authorization.py
+https://raw.githubusercontent.com/lithic-com/lithic-openapi/main/lithic-openapi.yml <- generate from this
+run `yq -o=json lithic-openapi.yml -P > lithic-openapi.json`
+then generate from json (and fix errors)
 
 # Code generation
 ```
