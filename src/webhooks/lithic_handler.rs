@@ -1,17 +1,5 @@
-use adyen_webhooks::models::{
-    RecurringContractNotificationRequest,
-    RecurringContractNotificationRequestItemWrapper,
-    recurring_contract_notification_request_item::EventCode,
-};
-use lazy_static::lazy_static;
-use crate::adyen_service::checkout::service::{AdyenChargeServiceTrait, ChargeService};
-use crate::wallet::entity::{
-    WalletCardAttempt,
-    UpdateCardAttempt,
-    NewCard,
-    Wallet
-};
-use crate::wallet::constant::WalletCardAttemptStatus;
+use crate::adyen_service::checkout::service::AdyenChargeServiceTrait;
+
 use crate::api_error::ApiError;
 use crate::charge_engine::engine::Engine as ChargeEngine;
 use crate::asa::request::AsaRequest;
@@ -19,32 +7,12 @@ use crate::rule_engine::engine::RuleEngine;
 use crate::user::entity::User;
 use crate::rule_engine::engine::RuleEngineTrait;
 
-#[cfg(test)]
-use crate::rule_engine::engine:: MockRuleEngineTrait;
-#[cfg(test)]
-use crate::adyen_service::checkout::service::MockAdyenChargeServiceTrait;
 use crate::asa::response::{AsaResponse, AsaResponseResult};
 
 pub struct LithicHandler {
     pub charge_engine: ChargeEngine,
     pub rule_engine: Box<dyn RuleEngineTrait>,
 }
-
-/*
-lazy_static! {
-    #[cfg(not(test))]
-    static ref CHARGE_ENGINE: ChargeEngine = ChargeEngine::new();
-    #[cfg(test)]
-    static ref CHARGE_ENGINE: ChargeEngine = ChargeEngine::new_with_service(
-        Box::new(MockAdyenChargeServiceTrait::new())
-    );
-
-    #[cfg(not(test))]
-    static ref RULE_ENGINE: RuleEngine = RuleEngine::new();
-    #[cfg(test)]
-    static ref RULE_ENGINE: RuleEngineTrait = MockRuleEngineTrait::new();
-}
- */
 
 impl LithicHandler {
     pub fn new() -> Self {

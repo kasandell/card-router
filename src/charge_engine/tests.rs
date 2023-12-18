@@ -5,7 +5,6 @@ mod tests {
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::{PaymentCancelResponse, PaymentResponse};
     use adyen_checkout::models::payment_cancel_response::Status;
-    use mockall::predicate::{eq, always};
     use crate::wallet::entity::Wallet;
     use crate::user::entity::User;
     use crate::adyen_service::checkout::error::Error;
@@ -15,13 +14,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_single_charge_fails_on_error() {
-        let mut chargeService = MockAdyenChargeServiceTrait::new();
-        chargeService.expect_charge_card_on_file()
+        let mut charge_service = MockAdyenChargeServiceTrait::new();
+        charge_service.expect_charge_card_on_file()
             .return_const(
                 Err(Error::new("test_error".to_string()))
             );
 
-        let engine = Engine::new_with_service(Box::new(chargeService));
+        let engine = Engine::new_with_service(Box::new(charge_service));
         let res = engine.charge_card_with_cleanup(
             Uuid::new_v4(),
             &Wallet::create_test_wallet(
@@ -153,7 +152,6 @@ mod tests {
         let user_id = 1;
         let amount_cents = 100;
         let mcc = "7184";
-        let statement = "test statement";
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
@@ -208,11 +206,10 @@ mod tests {
 
     #[actix_web::test]
     async fn test_charge_user_wallet_no_cards_fails() {
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
+        let charge_service = MockAdyenChargeServiceTrait::new();
         let user_id = 1;
         let amount_cents = 100;
         let mcc = "7184";
-        let statement = "test statement";
 
         let user = User::create_test_user(
             user_id
@@ -236,7 +233,6 @@ mod tests {
         let user_id = 1;
         let amount_cents = 100;
         let mcc = "7184";
-        let statement = "test statement";
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
@@ -317,7 +313,6 @@ mod tests {
         let user_id = 1;
         let amount_cents = 100;
         let mcc = "7184";
-        let statement = "test statement";
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 

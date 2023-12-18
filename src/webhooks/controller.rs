@@ -10,7 +10,6 @@ use adyen_webhooks::models::{
     RecurringContractNotificationRequest,
     NotificationResponse
 };
-use lithic_client::models::AsaClientResponse;
 use crate::webhooks::adyen_handler::AdyenHandler;
 use crate::webhooks::lithic_handler::LithicHandler;
 

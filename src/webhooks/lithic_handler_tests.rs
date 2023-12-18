@@ -2,18 +2,11 @@
 mod tests {
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::PaymentResponse;
-    use adyen_webhooks::models::{Amount, RecurringContractNotificationRequestItem, RecurringContractNotificationRequestItemWrapper};
-    use adyen_webhooks::models::recurring_contract_notification_request_item::EventCode;
-    use crate::wallet::entity::{InsertableCardAttempt, Wallet, WalletCardAttempt};
-    use crate::test_helper::initialize_user;
-    use crate::wallet::constant::WalletCardAttemptStatus;
-    use crate::webhooks::adyen_handler::AdyenHandler;
-    use crate::charge_engine::engine::Engine as ChargeEngine;
+    use crate::wallet::entity::Wallet;
     use crate::adyen_service::checkout::service::MockAdyenChargeServiceTrait;
-    use crate::api_error::ApiError;
-    use crate::asa::request::{AsaRequest, Avs, Card, CardholderAuthentication, create_example_asa, Event, Funding, Merchant, POS, TokenInfo};
-    use crate::asa::response::{AsaResponse, AsaResponseResult};
-    use crate::rule_engine::engine::{MockRuleEngineTrait, RuleEngineTrait};
+    use crate::asa::request::create_example_asa;
+    use crate::asa::response::AsaResponseResult;
+    use crate::rule_engine::engine::MockRuleEngineTrait;
     use crate::user::entity::User;
     use crate::webhooks::lithic_handler::LithicHandler;
     use std::default::Default;
@@ -27,7 +20,6 @@ mod tests {
         let user_id = 1;
         let amount_cents = 100;
         let mcc = "7184";
-        let statement = "test statement";
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
