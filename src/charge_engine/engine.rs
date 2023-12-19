@@ -7,6 +7,10 @@ use crate::adyen_service::checkout::service::{
     ChargeService,
     AdyenChargeServiceTrait
 };
+use crate::charge_engine::entity::{
+    ChargeEngineResult,
+    ChargeCardAttemptResult
+};
 use crate::charge_engine::error::Error;
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
@@ -53,10 +57,11 @@ impl Engine {
         amount_cents: i32,
         mcc: &str,
         statement: &str,
-    ) -> Result<bool, Error> {
+    ) -> Result<ChargeEngineResult, Error> {
         // iterate through the users wallet, charging one and ONLY ONE card
         let idempotency_key = Uuid::new_v4();
         let mut success_charge = false;
+        let mut codes : Vec<ChargeCardAttemptResult> = vec![];
         info!("Charging {} cards for user={}", wallet.len(), user.id);
         for card in wallet {
             if success_charge { break; }
@@ -69,10 +74,17 @@ impl Engine {
                 statement,
             ).await {
                 info!("Successfully charged card={} for user={}", card.id, user.id);
-                success_charge = charge_attempt;
+                success_charge = bool::from(&charge_attempt);
+                codes.push(charge_attempt)
+
             }
         }
-        Ok(success_charge)
+        if success_charge {
+            Ok(ChargeEngineResult::Approved)
+
+        } else {
+            Ok(ChargeEngineResult::Denied)
+        }
     }
 
     pub async fn charge_card_with_cleanup(
@@ -83,7 +95,7 @@ impl Engine {
         amount_cents: i32,
         mcc: &str,
         statement: &str,
-    ) -> Result<bool, Error> {
+    ) -> Result<ChargeCardAttemptResult, Error> {
         let resp = self.charge_service.charge_card_on_file(
             ChargeCardRequest {
                 amount_cents: amount_cents,
@@ -101,10 +113,11 @@ impl Engine {
                 info!("Checkout returned code={:?} for card={} user={}", code, card.id, user.id);
                 if ACCEPTABLE_STATUSES.contains(&code) {
                     info!("Charged card={} for user={}", card.id, user.id);
-                    return Ok(true);
+                    return Ok(ChargeCardAttemptResult::from(code));
                     //add to ledger
                 } else if FINAL_STATE_ERROR_CODES.contains(&code) {
                     warn!("Error charging card={} for user={}", card.id, user.id);
+                    return Ok(ChargeCardAttemptResult::Denied);
                     //can safely bypass this branch
                 } else {
                     warn!("Intermediate state needs cleanup for card={} for user={}", card.id, user.id);
@@ -114,15 +127,17 @@ impl Engine {
                         );
                         if let Ok(cancel) = cancel {
                             info!("Cancelled with status: {:?}", cancel.status);
+                            return Ok(ChargeCardAttemptResult::PartialCancelSucceeded);
                             //cancel received. block on webhook response?
                         } else {
-                            error!("Error cancelling unsuccessful payment with psp={}", psp)
+                            error!("Error cancelling unsuccessful payment with psp={}", psp);
+                            return Ok(ChargeCardAttemptResult::PartialCancelFailed);
                             // error cancelling. figure out what to do
                         }
                     }
                 }
             }
         }
-        Ok(false)
+        Ok(ChargeCardAttemptResult::Denied)
     }
 }

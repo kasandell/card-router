@@ -8,7 +8,13 @@ mod tests {
     use crate::wallet::entity::Wallet;
     use crate::user::entity::User;
     use crate::adyen_service::checkout::error::Error;
-    use crate::charge_engine::engine::Engine;
+    use crate::charge_engine::{
+        engine::Engine,
+        entity::{
+            ChargeCardAttemptResult,
+            ChargeEngineResult
+        }
+    };
     use uuid::Uuid;
     use crate::adyen_service::checkout::service::*;
 
@@ -35,7 +41,7 @@ mod tests {
             "7184",
             "Test charge"
         ).await.expect("NO error");
-        assert!(!res);
+        assert_eq!(ChargeCardAttemptResult::Denied, res);
     }
 
     #[actix_web::test]
@@ -65,7 +71,7 @@ mod tests {
             "7184",
             "Test charge"
         ).await.expect("NO error");
-        assert!(res);
+        assert_eq!(ChargeCardAttemptResult::Approved, res);
     }
 
     #[actix_web::test]
@@ -110,7 +116,7 @@ mod tests {
             "7184",
             "Test charge"
         ).await.expect("NO error");
-        assert!(!res);
+        assert_eq!(ChargeCardAttemptResult::PartialCancelSucceeded, res);
     }
 
     #[actix_web::test]
@@ -143,7 +149,7 @@ mod tests {
             "7184",
             "Test charge"
         ).await.expect("NO error");
-        assert!(!res);
+        assert_eq!(ChargeCardAttemptResult::Denied, res);
     }
 
     #[actix_web::test]
@@ -201,7 +207,7 @@ mod tests {
             mcc,
             "test statement"
         ).await.expect("NO error");
-        assert!(res);
+        assert_eq!(ChargeEngineResult::Approved, res);
     }
 
     #[actix_web::test]
@@ -223,7 +229,7 @@ mod tests {
             mcc,
             "test statement"
         ).await.expect("NO error");
-        assert!(!res);
+        assert_eq!(ChargeEngineResult::Denied, res);
     }
 
 
@@ -303,7 +309,7 @@ mod tests {
             mcc,
             "test statement"
         ).await.expect("NO error");
-        assert!(res);
+        assert_eq!(ChargeEngineResult::Approved, res);
     }
 
 
@@ -383,6 +389,6 @@ mod tests {
             mcc,
             "test statement"
         ).await.expect("NO error");
-        assert!(!res);
+        assert_eq!(ChargeEngineResult::Denied, res);
     }
 }

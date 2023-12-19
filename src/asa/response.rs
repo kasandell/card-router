@@ -1,4 +1,5 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use crate::charge_engine::entity::ChargeEngineResult;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AsaResponseResult {
@@ -51,9 +52,9 @@ impl<'de> Deserialize<'de> for AsaResponseResult {
     }
 }
 
-impl From<String> for AsaResponseResult {
-    fn from(value: String) -> Self {
-        match &*value {
+impl From<&str> for AsaResponseResult {
+    fn from(value: &str) -> Self {
+        match value {
             "ACCOUNT_INACTIVE" => AsaResponseResult::AccountInactive,
             "AVS_INVALID" => AsaResponseResult::AvsInvalid,
             "CARD_CLOSED" => AsaResponseResult::CardClosed,
@@ -64,6 +65,12 @@ impl From<String> for AsaResponseResult {
             "APPROVED" => AsaResponseResult::Approved,
             _ => AsaResponseResult::UnauthorizedMerchant
         }
+    }
+}
+
+impl From<String> for AsaResponseResult {
+    fn from(value: String) -> Self {
+        AsaResponseResult::from(&*value)
     }
 }
 
@@ -85,6 +92,19 @@ impl From<&AsaResponseResult> for String {
             AsaResponseResult::VelocityExceeded => "VELOCITY_EXCEEDED",
             AsaResponseResult::Approved => "APPROVED",
         }.to_string()
+    }
+}
+
+impl From<ChargeEngineResult> for AsaResponseResult {
+    fn from(value: ChargeEngineResult) -> Self {
+        match value {
+            ChargeEngineResult::Approved => AsaResponseResult::Approved,
+            ChargeEngineResult::CardClosed => AsaResponseResult::CardClosed,
+            ChargeEngineResult::Denied => AsaResponseResult::UnauthorizedMerchant,
+            ChargeEngineResult::InsufficientFunds => AsaResponseResult::InsufficientFunds,
+            ChargeEngineResult::CardPaused => AsaResponseResult::CardPaused,
+            _ => AsaResponseResult::AccountInactive
+        }
     }
 }
 

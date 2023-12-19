@@ -62,7 +62,7 @@ impl LithicHandler {
         Ok(
             AsaResponse {
                 token: request.token,
-                result: if result {AsaResponseResult::Approved} else {AsaResponseResult::UnauthorizedMerchant},
+                result: AsaResponseResult::from(result),
                 avs_result: None,
                 balance: None,
             }
