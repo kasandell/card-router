@@ -3,25 +3,42 @@ use uuid::Uuid;
 use crate::user::entity::User;
 use crate::api_error::ApiError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
-use crate::passthrough_card::entity::{InsertablePassthroughCard, PassthroughCard};
+use crate::passthrough_card::entity::PassthroughCard;
 use base64::engine::general_purpose;
 use lithic_client::models::card::Card;
-use lithic_client::models::payment_response::Source::Lithic;
 use crate::lithic_service::{
     service::LithicService,
-    error::Error as LithicError
+    service::LithicServiceTrait,
 };
 
-pub struct Engine {}
+pub struct Engine {
+    pub lithic_service: Box<dyn LithicServiceTrait>
+}
 
 impl Engine {
+    pub fn new() -> Self {
+        Engine {
+            lithic_service: Box::new(LithicService::new())
+        }
+    }
+    #[cfg(test)]
+    pub fn new_with_service(service: Box<dyn LithicServiceTrait>) -> Self {
+        Engine {
+            lithic_service: service
+        }
+    }
     pub fn issue_card_to_user(
-        user: User,
+        &self,
+        user: &User,
         pin: String
-    ) -> Result<(), ApiError> {
+    ) -> Result<PassthroughCard, ApiError> {
+        let has_active = self.user_has_active_card(&user)?;
+        if has_active {
+            return Err(ApiError::new(409, "User has active card already".to_string()))
+        }
         let idempotency_key = Uuid::new_v4();
         let pin_encoded = general_purpose::STANDARD_NO_PAD.encode(pin);
-        let lithic_card = LithicService::create_card(
+        let lithic_card = self.lithic_service.create_card(
             pin_encoded,
             idempotency_key
         )?;
@@ -31,10 +48,17 @@ impl Engine {
         );
         return match inserted_card {
             Ok(card) => {
-                return Ok(())
+                return Ok(card)
             }
             Err(e) => {
-                let closed = Engine::close_lithic_card(&lithic_card.token.to_string());
+                let closed = self.close_lithic_card(&lithic_card.token.to_string());
+                match closed {
+                    Ok(card) => info!("Rolled back lithic card successfully"),
+                    Err(err) => {
+                        error!("Unable to close lithic card");
+                        return Err(err);
+                    }
+                }
                 return Err(ApiError::new(500, "unable to issue card".to_string()));
             }
         }
@@ -42,11 +66,12 @@ impl Engine {
 
     // really lets rewrite this to be atomic
     pub fn update_card_status(
-        user: User,
+        &self,
+        user: &User,
         status: PassthroughCardStatus
     ) -> Result<(), ApiError> {
         info!("Searching for cards for userId={} to go to status={}", user.id, String::from(&status));
-        let card = Engine::find_card_for_user_in_status(
+        let card = self.find_card_for_user_in_status(
             &user,
             &status
         )?;
@@ -61,9 +86,9 @@ impl Engine {
         info!("Updated card={} for userId={}", card.id, user.id);
 
         let lithic_result = match &status {
-            PassthroughCardStatus::CLOSED => Engine::close_lithic_card(&updated.token),
-            PassthroughCardStatus::OPEN => Engine::activate_lithic_card(&updated.token),
-            PassthroughCardStatus::PAUSED =>  Engine::activate_lithic_card(&updated.token),
+            PassthroughCardStatus::CLOSED => self.close_lithic_card(&updated.token),
+            PassthroughCardStatus::OPEN => self.activate_lithic_card(&updated.token),
+            PassthroughCardStatus::PAUSED =>  self.pause_lithic_card(&updated.token),
             _ => Err(ApiError::new(500, "Invalid state transition from engine".to_string()))
         };
 
@@ -91,20 +116,21 @@ impl Engine {
     }
 
     pub fn find_card_for_user_in_status(
+        &self,
         user: &User,
         status: &PassthroughCardStatus
     ) -> Result<PassthroughCard, ApiError> {
         return match status {
             PassthroughCardStatus::CLOSED => {
                 let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id)?;
-                Engine::filter_cards(
+                self.filter_cards(
                     &v,
                     |card| {card.is_active.is_some_and(|active|active)}
                 ).cloned()
             },
             PassthroughCardStatus::OPEN => {
                 let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id)?;
-                Engine::filter_cards(
+                self.filter_cards(
                     &v,
                     |item| {
                         item.is_active.is_some_and(|active| active)
@@ -114,7 +140,7 @@ impl Engine {
             },
             PassthroughCardStatus::PAUSED => {
                 let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id)?;
-                Engine::filter_cards(
+                self.filter_cards(
                     &v,
                     |item| {
                         item.is_active.is_some_and(|active| active)
@@ -122,13 +148,36 @@ impl Engine {
                     }
                 ).cloned()
             },
-            _ => return Err(ApiError::new(500, "Invalid state transition from engine".to_string()))
+            _ => return Err(ApiError::new(404, "Invalid state transition from engine".to_string()))
         }
     }
 
+    pub fn user_has_active_card(
+        &self,
+        user: &User
+    ) -> Result<bool, ApiError> {
+        let cards = PassthroughCard::find_cards_for_user(user.id)?;
+        if cards.len() == 0 {
+            return Ok(false);
+        }
+        let result: Vec<&PassthroughCard> = cards
+            .iter()
+            .filter(|&card| {
+                return card.passthrough_card_status == String::from(&PassthroughCardStatus::OPEN) ||
+                    card.passthrough_card_status == String::from(&PassthroughCardStatus::PAUSED)
+
+            })
+            .collect();
+        if result.len() > 0 {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
     //probably need a lifetime
-    fn filter_cards(
-        cards: &Vec<PassthroughCard>,
+    fn filter_cards<'a>(
+        &'a self,
+        cards: &'a Vec<PassthroughCard>,
         filter: fn(&PassthroughCard) -> bool
     ) -> Result<&PassthroughCard, ApiError> {
         let v: Vec<&PassthroughCard> = cards
@@ -143,23 +192,26 @@ impl Engine {
     }
 
     fn close_lithic_card(
+        &self,
         token: &str
     ) -> Result<Card, ApiError> {
-        let closed = LithicService::close_card(token.to_string())?;
+        let closed = self.lithic_service.close_card(token.to_string())?;
         Ok(closed)
     }
 
     fn pause_lithic_card(
+        &self,
         token: &str
     ) -> Result<Card, ApiError> {
-        let closed = LithicService::pause_card(token.to_string())?;
+        let closed = self.lithic_service.pause_card(token.to_string())?;
         Ok(closed)
     }
 
     fn activate_lithic_card(
+        &self,
         token: &str
     ) -> Result<Card, ApiError> {
-        let closed = LithicService::activate_card(token.to_string())?;
+        let closed = self.lithic_service.activate_card(token.to_string())?;
         Ok(closed)
     }
 }

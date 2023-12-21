@@ -12,21 +12,64 @@ use uuid::Uuid;
 use crate::constant::env_key;
 use super::error::Error as LithicError;
 
-pub struct LithicService {}
-
-impl LithicService {
-    pub fn create_card(
+#[mockall::automock]
+pub trait LithicServiceTrait {
+    fn create_card(
+        &self,
         pin_str: String,
         idempotency_key: Uuid,
-    ) -> Result<Card, LithicError> {
+    ) -> Result<Card, LithicError>;
+
+    fn close_card(
+        &self,
+        card_token: String
+    ) -> Result<Card, LithicError>;
+
+    fn activate_card(
+        &self,
+        card_token: String,
+    ) -> Result<Card, LithicError>;
+    fn pause_card(
+        &self,
+        card_token: String,
+    ) -> Result<Card, LithicError>;
+
+    fn patch_card(
+        &self,
+        card_token: String,
+        state: Option<PatchState>,
+        pin: Option<String>
+    ) -> Result<Card, LithicError>;
+
+
+}
+
+pub struct LithicService {
+    configuration: Configuration
+}
+
+impl LithicService {
+    pub fn new() -> Self {
         let mut cfg = Configuration::new();
         cfg.api_key = Some(ApiKey {
             prefix: None,
             key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
         });
+        LithicService {
+            configuration: cfg
+        }
+    }
+}
+
+impl LithicServiceTrait for LithicService {
+    fn create_card(
+        &self,
+        pin_str: String,
+        idempotency_key: Uuid,
+    ) -> Result<Card, LithicError> {
         Ok(
             futures::executor::block_on(async {
-                post_cards(&cfg, PostCardsRequest {
+                post_cards(&self.configuration, PostCardsRequest {
                     account_token: None, // might need
                     card_program_token: None,
                     exp_month: None,
@@ -47,15 +90,11 @@ impl LithicService {
         )
     }
 
-    pub fn close_card(
+    fn close_card(
+        &self,
         card_token: String
     ) -> Result<Card, LithicError> {
-        let mut cfg = Configuration::new();
-        cfg.api_key = Some(ApiKey {
-            prefix: None,
-            key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
-        });
-        LithicService::patch_card(
+        self.patch_card(
             card_token,
             Some(PatchState::Closed),
             None
@@ -63,50 +102,38 @@ impl LithicService {
 
     }
 
-    pub fn pause_card(
+    fn pause_card(
+        &self,
         card_token: String,
     ) -> Result<Card, LithicError> {
-        let mut cfg = Configuration::new();
-        cfg.api_key = Some(ApiKey {
-            prefix: None,
-            key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
-        });
-        LithicService::patch_card(
+        self.patch_card(
             card_token,
             Some(PatchState::Paused),
             None
         )
     }
 
-    pub fn activate_card(
+    fn activate_card(
+        &self,
         card_token: String,
     ) -> Result<Card, LithicError> {
-        let mut cfg = Configuration::new();
-        cfg.api_key = Some(ApiKey {
-            prefix: None,
-            key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
-        });
-        LithicService::patch_card(
+        self.patch_card(
             card_token,
             Some(PatchState::Open),
             None
         )
     }
 
-    pub fn patch_card(
+    fn patch_card(
+        &self,
         card_token: String,
         state: Option<PatchState>,
         pin: Option<String>
     ) -> Result<Card, LithicError> {
-        let mut cfg = Configuration::new();
-        cfg.api_key = Some(ApiKey {
-            prefix: None,
-            key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
-        });
         Ok(
             futures::executor::block_on( async {
                 patch_card_by_token(
-                    &cfg,
+                    &self.configuration,
                     serde_json::to_value(card_token).expect("card should go to value"),
                     PatchCardByTokenRequest {
                         memo: None,

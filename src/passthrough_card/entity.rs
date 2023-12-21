@@ -5,11 +5,9 @@ use lithic_client::models::Card;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::api_error::ApiError;
-use crate::schema::passthrough_card::token;
 use crate::user::entity::User;
 use crate::util::date::expiration_date_from_str_parts;
 use crate::util::db;
-use crate::wallet::entity::Wallet;
 use super::constant::{
     PassthroughCardStatus,
     PassthroughCardType
@@ -104,6 +102,15 @@ impl PassthroughCard {
         .set(update)
         .get_result(&mut conn)?;
         Ok(update)
+    }
+
+    pub fn get(id: i32) -> Result<Self, ApiError> {
+        let mut conn = db::connection()?;
+
+        let card = passthrough_card::table
+            .filter(passthrough_card::id.eq(id))
+            .first(&mut conn)?;
+        Ok(card)
     }
 
     pub fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, ApiError> {
