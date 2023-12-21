@@ -21,6 +21,7 @@ mod rule_engine;
 mod category;
 mod membership;
 mod transaction;
+mod passthrough_card;
 mod schema;
 mod user;
 mod wallet;
@@ -32,6 +33,7 @@ mod test;
 #[cfg(test)]
 mod test_helper;
 mod charge_engine;
+mod lithic_service;
 
 
 async fn manual_hello() -> impl Responder {

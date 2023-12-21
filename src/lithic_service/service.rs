@@ -118,7 +118,7 @@ impl LithicService {
                         digital_card_art_token: None,
                     }
 
-                )
+                ).await
             })?
         )
     }

@@ -7,6 +7,7 @@ use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde_json::{json, Error as SerdeError};
 use std::fmt;
+use std::num::ParseIntError;
 use crate::adyen_service;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -64,6 +65,12 @@ impl From<ChargeEngineError> for ApiError {
     fn from(_: ChargeEngineError) -> Self {
         ApiError::new(500, "Service error".to_string())
 
+    }
+}
+
+impl From<ParseIntError> for ApiError {
+    fn from(_: ParseIntError) -> Self {
+        ApiError::new(500, "Parse error".to_string())
     }
 }
 
