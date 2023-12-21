@@ -6,7 +6,7 @@ pub enum PassthroughCardType {
     SINGLE_USE
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PassthroughCardStatus {
     CLOSED,
     OPEN,

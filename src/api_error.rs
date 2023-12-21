@@ -2,6 +2,7 @@ use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use adyen_checkout::apis::Error as AdyenCheckoutError;
 use adyen_service::checkout::error::Error as AdyenServiceError;
+use crate::lithic_service::error::Error as LithicServiceError;
 use crate::charge_engine::error::Error as ChargeEngineError;
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
@@ -71,6 +72,12 @@ impl From<ChargeEngineError> for ApiError {
 impl From<ParseIntError> for ApiError {
     fn from(_: ParseIntError) -> Self {
         ApiError::new(500, "Parse error".to_string())
+    }
+}
+
+impl From<LithicServiceError> for ApiError {
+    fn from(_: LithicServiceError) -> Self {
+        ApiError::new(500, "Lithic service error".to_string())
     }
 }
 

@@ -16,6 +16,7 @@ mod asa;
 mod util;
 mod api_error;
 mod constant;
+mod lithic_service;
 mod credit_card_type;
 mod rule_engine;
 mod category;
@@ -33,7 +34,6 @@ mod test;
 #[cfg(test)]
 mod test_helper;
 mod charge_engine;
-mod lithic_service;
 
 
 async fn manual_hello() -> impl Responder {

@@ -1,9 +1,11 @@
 use crate::schema::passthrough_card;
 use chrono::{NaiveDateTime, NaiveDate, Utc};
 use diesel::prelude::*;
+use lithic_client::models::Card;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::api_error::ApiError;
+use crate::schema::passthrough_card::token;
 use crate::user::entity::User;
 use crate::util::date::expiration_date_from_str_parts;
 use crate::util::db;
@@ -22,7 +24,7 @@ pub struct LithicCard {
 }
 
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
 #[diesel(table_name = passthrough_card)]
 #[diesel(belongs_to(PassthroughCardType))]
 #[diesel(belongs_to(PassThroughCardStatus))]
@@ -70,6 +72,18 @@ impl PassthroughCard {
         let mut conn = db::connection()?;
 
         let mut card = InsertablePassthroughCard::from(card);
+        card.user_id = user.id;
+        //TODO: populate with user_id
+        let card = diesel::insert_into(passthrough_card::table)
+            .values(card)
+            .get_result(&mut conn)?;
+        Ok(card)
+    }
+
+    pub fn create_from_api_card(card: &Card, user: &User) -> Result<Self, ApiError> {
+        let mut conn = db::connection()?;
+
+        let mut card = InsertablePassthroughCard::convert_from(&card)?;
         card.user_id = user.id;
         //TODO: populate with user_id
         let card = diesel::insert_into(passthrough_card::table)
@@ -150,5 +164,27 @@ impl From<LithicCard> for InsertablePassthroughCard {
             passthrough_card_type: String::from(&PassthroughCardType::VIRTUAL),
             is_active: true
         }
+    }
+}
+
+impl InsertablePassthroughCard {
+    pub fn convert_from(card: &Card) -> Result<Self, ApiError> {
+        let exp_year = card.exp_year.clone().ok_or(
+            ApiError::new(500, "Cannot find expiration year".to_string())
+        )?;
+        let exp_month = card.exp_month.clone().ok_or(
+            ApiError::new(500, "Cannot find expiration month".to_string())
+        )?;
+        let expiration = expiration_date_from_str_parts(&exp_year, &exp_month)?;
+        Ok(InsertablePassthroughCard {
+            passthrough_card_status: String::from(&PassthroughCardStatus::OPEN),
+            public_id: Uuid::new_v4(),
+            user_id: 0,
+            token: card.token.to_string(),
+            expiration: expiration,
+            last_four: card.last_four.clone(),
+            passthrough_card_type: String::from(&PassthroughCardType::VIRTUAL),
+            is_active: true
+        })
     }
 }

@@ -414,6 +414,7 @@ dependencies = [
  "adyen-checkout",
  "adyen-payment",
  "adyen-webhooks",
+ "base64 0.21.5",
  "chrono",
  "diesel",
  "diesel-derive-enum",
