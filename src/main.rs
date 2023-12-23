@@ -29,6 +29,8 @@ mod wallet;
 mod middleware;
 mod webhooks;
 
+mod auth;
+
 #[cfg(test)]
 mod test;
 #[cfg(test)]
@@ -60,11 +62,13 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
+            //.wrap(crate::middleware::auth::Auth)
             //.wrap(api_key_validation::ApiKeyValidation)
             //.app_data(web::Data::new(state.clone()))
             .service(web::scope("/user").configure(user::config::config))
             .service(web::scope("/wallet").configure(wallet::config::config))
             .service(web::scope("/webhook").configure(webhooks::config::config))
+            .service(web::scope("/auth").configure(auth::config::config))
             .route("/hey/", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?

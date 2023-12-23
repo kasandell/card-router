@@ -55,6 +55,22 @@ impl User {
         Ok(user)
     }
 
+    pub fn find_by_email_password(
+        email: String,
+        password: String
+    ) -> Result<Self, ApiError> {
+        let mut conn = db::connection()?;
+
+        let user = users::table
+            .filter(
+                users::email.eq(email)
+                    .and(users::password.eq(password))
+            )
+            .first(&mut conn)?;
+
+        Ok(user)
+    }
+
     pub fn find_by_internal_id(id: i32) -> Result<Self, ApiError> {
         let mut conn = db::connection()?;
 
