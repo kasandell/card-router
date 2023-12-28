@@ -3,6 +3,9 @@ https://github.com/serde-rs/serde/issues/1019
 
 # Authenitication 
 https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
+https://github.com/actix/examples/blob/master/middleware/various/src/redirect.rs
+https://github.com/SakaDream/actix-web-rest-api-with-jwt/blob/master/src/middleware/auth_middleware.rs
+https://blog.logrocket.com/jwt-authentication-in-rust/
 
 # Architecture
 https://cloudmaker.dev/how-to-create-a-rest-api-in-rust/
