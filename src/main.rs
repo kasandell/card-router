@@ -28,14 +28,13 @@ mod user;
 mod wallet;
 mod middleware;
 mod webhooks;
-
+mod charge_engine;
 mod auth;
 
 #[cfg(test)]
 mod test;
 #[cfg(test)]
 mod test_helper;
-mod charge_engine;
 
 
 async fn manual_hello() -> impl Responder {
@@ -45,30 +44,19 @@ async fn manual_hello() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    //let pool = util::db::establish_connection();
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
     util::db::init();
-
-    /*
-    let state = {
-        let pool = util::db::establish_connection();
-        use middleware::state::AppState;
-        AppState::new(pool)
-    };
-    */
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
-            //.wrap(crate::middleware::auth::Auth)
-            //.wrap(api_key_validation::ApiKeyValidation)
-            //.app_data(web::Data::new(state.clone()))
             .service(web::scope("/user").configure(user::config::config))
             .service(web::scope("/wallet").configure(wallet::config::config))
             .service(web::scope("/webhook").configure(webhooks::config::config))
             .service(web::scope("/auth").configure(auth::config::config))
+            .service(web::scope("/passthrough").configure(passthrough_card::config::config))
             .route("/hey/", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?
