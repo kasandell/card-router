@@ -24,7 +24,7 @@ async fn login(request: web::Json<LoginRequest>) -> Result<HttpResponse, ApiErro
             );
         },
         Err(err) => {
-            return Err(ApiError::new(401, "Invalid credentials".to_string()));
+            return Err(ApiError::new(401, "Invalid user".to_string()));
         }
     }
     Err(ApiError::new(500, "Not implemented".to_string()))

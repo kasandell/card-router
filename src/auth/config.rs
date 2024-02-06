@@ -10,6 +10,6 @@ pub fn config(cfg: &mut web::ServiceConfig) -> () {
                 web::scope("")
                     .wrap(crate::middleware::auth::Auth)
                     .service(controller::logout)
-            )
+            );
     }
 }
