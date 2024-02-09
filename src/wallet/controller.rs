@@ -7,6 +7,7 @@ use actix_web::{
 
 use crate::api_error::ApiError;
 use crate::user::entity::User;
+use crate::wallet::entity::DisplayableCardInfo;
 use super::{
     request, 
     entity::{
@@ -16,6 +17,7 @@ use super::{
 };
 
 
+// TODO: this needs to be adjusted to create a card attempt
 #[post("/add-card/")]
 async fn add_card(info: web::Json<request::AddCardRequest>) -> Result<HttpResponse, ApiError> {
     let new_card = NewCard {
@@ -29,9 +31,29 @@ async fn add_card(info: web::Json<request::AddCardRequest>) -> Result<HttpRespon
 }
 
 #[get("/list-cards/")]
-async fn list_cards() -> Result<HttpResponse, ApiError> {
+async fn list_cards(
+    user: web::ReqData<User> // should extract from extensions
+) -> Result<HttpResponse, ApiError> {
+    let user = user.into_inner();
+    /*
     let cards = Wallet::find_all_for_user(
         &(User::find_by_internal_id(1)?)
     )?;
+     */
+    let cards: Vec<DisplayableCardInfo> = Wallet::find_all_for_user_with_card_info(
+        &user //(User::find_by_internal_id(1)?)
+    )?
+        .iter()
+        .map(|card| DisplayableCardInfo {
+            public_id: card.0.public_id,
+            created_at: card.0.created_at,
+            card_name: card.1.name.clone(),
+            issuer_name: card.3.name.clone(),
+            card_type: card.2.name.clone(),
+            card_image_url: card.1.card_image_url.clone(),
+        })
+        .collect();
     Ok(HttpResponse::Ok().json(cards))
 }
+
+// TODO: need a remove card endpoint (mark as deleted)

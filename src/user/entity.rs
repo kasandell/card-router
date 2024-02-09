@@ -13,7 +13,7 @@ pub struct UserMessage {
     pub password: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
 #[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
