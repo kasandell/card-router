@@ -18,7 +18,7 @@ async fn active_card(
     user: web::ReqData<User>
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
-    let engine = Engine {};
+    let engine = Engine::new();
     let has_active = engine.user_has_active_card(&user)?;
     Ok(
         HttpResponse::Ok().json(

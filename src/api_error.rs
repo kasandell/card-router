@@ -31,6 +31,7 @@ impl fmt::Display for ApiError {
 
 impl From<DieselError> for ApiError {
     fn from(error: DieselError) -> ApiError {
+        info!("Converting from diesel error");
         match error {
             DieselError::DatabaseError(_, err) => ApiError::new(409, err.message().to_string()),
             DieselError::NotFound => ApiError::new(404, "Record not found".to_string()),
@@ -41,6 +42,7 @@ impl From<DieselError> for ApiError {
 
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
+        info!("Converting from serde error");
         match error {
             err => ApiError::new(500, format!("Serde Error error: {}", err)),
         }
@@ -49,6 +51,7 @@ impl From<SerdeError> for ApiError {
 
 impl <T> From<AdyenCheckoutError<T>> for ApiError {
     fn from(error: AdyenCheckoutError<T>) -> ApiError {
+        info!("Converting from adyen checkout error");
         match error {
             err => ApiError::new(500, format!("Adyen error: {}", err)),
         }
@@ -57,6 +60,7 @@ impl <T> From<AdyenCheckoutError<T>> for ApiError {
 
 impl From<AdyenServiceError> for ApiError {
     fn from(_: AdyenServiceError) -> Self {
+        info!("Converting from adyen service error");
         ApiError::new(500, "Service error".to_string())
 
     }
@@ -64,6 +68,7 @@ impl From<AdyenServiceError> for ApiError {
 
 impl From<ChargeEngineError> for ApiError {
     fn from(_: ChargeEngineError) -> Self {
+        info!("Converting from charge engine error");
         ApiError::new(500, "Service error".to_string())
 
     }
@@ -77,6 +82,7 @@ impl From<ParseIntError> for ApiError {
 
 impl From<LithicServiceError> for ApiError {
     fn from(_: LithicServiceError) -> Self {
+        info!("converting from lithic service error");
         ApiError::new(500, "Lithic service error".to_string())
     }
 }

@@ -1,12 +1,13 @@
-use crate::schema::{
-    credit_card,
-    credit_card_issuer,
-    credit_card_type
-};
+use crate::schema::{credit_card, credit_card_issuer, credit_card_type, wallet};
+
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::api_error::ApiError;
+use crate::user::entity::User;
+use crate::util::db;
+use crate::wallet::entity::Wallet;
 
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable)]
@@ -44,6 +45,36 @@ pub struct CreditCardIssuer {
     pub updated_at: NaiveDateTime
 }
 
+impl CreditCard {
+    pub fn list_all_card_types() -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, ApiError> {
+        let mut conn = db::connection()?;
+        let cards = credit_card::table
+            .inner_join(credit_card_type::table)
+            .inner_join(credit_card_issuer::table)
+            .select((Self::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
+            .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn)?;
+        info!("Query executed ok");
+        Ok(cards)
+    }
+
+    pub fn search_all_card_types(
+        query: String
+    ) -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, ApiError> {
+        let mut conn = db::connection()?;
+        let cards = credit_card::table
+            .inner_join(credit_card_type::table)
+            .inner_join(credit_card_issuer::table)
+            .filter(credit_card::name.like(&query).or(
+                credit_card_type::name.like(&query).or(
+                    credit_card_issuer::name.like(&query)
+                )
+            ))
+            .select((Self::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
+            .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn)?;
+        info!("Query executed ok");
+        Ok(cards)
+    }
+}
 
 #[cfg(test)]
 impl CreditCard {

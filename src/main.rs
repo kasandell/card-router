@@ -57,6 +57,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::scope("/webhook").configure(webhooks::config::config))
             .service(web::scope("/auth").configure(auth::config::config))
             .service(web::scope("/passthrough").configure(passthrough_card::config::config))
+            .service(web::scope("/credit-card-type").configure(credit_card_type::config::config))
             .route("/hey/", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?
