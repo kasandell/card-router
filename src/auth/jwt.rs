@@ -7,7 +7,7 @@ use super::constant::{BEARER, JWT_SECRET};
 
 pub fn create_jwt(uid: &str, role: &Role) -> Result<String, ApiError> {
     let expiration = Utc::now()
-        .checked_add_signed(chrono::Duration::seconds(60))
+        .checked_add_signed(chrono::Duration::minutes(60))
         .expect("valid timestamp")
         .timestamp();
 

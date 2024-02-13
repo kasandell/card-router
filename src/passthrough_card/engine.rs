@@ -85,6 +85,7 @@ impl Engine {
 
         info!("Updated card={} for userId={}", card.id, user.id);
 
+        /*
         let lithic_result = match &status {
             PassthroughCardStatus::CLOSED => self.close_lithic_card(&updated.token),
             PassthroughCardStatus::OPEN => self.activate_lithic_card(&updated.token),
@@ -113,6 +114,8 @@ impl Engine {
                 Err(e)
             }
         };
+         */
+        Ok(())
     }
 
     pub fn find_card_for_user_in_status(
@@ -152,10 +155,40 @@ impl Engine {
         }
     }
 
+    pub fn get_active_card_for_user(
+        &self,
+        user: &User
+    ) -> Result<Option<PassthroughCard>, ApiError> {
+        let cards = PassthroughCard::find_cards_for_user(user.id)?;
+        if cards.len() == 0 {
+            return Ok(None);
+        }
+        let result: Vec<&PassthroughCard> = cards
+            .iter()
+            .filter(|&card| {
+                return card.passthrough_card_status == String::from(&PassthroughCardStatus::OPEN) ||
+                    card.passthrough_card_status == String::from(&PassthroughCardStatus::PAUSED)
+
+            })
+            .collect();
+        if result.len() > 0 {
+            if let Some(card) = result.get(0) {
+                return Ok(Some((**card).clone()))
+            }
+            return Ok(None);
+        }
+        Ok(None)
+    }
+
     pub fn user_has_active_card(
         &self,
         user: &User
     ) -> Result<bool, ApiError> {
+        if let Some(card) = self.get_active_card_for_user(&user)? {
+            return Ok(true)
+        }
+        Ok(false)
+        /*
         let cards = PassthroughCard::find_cards_for_user(user.id)?;
         if cards.len() == 0 {
             return Ok(false);
@@ -172,6 +205,7 @@ impl Engine {
             return Ok(true);
         }
         Ok(false)
+         */
     }
 
     //probably need a lifetime

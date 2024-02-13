@@ -9,6 +9,8 @@ pub fn config(cfg: &mut web::ServiceConfig) -> () {
                 web::scope("")
                     .wrap(crate::middleware::auth::Auth)
                     .service(controller::create_card)
+                    .service(controller::get_card)
+                    .service(controller::active_card)
                     .service(controller::pause_card)
                     .service(controller::unpause_card)
                     .service(controller::cancel_card)

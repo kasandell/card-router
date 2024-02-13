@@ -1,6 +1,9 @@
+use std::any::Any;
 use actix_web::{put, post, get, HttpResponse, web};
+use uuid::Uuid;
 use crate::api_error::ApiError;
-use crate::passthrough_card::response::HasActiveResponse;
+use crate::passthrough_card::constant::PassthroughCardStatus;
+use crate::passthrough_card::response::{HasActiveResponse, PassthroughCardResposnse};
 use crate::user::entity::User;
 use super::engine::Engine;
 
@@ -11,6 +14,32 @@ async fn create_card(
     Ok(
         HttpResponse::Ok().finish()
     )
+}
+
+#[get("/get-card/")]
+async fn get_card(
+    user: web::ReqData<User>
+) -> Result<HttpResponse, ApiError> {
+    let user = user.into_inner();
+    let engine = Engine::new();
+    return if let Some(card) = engine.get_active_card_for_user(&user)? {
+        println!("FOUND A CARD");
+        Ok(
+            HttpResponse::Ok().json(
+                PassthroughCardResposnse {
+                    public_id: card.public_id.clone(),
+                    card_status: card.passthrough_card_status.clone(),
+                    card_type: card.passthrough_card_type.clone(),
+                    last_four: card.last_four.clone(),
+                }
+            )
+        )
+    } else {
+        println!("DID NOT FIND A CARD");
+        Ok(
+            HttpResponse::NotFound().finish()
+        )
+    }
 }
 
 #[get("/active-card/")]
@@ -33,6 +62,9 @@ async fn active_card(
 async fn pause_card(
     user: web::ReqData<User>
 ) -> Result<HttpResponse, ApiError> {
+    let user = user.into_inner();
+    let engine = Engine::new();
+    engine.update_card_status(&user, PassthroughCardStatus::PAUSED)?;
     Ok(
         HttpResponse::Ok().finish()
     )
@@ -42,6 +74,9 @@ async fn pause_card(
 async fn unpause_card(
     user: web::ReqData<User>
 ) -> Result<HttpResponse, ApiError> {
+    let user = user.into_inner();
+    let engine = Engine::new();
+    engine.update_card_status(&user, PassthroughCardStatus::OPEN)?;
     Ok(
         HttpResponse::Ok().finish()
     )
@@ -51,6 +86,9 @@ async fn unpause_card(
 async fn cancel_card(
     user: web::ReqData<User>
 ) -> Result<HttpResponse, ApiError> {
+    let user = user.into_inner();
+    let engine = Engine::new();
+    engine.update_card_status(&user, PassthroughCardStatus::CLOSED)?;
     Ok(
         HttpResponse::Ok().finish()
     )
