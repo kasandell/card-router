@@ -49,12 +49,42 @@ diesel::table! {
 }
 
 diesel::table! {
+    inner_charge_ledger (id) {
+        id -> Int4,
+        registered_transaction_id -> Uuid,
+        user_id -> Int4,
+        wallet_card_id -> Int4,
+        amount_cents -> Int8,
+        #[max_length = 255]
+        status -> Varchar,
+        is_success -> Nullable<Bool>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     mcc_mapping (id) {
         id -> Int4,
         public_id -> Uuid,
         #[max_length = 4]
         mcc_code -> Varchar,
         category_id -> Int4,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    outer_charge_ledger (id) {
+        id -> Int4,
+        registered_transaction_id -> Uuid,
+        user_id -> Int4,
+        passthrough_card_id -> Int4,
+        amount_cents -> Int8,
+        #[max_length = 255]
+        status -> Varchar,
+        is_success -> Nullable<Bool>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
@@ -81,6 +111,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    registered_transactions (id) {
+        id -> Int4,
+        user_id -> Int4,
+        transaction_id -> Uuid,
+        #[max_length = 255]
+        memo -> Varchar,
+        amount_cents -> Int8,
+        #[max_length = 255]
+        mcc -> Varchar,
+    }
+}
+
+diesel::table! {
     rule (id) {
         id -> Int4,
         public_id -> Uuid,
@@ -97,6 +140,15 @@ diesel::table! {
         end_date -> Nullable<Date>,
         #[max_length = 255]
         rule_status -> Varchar,
+    }
+}
+
+diesel::table! {
+    transaction_ledger (id) {
+        id -> Int4,
+        transaction_id -> Uuid,
+        inner_charge_ledger_id -> Int4,
+        outer_charge_ledger_id -> Int4,
     }
 }
 
@@ -146,9 +198,16 @@ diesel::table! {
 
 diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
+diesel::joinable!(inner_charge_ledger -> users (user_id));
+diesel::joinable!(inner_charge_ledger -> wallet (wallet_card_id));
 diesel::joinable!(mcc_mapping -> category (category_id));
+diesel::joinable!(outer_charge_ledger -> passthrough_card (passthrough_card_id));
+diesel::joinable!(outer_charge_ledger -> users (user_id));
 diesel::joinable!(passthrough_card -> users (user_id));
+diesel::joinable!(registered_transactions -> users (user_id));
 diesel::joinable!(rule -> credit_card (credit_card_id));
+diesel::joinable!(transaction_ledger -> inner_charge_ledger (inner_charge_ledger_id));
+diesel::joinable!(transaction_ledger -> outer_charge_ledger (outer_charge_ledger_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 diesel::joinable!(wallet -> wallet_card_attempt (wallet_card_attempt_id));
@@ -160,9 +219,13 @@ diesel::allow_tables_to_appear_in_same_query!(
     credit_card,
     credit_card_issuer,
     credit_card_type,
+    inner_charge_ledger,
     mcc_mapping,
+    outer_charge_ledger,
     passthrough_card,
+    registered_transactions,
     rule,
+    transaction_ledger,
     users,
     wallet,
     wallet_card_attempt,

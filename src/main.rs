@@ -1,3 +1,5 @@
+// TODO: Remove
+#![allow(warnings)]
 extern crate diesel;
 extern crate diesel_migrations;
 #[macro_use]
@@ -10,6 +12,7 @@ use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
 use dotenv::dotenv;
+
 
 mod adyen_service;
 mod asa;

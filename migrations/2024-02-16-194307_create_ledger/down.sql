@@ -1,0 +1,6 @@
+DROP INDEX IF EXISTS inner_charge_success_txn;
+DROP INDEX IF EXISTS outer_charge_success_txn;
+DROP TABLE IF EXISTS transaction_ledger;
+DROP TABLE IF EXISTS inner_charge_ledger;
+DROP TABLE IF EXISTS outer_charge_ledger;
+DROP TABLE IF EXISTS registered_transactions;

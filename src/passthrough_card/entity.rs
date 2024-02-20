@@ -1,7 +1,7 @@
 use crate::schema::passthrough_card;
 use chrono::{NaiveDateTime, NaiveDate, Utc};
 use diesel::prelude::*;
-use lithic_client::models::Card;
+use lithic_client::models::{Card, FundingAccount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::api_error::ApiError;
@@ -20,7 +20,6 @@ pub struct LithicCard {
     pub exp_month: String,
     pub exp_year: String
 }
-
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
 #[diesel(table_name = passthrough_card)]
@@ -64,6 +63,7 @@ pub struct PassthroughCardStatusUpdate {
     pub passthrough_card_status: String,
     pub is_active: Option<bool>
 }
+
 
 impl PassthroughCard {
     pub fn create(card: LithicCard, user: &User) -> Result<Self, ApiError> {
@@ -193,5 +193,40 @@ impl InsertablePassthroughCard {
             passthrough_card_type: String::from(&PassthroughCardType::VIRTUAL),
             is_active: true
         })
+    }
+}
+
+#[cfg(test)]
+pub fn create_test_lithic_card(
+    exp_month: String,
+    exp_year: String,
+    last_four: String,
+    token: Uuid
+) -> Card {
+    Card {
+        created: "".to_string(),
+        cvv: None,
+        funding: Box::new(FundingAccount {
+            account_name: None,
+            created: "".to_string(),
+            last_four: "".to_string(),
+            nickname: None,
+            state: Default::default(),
+            token: Default::default(),
+            r#type: Default::default(),
+        }),
+        exp_month: Some(exp_month),
+        exp_year: Some(exp_year),
+        hostname: None,
+        last_four: last_four,
+        memo: None,
+        pan: None,
+        spend_limit: 0,
+        spend_limit_duration: Default::default(),
+        state: Default::default(),
+        auth_rule_tokens: None,
+        token: Default::default(),
+        r#type: Default::default(),
+        digital_card_art_token: None,
     }
 }

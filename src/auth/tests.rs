@@ -47,7 +47,7 @@ mod tests {
         assert!(User::find(user.public_id).is_err())
     }
 
-    //#[actix_web::test]
+    #[actix_web::test]
     async fn test_login_fails() {
         crate::test::init();
         let user = initialize_user();
