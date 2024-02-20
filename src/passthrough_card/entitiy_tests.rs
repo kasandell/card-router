@@ -14,6 +14,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_create_insertable_card() {
+        crate::test::init();
         let user = initialize_user();
         let token = "12345";
         let last_four = "1234";
@@ -48,6 +49,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_status_update() {
+        crate::test::init();
         let user = initialize_user();
         let token = "12345";
         let last_four = "1234";
@@ -108,6 +110,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_create_insertable_card_fails_for_same_token() {
+        crate::test::init();
         let user = initialize_user();
         let token = "12345";
         let last_four = "1234";
@@ -144,6 +147,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_create_insertable_card_fails_for_active_already() {
+        crate::test::init();
         let user = initialize_user();
         let token = "12345";
         let token2 = "23456";
@@ -188,6 +192,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_list_card_for_user() {
+        crate::test::init();
         let user = initialize_user();
         let user2 = User::create(
             UserMessage {

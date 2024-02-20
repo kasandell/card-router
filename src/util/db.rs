@@ -3,6 +3,7 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager,CustomizeConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::env;
+use std::time::Duration;
 use lazy_static::lazy_static;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
@@ -13,6 +14,7 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 
 fn run_migration(conn: &mut impl MigrationHarness<DB>) {
+    println!("In run migrations");
     conn.run_pending_migrations(MIGRATIONS).unwrap();
 }
 
@@ -58,7 +60,7 @@ where
     fn on_acquire(&self, conn: &mut C) -> Result<(), E> {
         conn.begin_test_transaction()
             .expect("Failed to start test transaction");
-
+        println!("Executing test transaction");
         Ok(())
     }
 }

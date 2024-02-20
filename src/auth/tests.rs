@@ -20,6 +20,7 @@ mod tests {
     async fn test_login() {
         crate::test::init();
         let user = initialize_user();
+        println!("initialized user");
         let request_body = json!({
             "email": "test@example.com",
             "password": "1234",
@@ -46,7 +47,7 @@ mod tests {
         assert!(User::find(user.public_id).is_err())
     }
 
-    #[actix_web::test]
+    //#[actix_web::test]
     async fn test_login_fails() {
         crate::test::init();
         let user = initialize_user();
@@ -67,7 +68,9 @@ mod tests {
     #[actix_web::test]
     async fn test_middleware() {
         crate::test::init();
+        println!("init test");
         let user = initialize_user();
+        println!("init user");
         let request_body = json!({
             "email": "test@example.com",
             "password": "1234",

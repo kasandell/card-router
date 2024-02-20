@@ -83,7 +83,6 @@ impl User {
 
     pub fn create(user: UserMessage) -> Result<Self, ApiError> {
         let mut conn = db::connection()?;
-
         let user = InsertableUser::from(user);
         let user = diesel::insert_into(users::table)
             .values(user)

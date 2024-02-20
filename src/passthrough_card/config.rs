@@ -3,6 +3,16 @@ use super::controller;
 
 pub fn config(cfg: &mut web::ServiceConfig) -> () {
     if cfg!(test) {
+        cfg
+            .service(
+                web::scope("")
+                    .service(controller::create_card)
+                    .service(controller::get_card)
+                    .service(controller::active_card)
+                    .service(controller::pause_card)
+                    .service(controller::unpause_card)
+                    .service(controller::cancel_card)
+            );
     } else {
         cfg
             .service(
