@@ -51,10 +51,15 @@ pub struct LithicService {
 impl LithicService {
     pub fn new() -> Self {
         let mut cfg = Configuration::new();
+        let base_path = match env::var(env_key::MODE_KEY).expect("need mode").as_str() {
+            "production" => "https://api.lithic.com/v1".to_owned(),
+            _ => "https://sandbox.lithic.com/v1".to_owned(),
+        };
         cfg.api_key = Some(ApiKey {
             prefix: None,
             key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
         });
+        cfg.base_path = base_path;
         LithicService {
             configuration: cfg
         }
