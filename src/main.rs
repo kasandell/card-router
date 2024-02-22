@@ -38,6 +38,8 @@ mod auth;
 mod test;
 #[cfg(test)]
 mod test_helper;
+mod data_error;
+mod service_error;
 
 
 async fn manual_hello() -> impl Responder {

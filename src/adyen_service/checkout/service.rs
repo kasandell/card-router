@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 use crate::constant::env_key;
 
-use super::error::Error;
+use crate::service_error::ServiceError;
 use super::request::ChargeCardRequest;
 
 pub struct ChargeService {}
@@ -30,12 +30,12 @@ pub trait AdyenChargeServiceTrait {
     fn charge_card_on_file(
         &self,
         request: ChargeCardRequest
-    ) -> Result<PaymentResponse, Error>;
+    ) -> Result<PaymentResponse, ServiceError>;
 
     fn cancel_transaction(
         &self,
         psp_reference: &str,
-    ) -> Result<PaymentCancelResponse, Error>;
+    ) -> Result<PaymentCancelResponse, ServiceError>;
 }
 
 
@@ -47,7 +47,7 @@ impl AdyenChargeServiceTrait for ChargeService {
     fn charge_card_on_file(
         &self,
         request: ChargeCardRequest
-    ) -> Result<PaymentResponse, Error> {
+    ) -> Result<PaymentResponse, ServiceError> {
         Ok(
             futures::executor::block_on( async {
                 post_payments(
@@ -202,7 +202,7 @@ impl AdyenChargeServiceTrait for ChargeService {
     fn cancel_transaction(
         &self,
         psp_reference: &str,
-    ) -> Result<PaymentCancelResponse, Error> {
+    ) -> Result<PaymentCancelResponse, ServiceError> {
         Ok(
             futures::executor::block_on(async {
                 post_payments_payment_psp_reference_cancels(

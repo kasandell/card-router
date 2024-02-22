@@ -1,4 +1,10 @@
+use uuid::Uuid;
+use crate::data_error::DataError;
+use crate::passthrough_card::entity::{create_test_lithic_card, PassthroughCard};
+use crate::transaction::entity::{InsertableRegisteredTransaction, RegisteredTransaction, TransactionMetadata};
 use crate::user::entity::{User, UserMessage};
+use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt};
+
 #[cfg(test)]
 pub fn initialize_user() -> User {
     User::create(
@@ -7,4 +13,93 @@ pub fn initialize_user() -> User {
             password: "1234".to_string()
         }
     ).expect("User should be created")
+}
+
+#[cfg(test)]
+pub fn initialize_wallet(
+    user: &User,
+    credit_card_id: i32
+) -> (Wallet, WalletCardAttempt) {
+    let ca = WalletCardAttempt::insert(
+        InsertableCardAttempt {
+            user_id: user.id,
+            credit_card_id: credit_card_id,
+            expected_reference_id: "test".to_string(),
+        }
+    ).expect("should create");
+    let wallet = Wallet::insert_card(
+        NewCard {
+            user_id: user.id,
+            payment_method_id: "test".to_string(),
+            credit_card_id: credit_card_id,
+            wallet_card_attempt_id: ca.id,
+
+        }
+    ).expect("should create");
+    (wallet, ca)
+}
+
+#[cfg(test)]
+pub fn initialize_wallet_with_payment_method(
+    user: &User,
+    credit_card_id: i32,
+    payment_method_id: String
+) -> (Wallet, WalletCardAttempt) {
+    let ca = WalletCardAttempt::insert(
+        InsertableCardAttempt {
+            user_id: user.id,
+            credit_card_id: credit_card_id,
+            expected_reference_id: Uuid::new_v4().to_string()
+        }
+    ).expect("should create");
+    let wallet = Wallet::insert_card(
+        NewCard {
+            user_id: user.id,
+            payment_method_id: payment_method_id,
+            credit_card_id: credit_card_id,
+            wallet_card_attempt_id: ca.id,
+
+        }
+    ).expect("should create");
+    (wallet, ca)
+}
+
+#[cfg(test)]
+pub fn initialize_passthrough_card(
+    user: &User
+) -> PassthroughCard {
+    PassthroughCard::create_from_api_card(
+        &create_test_lithic_card(
+            "09".to_string(),
+            "2026".to_string(),
+            "1234".to_string(),
+            Uuid::new_v4()
+        ),
+        &user
+    ).expect("should create card")
+}
+
+#[cfg(test)]
+pub fn initialize_registered_transaction_for_user(
+    user: &User,
+    metadata: &TransactionMetadata
+
+) -> RegisteredTransaction {
+    RegisteredTransaction::insert(
+        InsertableRegisteredTransaction {
+            user_id: user.id,
+            transaction_id: Default::default(),
+            memo: metadata.memo.clone(),
+            amount_cents: metadata.amount_cents,
+            mcc: metadata.mcc.clone()
+        }
+    ).expect("should create")
+}
+
+pub fn default_transaction_metadata() -> TransactionMetadata {
+    TransactionMetadata {
+        amount_cents: 0,
+        memo: "".to_string(),
+        mcc: "7184".to_string()
+    }
 }

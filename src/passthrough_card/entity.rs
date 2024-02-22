@@ -4,7 +4,7 @@ use diesel::prelude::*;
 use lithic_client::models::{Card, FundingAccount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::api_error::ApiError;
+use crate::data_error::DataError;
 use crate::user::entity::User;
 use crate::util::date::expiration_date_from_str_parts;
 use crate::util::db;
@@ -66,7 +66,7 @@ pub struct PassthroughCardStatusUpdate {
 
 
 impl PassthroughCard {
-    pub fn create(card: LithicCard, user: &User) -> Result<Self, ApiError> {
+    pub fn create(card: LithicCard, user: &User) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let mut card = InsertablePassthroughCard::from(card);
@@ -78,7 +78,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
-    pub fn create_from_api_card(card: &Card, user: &User) -> Result<Self, ApiError> {
+    pub fn create_from_api_card(card: &Card, user: &User) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let mut card = InsertablePassthroughCard::convert_from(&card)?;
@@ -90,7 +90,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
-    pub fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, ApiError> {
+    pub fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
         let update = PassthroughCardStatusUpdate {
             id: id,
@@ -104,7 +104,7 @@ impl PassthroughCard {
         Ok(update)
     }
 
-    pub fn get(id: i32) -> Result<Self, ApiError> {
+    pub fn get(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let card = passthrough_card::table
@@ -113,7 +113,16 @@ impl PassthroughCard {
         Ok(card)
     }
 
-    pub fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, ApiError> {
+    pub fn get_by_token(token: String) -> Result<Self, DataError> {
+        let mut conn = db::connection()?;
+
+        let card = passthrough_card::table
+            .filter(passthrough_card::token.eq(token))
+            .first(&mut conn)?;
+        Ok(card)
+    }
+
+    pub fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection()?;
 
         let cards = passthrough_card::table
@@ -125,7 +134,7 @@ impl PassthroughCard {
     pub fn find_card_for_user_in_status(
         user_id: i32,
         status: PassthroughCardStatus
-    ) -> Result<Self, ApiError> {
+    ) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let card = passthrough_card::table
@@ -141,7 +150,7 @@ impl PassthroughCard {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, ApiError> {
+    pub fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
@@ -153,7 +162,7 @@ impl PassthroughCard {
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, ApiError> {
+    pub fn delete_self(&self) -> Result<usize, DataError> {
         PassthroughCard::delete(self.id)
     }
 
@@ -175,12 +184,12 @@ impl From<LithicCard> for InsertablePassthroughCard {
 }
 
 impl InsertablePassthroughCard {
-    pub fn convert_from(card: &Card) -> Result<Self, ApiError> {
+    pub fn convert_from(card: &Card) -> Result<Self, DataError> {
         let exp_year = card.exp_year.clone().ok_or(
-            ApiError::new(500, "Cannot find expiration year".to_string())
+            DataError::new(500, "Cannot find expiration year".to_string())
         )?;
         let exp_month = card.exp_month.clone().ok_or(
-            ApiError::new(500, "Cannot find expiration month".to_string())
+            DataError::new(500, "Cannot find expiration month".to_string())
         )?;
         let expiration = expiration_date_from_str_parts(&exp_year, &exp_month)?;
         Ok(InsertablePassthroughCard {

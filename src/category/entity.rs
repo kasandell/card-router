@@ -3,7 +3,7 @@ use crate::{
         category,
         mcc_mapping
     },
-    api_error::ApiError,
+    data_error::DataError,
     util::db
 };
 use chrono::NaiveDateTime;
@@ -51,7 +51,7 @@ pub struct MccMapping {
 }
 
 impl Category {
-    pub fn create(category: InsertableCategory) -> Result<Self, ApiError>{
+    pub fn create(category: InsertableCategory) -> Result<Self, DataError>{
         let mut conn = db::connection()?;
         let cat = diesel::insert_into(category::table)
         .values(category)
@@ -60,7 +60,7 @@ impl Category {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, ApiError> {
+    pub fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
@@ -72,13 +72,13 @@ impl Category {
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, ApiError> {
+    pub fn delete_self(&self) -> Result<usize, DataError> {
         Category::delete(self.id)
     }
 }
 
 impl MccMapping {
-    pub fn create(mapping: InsertableMccMapping) -> Result<Self, ApiError> {
+    pub fn create(mapping: InsertableMccMapping) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
         let map = diesel::insert_into(mcc_mapping::table)
         .values(mapping)
@@ -87,7 +87,7 @@ impl MccMapping {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, ApiError> {
+    pub fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
@@ -99,7 +99,7 @@ impl MccMapping {
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, ApiError> {
+    pub fn delete_self(&self) -> Result<usize, DataError> {
         MccMapping::delete(self.id)
     }
 }

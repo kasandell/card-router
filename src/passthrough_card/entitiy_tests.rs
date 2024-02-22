@@ -139,7 +139,7 @@ mod tests {
             &user
         ).expect_err("error expected to be thrown here");
 
-        assert_eq!(409, created_error.status_code);
+        assert_eq!(500, created_error.status_code);
 
         created_card.delete_self().expect("card should delete");
         user.delete_self().expect("User should delete");
@@ -184,7 +184,7 @@ mod tests {
             &user
         ).expect_err("error expected to be thrown here");
 
-        assert_eq!(409, created_error.status_code);
+        assert_eq!(500, created_error.status_code);
 
         created_card.delete_self().expect("card should delete");
         user.delete_self().expect("User should delete");

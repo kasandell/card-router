@@ -1,5 +1,6 @@
 use std::fmt;
 use serde::Deserialize;
+use crate::transaction::error::Error as LedgerError;
 
 #[derive(Debug, Deserialize)]
 pub struct Error {
@@ -15,5 +16,11 @@ impl fmt::Display for Error {
 impl Error {
     pub fn new(message: String) -> Error {
         Error { message }
+    }
+}
+
+impl From<LedgerError> for Error {
+    fn from(error: LedgerError) -> Error {
+        Error::new(error.message)
     }
 }

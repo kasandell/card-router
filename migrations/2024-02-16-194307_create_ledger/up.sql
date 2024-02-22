@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS registered_transactions(
     user_id INT NOT NULL REFERENCES users(id),
     transaction_id UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
     memo VARCHAR(255) NOT NULL,
-    amount_cents BIGINT NOT NULL,
+    amount_cents INT NOT NULL,
     mcc VARCHAR(255) NOT NULL
 );
 
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS outer_charge_ledger(
     registered_transaction_id UUID NOT NULL REFERENCES registered_transactions(transaction_id),
     user_id INT NOT NULL REFERENCES users(id),
     passthrough_card_id INT NOT NULL REFERENCES passthrough_card(id),
-    amount_cents BIGINT NOT NULL,
+    amount_cents INT NOT NULL,
     status VARCHAR(255) NOT NULL,
     is_success BOOLEAN DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS inner_charge_ledger(
     registered_transaction_id UUID NOT NULL REFERENCES registered_transactions(transaction_id),
     user_id INT NOT NULL REFERENCES users(id),
     wallet_card_id INT NOT NULL REFERENCES wallet(id),
-    amount_cents BIGINT NOT NULL,
+    amount_cents INT NOT NULL,
     status VARCHAR(255) NOT NULL,
     is_success BOOLEAN DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,

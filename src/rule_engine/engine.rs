@@ -2,7 +2,7 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use chrono::Utc;
 
-use crate::api_error::ApiError;
+use crate::service_error::ServiceError;
 use crate::asa::request::AsaRequest;
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
 use crate::user::entity::User;
@@ -18,11 +18,11 @@ pub struct RuleEngine {
 
 #[mockall::automock]
 pub trait RuleEngineTrait {
-    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ApiError>;
+    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
 }
 
 impl RuleEngineTrait for RuleEngine {
-    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ApiError> {
+    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
@@ -40,7 +40,7 @@ impl RuleEngine {
     pub fn new() -> Self {
         Self {}
     }
-    pub fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ApiError> {
+    pub fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
@@ -73,7 +73,7 @@ impl RuleEngine {
         Ok(cards_only)
     }
 
-    fn find_and_filter_rules(request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ApiError> {
+    fn find_and_filter_rules(request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
         Ok(
             Rule::get_rules_for_card_ids(card_type_ids)?
                 .into_iter()

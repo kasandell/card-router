@@ -5,6 +5,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::env;
 use std::time::Duration;
 use lazy_static::lazy_static;
+use r2d2::Error;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 pub type DbConnection = r2d2::PooledConnection<ConnectionManager<PgConnection>>;
@@ -45,9 +46,9 @@ pub fn init() {
     info!("Initialized DB");
 }
 
-pub fn connection() -> Result<DbConnection, ApiError> {
+pub fn connection() -> Result<DbConnection, Error> {
     POOL.get()
-        .map_err(|e| ApiError::new(500, format!("Failed getting db connection: {}", e)))
+        //.map_err(|e| ApiError::new(500, format!("Failed getting db connection: {}", e)))
 }
 
 #[derive(Debug, Clone, Copy)]

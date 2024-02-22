@@ -4,12 +4,16 @@ use adyen_checkout::apis::Error as AdyenCheckoutError;
 use adyen_service::checkout::error::Error as AdyenServiceError;
 use crate::lithic_service::error::Error as LithicServiceError;
 use crate::charge_engine::error::Error as ChargeEngineError;
+use crate::transaction::error::{Error as LedgerError, Error};
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
+use r2d2::Error as R2D2Error;
 use serde_json::{json, Error as SerdeError};
 use std::fmt;
 use std::num::ParseIntError;
 use crate::adyen_service;
+use crate::data_error::DataError;
+use crate::service_error::ServiceError;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ApiError {
@@ -29,17 +33,6 @@ impl fmt::Display for ApiError {
     }
 }
 
-impl From<DieselError> for ApiError {
-    fn from(error: DieselError) -> ApiError {
-        info!("Converting from diesel error");
-        match error {
-            DieselError::DatabaseError(_, err) => ApiError::new(409, err.message().to_string()),
-            DieselError::NotFound => ApiError::new(404, "Record not found".to_string()),
-            err => ApiError::new(500, format!("Diesel error: {}", err)),
-        }
-    }
-}
-
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
         info!("Converting from serde error");
@@ -49,22 +42,7 @@ impl From<SerdeError> for ApiError {
     }
 }
 
-impl <T> From<AdyenCheckoutError<T>> for ApiError {
-    fn from(error: AdyenCheckoutError<T>) -> ApiError {
-        info!("Converting from adyen checkout error");
-        match error {
-            err => ApiError::new(500, format!("Adyen error: {}", err)),
-        }
-    }
-}
 
-impl From<AdyenServiceError> for ApiError {
-    fn from(_: AdyenServiceError) -> Self {
-        info!("Converting from adyen service error");
-        ApiError::new(500, "Service error".to_string())
-
-    }
-}
 
 impl From<ChargeEngineError> for ApiError {
     fn from(_: ChargeEngineError) -> Self {
@@ -74,16 +52,11 @@ impl From<ChargeEngineError> for ApiError {
     }
 }
 
-impl From<ParseIntError> for ApiError {
-    fn from(_: ParseIntError) -> Self {
-        ApiError::new(500, "Parse error".to_string())
-    }
-}
+impl From<LedgerError> for ApiError {
+    fn from(_: LedgerError) -> Self {
+        info!("Converting from ledger error");
+        ApiError::new(500, "Service error".to_string())
 
-impl From<LithicServiceError> for ApiError {
-    fn from(_: LithicServiceError) -> Self {
-        info!("converting from lithic service error");
-        ApiError::new(500, "Lithic service error".to_string())
     }
 }
 
@@ -108,5 +81,23 @@ impl ResponseError for ApiError {
 
         HttpResponse::build(status_code)
             .json(json!({ "message": message }))
+    }
+}
+
+impl From<R2D2Error> for ApiError {
+    fn from(_: R2D2Error) -> ApiError {
+        ApiError::new(500, "R2D2 error".to_string())
+    }
+}
+
+impl From<DataError> for ApiError {
+    fn from(error: DataError) -> ApiError {
+        ApiError::new(error.status_code, error.message)
+    }
+}
+
+impl From<ServiceError> for ApiError {
+    fn from(error: ServiceError) -> ApiError {
+        ApiError::new(error.status_code, error.message)
     }
 }

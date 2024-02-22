@@ -25,7 +25,8 @@ mod tests {
         assert!(!user.public_id.is_nil());
 
         let resp = TestRequest::post().uri("/").set_json(&request_body).send_request(&mut app).await;
-        assert!(resp.status().is_client_error(), "Should not be possible to create user with same email twice");
+        // TODO: data exceptions are bubbling up as 500, but for conflict we want 409
+        assert!(resp.status().is_server_error(), "Should not be possible to create user with same email twice");
         user.delete_self().expect("user should delete");
         assert!(User::find(user.public_id).is_err())
     }

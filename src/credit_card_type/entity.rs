@@ -4,7 +4,7 @@ use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::api_error::ApiError;
+use crate::data_error::DataError;
 use crate::user::entity::User;
 use crate::util::db;
 use crate::wallet::entity::Wallet;
@@ -46,7 +46,7 @@ pub struct CreditCardIssuer {
 }
 
 impl CreditCard {
-    pub fn list_all_card_types() -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, ApiError> {
+    pub fn list_all_card_types() -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
         let mut conn = db::connection()?;
         let cards = credit_card::table
             .inner_join(credit_card_type::table)
@@ -59,7 +59,7 @@ impl CreditCard {
 
     pub fn search_all_card_types(
         query: String
-    ) -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, ApiError> {
+    ) -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
         let mut conn = db::connection()?;
         let cards = credit_card::table
             .inner_join(credit_card_type::table)

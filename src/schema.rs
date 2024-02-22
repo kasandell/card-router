@@ -54,7 +54,7 @@ diesel::table! {
         registered_transaction_id -> Uuid,
         user_id -> Int4,
         wallet_card_id -> Int4,
-        amount_cents -> Int8,
+        amount_cents -> Int4,
         #[max_length = 255]
         status -> Varchar,
         is_success -> Nullable<Bool>,
@@ -81,7 +81,7 @@ diesel::table! {
         registered_transaction_id -> Uuid,
         user_id -> Int4,
         passthrough_card_id -> Int4,
-        amount_cents -> Int8,
+        amount_cents -> Int4,
         #[max_length = 255]
         status -> Varchar,
         is_success -> Nullable<Bool>,
@@ -117,7 +117,7 @@ diesel::table! {
         transaction_id -> Uuid,
         #[max_length = 255]
         memo -> Varchar,
-        amount_cents -> Int8,
+        amount_cents -> Int4,
         #[max_length = 255]
         mcc -> Varchar,
     }

@@ -1,10 +1,10 @@
-use crate::api_error::ApiError;
 use crate::util::db;
 use crate::schema::users;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::data_error::DataError;
 
 #[derive(Serialize, Deserialize, AsChangeset)]
 #[diesel(table_name = users)]
@@ -26,7 +26,6 @@ pub struct User {
 
 #[derive(Serialize, Deserialize, Insertable)]
 #[diesel(table_name = users)]
-
 pub struct InsertableUser {
     pub public_id: Uuid,
     pub email: String,
@@ -36,7 +35,7 @@ pub struct InsertableUser {
 }
 
 impl User {
-    pub fn find_all() -> Result<Vec<Self>, ApiError> {
+    pub fn find_all() -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection()?;
 
         let users = users::table
@@ -45,7 +44,7 @@ impl User {
         Ok(users)
     }
 
-    pub fn find(id: Uuid) -> Result<Self, ApiError> {
+    pub fn find(id: Uuid) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let user = users::table
@@ -58,7 +57,7 @@ impl User {
     pub fn find_by_email_password(
         email: String,
         password: String
-    ) -> Result<Self, ApiError> {
+    ) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let user = users::table
@@ -71,7 +70,7 @@ impl User {
         Ok(user)
     }
 
-    pub fn find_by_internal_id(id: i32) -> Result<Self, ApiError> {
+    pub fn find_by_internal_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let user = users::table
@@ -81,7 +80,7 @@ impl User {
         Ok(user)
     }
 
-    pub fn create(user: UserMessage) -> Result<Self, ApiError> {
+    pub fn create(user: UserMessage) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
         let user = InsertableUser::from(user);
         let user = diesel::insert_into(users::table)
@@ -91,7 +90,7 @@ impl User {
         Ok(user)
     }
 
-    pub fn update(id: Uuid, user: UserMessage) -> Result<Self, ApiError> {
+    pub fn update(id: Uuid, user: UserMessage) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let user = diesel::update(users::table)
@@ -103,7 +102,7 @@ impl User {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, ApiError> {
+    pub fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
@@ -116,7 +115,7 @@ impl User {
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, ApiError> {
+    pub fn delete_self(&self) -> Result<usize, DataError> {
         User::delete(self.id)
     }
 
@@ -132,6 +131,18 @@ impl User {
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
         }
+    }
+
+    #[cfg(test)]
+    pub fn delete_all() -> Result<usize, DataError> {
+        let mut conn = db::connection()?;
+
+        let res = diesel::delete(
+            users::table
+        )
+            .execute(&mut conn)?;
+
+        Ok(res)
     }
 }
 

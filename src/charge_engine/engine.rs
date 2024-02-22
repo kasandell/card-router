@@ -7,13 +7,17 @@ use crate::adyen_service::checkout::service::{
     ChargeService,
     AdyenChargeServiceTrait
 };
+use crate::asa::request::AsaRequest;
 use crate::charge_engine::entity::{
     ChargeEngineResult,
     ChargeCardAttemptResult
 };
-use crate::charge_engine::error::Error;
+use crate::passthrough_card::entity::PassthroughCard;
+use crate::service_error::ServiceError;
+use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
+use crate::transaction::engine::Engine as Ledger;
 
 pub struct Engine {
     charge_service: Box<dyn AdyenChargeServiceTrait>,
@@ -50,40 +54,97 @@ impl Engine {
         }
     }
 
+    pub async fn charge_from_asa_request(
+        &self,
+        request: &AsaRequest,
+        wallet: &Vec<Wallet>
+    ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ServiceError> {
+        let metadata = TransactionMetadata::from(request);
+        let passthrough_card = PassthroughCard::get_by_token(request.token.clone())?;
+        let user = User::find_by_internal_id(passthrough_card.user_id)?;
+        let rtx = Ledger::register_transaction_for_user(
+            &user,
+            &metadata
+        )?;
+
+        let (charge_result, ledger) = self.charge_wallet(
+            &user,
+            wallet,
+            &metadata,
+            &rtx
+        ).await?;
+        return match charge_result {
+            ChargeEngineResult::Approved => {
+                if let Some(ledger) = ledger {
+                    // TODO: should verify that this is success
+                    let outer_successs = Ledger::register_successful_outer_charge(
+                        &rtx,
+                        &metadata,
+                        &passthrough_card
+                    )?;
+
+                    let full_txn = Ledger::register_full_transaction(
+                        &rtx,
+                        &ledger,
+                        &outer_successs
+                    )?;
+                    Ok((charge_result, Some(full_txn)))
+
+                } else {
+                    Ledger::register_failed_outer_charge(
+                        &rtx,
+                        &metadata,
+                        &passthrough_card
+                    )?;
+                    Err(ServiceError::new(500, "Approved inner charge with no ledger entry, should not be possible".to_string()))
+                }
+            },
+            _ => {
+                Ledger::register_failed_outer_charge(
+                    &rtx,
+                    &metadata,
+                    &passthrough_card
+                )?;
+                Ok((charge_result, None))
+
+            }
+        }
+    }
+
     pub async fn charge_wallet(
         &self,
         user: &User,
         wallet: &Vec<Wallet>,
-        amount_cents: i32,
-        mcc: &str,
-        statement: &str,
-    ) -> Result<ChargeEngineResult, Error> {
+        transaction_metadata: &TransactionMetadata,
+        registered_transaction: &RegisteredTransaction
+    ) -> Result<(ChargeEngineResult, Option<InnerChargeLedger>), ServiceError> {
         // iterate through the users wallet, charging one and ONLY ONE card
         let idempotency_key = Uuid::new_v4();
         let mut success_charge = false;
         let mut codes : Vec<ChargeCardAttemptResult> = vec![];
+        let mut ledger_res: Option<InnerChargeLedger> = None;
         info!("Charging {} cards for user={}", wallet.len(), user.id);
         for card in wallet {
             if success_charge { break; }
-            if let Ok(charge_attempt) = self.charge_card_with_cleanup(
+            if let Ok((charge_attempt, ledger)) = self.charge_card_with_cleanup(
                 idempotency_key,
                 card,
                 user,
-                amount_cents,
-                mcc,
-                statement,
+                transaction_metadata,
+                registered_transaction
             ).await {
                 info!("Successfully charged card={} for user={}", card.id, user.id);
                 success_charge = bool::from(&charge_attempt);
+                ledger_res = ledger;
                 codes.push(charge_attempt)
 
             }
         }
         if success_charge {
-            Ok(ChargeEngineResult::Approved)
+            Ok((ChargeEngineResult::Approved, ledger_res))
 
         } else {
-            Ok(ChargeEngineResult::Denied)
+            Ok((ChargeEngineResult::Denied, ledger_res))
         }
     }
 
@@ -92,19 +153,18 @@ impl Engine {
         idempotency_key: Uuid,
         card: &Wallet,
         user: &User,
-        amount_cents: i32,
-        mcc: &str,
-        statement: &str,
-    ) -> Result<ChargeCardAttemptResult, Error> {
+        transaction_metadata: &TransactionMetadata,
+        registered_transaction: &RegisteredTransaction
+    ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ServiceError> {
         let resp = self.charge_service.charge_card_on_file(
             ChargeCardRequest {
-                amount_cents: amount_cents,
-                mcc: mcc.to_string(),
+                amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
+                mcc: transaction_metadata.mcc.to_string(),
                 payment_method_id: card.payment_method_id.clone(),
                 customer_public_id: user.public_id.clone(),
                 idempotency_key: idempotency_key.to_string(),
                 reference: Uuid::new_v4().to_string(), // TODO: this will later be done with what we put in ledger for attempts
-                statement: statement.to_string(),
+                statement: transaction_metadata.memo.clone(),
             }
         );
 
@@ -113,11 +173,23 @@ impl Engine {
                 info!("Checkout returned code={:?} for card={} user={}", code, card.id, user.id);
                 if ACCEPTABLE_STATUSES.contains(&code) {
                     info!("Charged card={} for user={}", card.id, user.id);
-                    return Ok(ChargeCardAttemptResult::from(code));
+                    let ledger_entry = Ledger::register_successful_inner_charge(
+                        registered_transaction,
+                        transaction_metadata,
+                        card
+                    )?;
+                    return Ok((ChargeCardAttemptResult::from(code), Some(ledger_entry)));
+
+
                     //add to ledger
                 } else if FINAL_STATE_ERROR_CODES.contains(&code) {
                     warn!("Error charging card={} for user={}", card.id, user.id);
-                    return Ok(ChargeCardAttemptResult::Denied);
+                    let ledger_entry = Ledger::register_failed_inner_charge(
+                        registered_transaction,
+                        transaction_metadata,
+                        card
+                    )?;
+                    return Ok((ChargeCardAttemptResult::Denied, Some(ledger_entry)));
                     //can safely bypass this branch
                 } else {
                     warn!("Intermediate state needs cleanup for card={} for user={}", card.id, user.id);
@@ -127,17 +199,27 @@ impl Engine {
                         );
                         if let Ok(cancel) = cancel {
                             info!("Cancelled with status: {:?}", cancel.status);
-                            return Ok(ChargeCardAttemptResult::PartialCancelSucceeded);
+                            let ledger_entry = Ledger::register_failed_inner_charge(
+                                registered_transaction,
+                                transaction_metadata,
+                                card
+                            )?;
+                            return Ok((ChargeCardAttemptResult::PartialCancelSucceeded, Some(ledger_entry)));
                             //cancel received. block on webhook response?
                         } else {
                             error!("Error cancelling unsuccessful payment with psp={}", psp);
-                            return Ok(ChargeCardAttemptResult::PartialCancelFailed);
+                            let ledger_entry = Ledger::register_failed_inner_charge(
+                                registered_transaction,
+                                transaction_metadata,
+                                card
+                            )?;
+                            return Ok((ChargeCardAttemptResult::PartialCancelFailed, Some(ledger_entry)));
                             // error cancelling. figure out what to do
                         }
                     }
                 }
             }
         }
-        Ok(ChargeCardAttemptResult::Denied)
+        Ok((ChargeCardAttemptResult::Denied, None))
     }
 }

@@ -42,3 +42,5 @@ DATABASE_URL=""
 ADYEN_API_KEY=""
 ADYEN_MERCHANT_ACCOUNT_NAME=""
 
+# TODOs:
+Restructure data in such a way that we can mock it. ie without having to actually hit db for tests

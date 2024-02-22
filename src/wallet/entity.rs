@@ -6,7 +6,7 @@ use crate::{schema::{
     credit_card_type
 }, credit_card_type::entity::{CreditCardType,CreditCard,CreditCardIssuer}};
 use crate::util::db;
-use crate::api_error::ApiError;
+use crate::data_error::DataError;
 use crate::user::entity::User;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
@@ -101,7 +101,7 @@ pub struct DisplayableCardInfo {
 }
 
 impl Wallet {
-    pub fn find_all_for_user(user: &User) -> Result<Vec<Self>, ApiError> {
+    pub fn find_all_for_user(user: &User) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection()?;
         //let cards = Wallet::belonging_to(&user).load::<Wallet>(&mut conn)?;
         let cards = wallet::table.filter(
@@ -111,7 +111,7 @@ impl Wallet {
     }
 
     /**/
-    pub fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, ApiError> {
+    pub fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
         let mut conn = db::connection()?;
         let cards = wallet::table
         .inner_join(
@@ -127,7 +127,7 @@ impl Wallet {
         Ok(cards)
     }
 
-    pub fn insert_card(card: NewCard) -> Result<Self, ApiError> {
+    pub fn insert_card(card: NewCard) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
         let insertable_card = InsertableCard::from(card);
         let inserted_card = diesel::insert_into(wallet::table)
@@ -138,7 +138,7 @@ impl Wallet {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, ApiError> {
+    pub fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
@@ -150,7 +150,7 @@ impl Wallet {
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, ApiError> {
+    pub fn delete_self(&self) -> Result<usize, DataError> {
         Wallet::delete(self.id)
     }
 }
@@ -191,7 +191,7 @@ impl Wallet {
     pub fn create_test_wallet_in_db(
         user_id: i32,
         credit_card_id: i32
-    ) -> Result<(Self, WalletCardAttempt), ApiError> {
+    ) -> Result<(Self, WalletCardAttempt), DataError> {
         let ca = WalletCardAttempt::insert(
             InsertableCardAttempt {
                 user_id: user_id,
@@ -213,7 +213,7 @@ impl Wallet {
 }
 
 impl WalletCardAttempt {
-    pub fn insert(card_attempt: InsertableCardAttempt) -> Result<Self, ApiError> {
+    pub fn insert(card_attempt: InsertableCardAttempt) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let wallet = diesel::insert_into(wallet_card_attempt::table)
@@ -222,7 +222,7 @@ impl WalletCardAttempt {
         Ok(wallet)
     }
 
-    pub fn find_by_reference_id(reference: String) -> Result<Self, ApiError> {
+    pub fn find_by_reference_id(reference: String) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let card_attempt = wallet_card_attempt::table
@@ -232,7 +232,7 @@ impl WalletCardAttempt {
         Ok(card_attempt)
     }
 
-    pub fn update_card(id: i32, card: UpdateCardAttempt) -> Result<Self, ApiError> {
+    pub fn update_card(id: i32, card: UpdateCardAttempt) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let wallet = diesel::update(wallet_card_attempt::table)
@@ -243,7 +243,7 @@ impl WalletCardAttempt {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, ApiError> {
+    pub fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
@@ -255,7 +255,7 @@ impl WalletCardAttempt {
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, ApiError> {
+    pub fn delete_self(&self) -> Result<usize, DataError> {
         WalletCardAttempt::delete(self.id)
     }
 }

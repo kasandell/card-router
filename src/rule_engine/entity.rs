@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
-use crate::api_error::ApiError;
+use crate::data_error::DataError;
 use crate::util::math::{
     get_cents_of_cashback,
     get_number_of_points
@@ -45,7 +45,7 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn create(new_rule: CreateRuleRequest) -> Result<Self, ApiError> {
+    pub fn create(new_rule: CreateRuleRequest) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
         let rule = diesel::insert_into(rule::table)
             .values(InsertableRule::from(new_rule))
@@ -53,7 +53,7 @@ impl Rule {
         Ok(rule)
     }
 
-    pub fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, ApiError> {
+    pub fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection()?;
 
         let rules = rule::table
@@ -117,7 +117,7 @@ impl Rule {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, ApiError> {
+    pub fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection()?;
 
         let res = diesel::delete(
@@ -129,7 +129,7 @@ impl Rule {
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, ApiError> {
+    pub fn delete_self(&self) -> Result<usize, DataError> {
         Rule::delete(self.id)
     }
 }
