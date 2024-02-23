@@ -11,10 +11,8 @@ use super::engine::Engine;
 async fn create_card(
     user: web::ReqData<User>
 ) -> Result<HttpResponse, ApiError> {
-    println!("HEI");
     let user = user.into_inner();
     let engine = Engine::new();
-    println!("HI");
     let card = engine.issue_card_to_user(&user, "1234".to_string()).await?;
     Ok(
         HttpResponse::Ok().json(
@@ -35,7 +33,6 @@ async fn get_card(
     let user = user.into_inner();
     let engine = Engine::new();
     return if let Some(card) = engine.get_active_card_for_user(&user).await? {
-        println!("FOUND A CARD");
         Ok(
             HttpResponse::Ok().json(
                 PassthroughCardResposnse {
@@ -47,7 +44,6 @@ async fn get_card(
             )
         )
     } else {
-        println!("DID NOT FIND A CARD");
         Ok(
             HttpResponse::NotFound().finish()
         )

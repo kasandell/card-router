@@ -15,7 +15,6 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 
 fn run_migration(conn: &mut impl MigrationHarness<DB>) {
-    println!("In run migrations");
     conn.run_pending_migrations(MIGRATIONS).unwrap();
 }
 
@@ -29,7 +28,6 @@ lazy_static! {
         };
         let mut builder = r2d2::Pool::builder();
         if cfg!(test) {
-            println!("RUNNING TEST POOL");
             warn!("Running test pool");
             builder = builder.connection_customizer(Box::new(TestConnectionCustomizer));
         }
@@ -61,7 +59,6 @@ where
     fn on_acquire(&self, conn: &mut C) -> Result<(), E> {
         conn.begin_test_transaction()
             .expect("Failed to start test transaction");
-        println!("Executing test transaction");
         Ok(())
     }
 }

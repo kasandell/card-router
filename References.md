@@ -44,3 +44,10 @@ ADYEN_MERCHANT_ACCOUNT_NAME=""
 
 # TODOs:
 Restructure data in such a way that we can mock it. ie without having to actually hit db for tests
+
+fix openapi bug: 
+in patch card
+line 618
+let local_var_uri_str = format!("{}/cards/{card_token}", local_var_configuration.base_path,
+    card_token=card_token.as_str().ok_or(Error::Io(io::Error::new(Other, "")))?
+);

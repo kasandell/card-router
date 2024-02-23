@@ -18,7 +18,6 @@ mod tests {
 
         let mut app = test::init_service(App::new().configure(config)).await;
         let resp = TestRequest::post().uri("/").set_json(&request_body).send_request(&mut app).await;
-        println!("{:?}", resp);
         assert!(resp.status().is_success(), "Failed to create user");
         let user: User = test::read_body_json(resp).await;
         assert_eq!(user.email, "test@example.com", "Found wrong user");

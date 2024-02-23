@@ -50,7 +50,6 @@ mod tests {
         assert_eq!(wallet_returned[0].credit_card_id, 2);
         assert_eq!(wallet_returned[1].credit_card_id, 1);
         assert_eq!(wallet_returned.len(), 2);
-        println!("{:?}", wallet_returned);
     }
 
 
@@ -89,7 +88,6 @@ mod tests {
         assert_eq!(wallet_returned[0].credit_card_id, 2);
         assert_eq!(wallet_returned[1].credit_card_id, 1);
         assert_eq!(wallet_returned.len(), 2);
-        println!("{:?}", wallet_returned);
     }
 
     #[actix_web::test]

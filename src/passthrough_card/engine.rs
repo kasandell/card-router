@@ -11,6 +11,7 @@ use crate::lithic_service::{
     service::LithicService,
     service::LithicServiceTrait,
 };
+use crate::passthrough_card::crypto::encrypt_pin;
 
 pub struct Engine {
     pub lithic_service: Box<dyn LithicServiceTrait>
@@ -33,18 +34,16 @@ impl Engine {
         user: &User,
         pin: String
     ) -> Result<PassthroughCard, ServiceError> {
-        println!("HI");
         let has_active = self.user_has_active_card(&user).await?;
         if has_active {
             return Err(ServiceError::new(409, "User has active card already".to_string()))
         }
         let idempotency_key = Uuid::new_v4();
-        let pin_encoded = general_purpose::STANDARD_NO_PAD.encode(pin);
+        let pin_encoded = encrypt_pin(pin);
         let lithic_card = self.lithic_service.create_card(
             pin_encoded,
             idempotency_key
         ).await?;
-        println!("NOT FUCKING WORKING");
         let inserted_card = PassthroughCard::create_from_api_card(
             &lithic_card,
             &user
@@ -54,11 +53,18 @@ impl Engine {
                 return Ok(card)
             }
             Err(e) => {
+                println!("{}", e.message);
                 let closed = self.close_lithic_card(&lithic_card.token.to_string()).await;
+                println!("Closed card");
                 match closed {
-                    Ok(card) => info!("Rolled back lithic card successfully"),
+                    Ok(card) => {
+                        info!("Rolled back lithic card successfully");
+                        println!("Rolled back lithic card successfully");
+                    },
                     Err(err) => {
                         error!("Unable to close lithic card");
+                        println!("Unable to close lithic card");
+                        println!("{}", err.message);
                         return Err(err);
                     }
                 }
@@ -88,37 +94,44 @@ impl Engine {
 
         info!("Updated card={} for userId={}", card.id, user.id);
 
-        /*
         let lithic_result = match &status {
-            PassthroughCardStatus::CLOSED => self.close_lithic_card(&updated.token),
-            PassthroughCardStatus::OPEN => self.activate_lithic_card(&updated.token),
-            PassthroughCardStatus::PAUSED =>  self.pause_lithic_card(&updated.token),
+            PassthroughCardStatus::CLOSED => self.close_lithic_card(&updated.token).await,
+            PassthroughCardStatus::OPEN => self.activate_lithic_card(&updated.token).await,
+            PassthroughCardStatus::PAUSED =>  self.pause_lithic_card(&updated.token).await,
             _ => Err(ServiceError::new(500, "Invalid state transition from engine".to_string()))
         };
 
         return match lithic_result {
             Ok(card) => {
                 info!("Successfully updated lithic status for cardId={} token={}", updated.id, updated.token);
+                println!("Successfully updated lithic status for cardId={} token={}", updated.id, updated.token);
                 Ok(())
             },
             Err(e) => {
                 // we really want to rollback here
                 // will figure out later. for now logs
                 error!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
+                println!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
                 let rollback = PassthroughCard::update_status(
                     updated.id,
                     PassthroughCardStatus::from(&*previous_status)
                 );
 
                 match rollback {
-                    Ok(card) => info!("Rolled back internal status successfully"),
-                    Err(e) => error!("Error rolling back internal status")
+                    Ok(card) => {
+                        info!("Rolled back internal status successfully");
+                        println!("Rolled back internal status successfully");
+
+                    },
+                    Err(e) => {
+                        error!("Error rolling back internal status");
+                        println!("Error rolling back internal status");
+                    }
                 }
                 Err(e)
             }
         };
-         */
-        Ok(())
+        //Ok(())
     }
 
     pub async fn find_card_for_user_in_status(

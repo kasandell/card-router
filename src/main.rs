@@ -16,6 +16,7 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 use uuid::Uuid;
 use crate::lithic_service::service::{LithicService, LithicServiceTrait};
+use crate::passthrough_card::crypto::encrypt_pin;
 
 
 mod adyen_service;
@@ -55,19 +56,13 @@ async fn manual_hello() -> impl Responder {
 #[tokio::main(flavor = "multi_thread", worker_threads = 32)]
 async fn main() -> std::io::Result<()> {
     console_subscriber::init();
-    println!("HELLO");
-    warn!("HI");
     dotenv().ok();
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
     util::db::init();
-    println!("made it out cuh");
     let lithic = LithicService::new();
-    println!("getting registered");
     let idempotency_key = Uuid::new_v4().to_string();
-    let resp = lithic.register_webhook(idempotency_key).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
-    println!("{}", resp.token.clone());
-    warn!("{}", resp.token.clone());
+    //let resp = lithic.register_webhook(idempotency_key).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
 
     HttpServer::new(move || {
         App::new()
@@ -85,7 +80,7 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await?;
 
-    lithic.deregister_webhook(resp.token).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
+    //lithic.deregister_webhook(resp.token).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
 
     Ok(())
 }

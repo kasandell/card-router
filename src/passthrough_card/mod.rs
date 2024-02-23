@@ -7,3 +7,4 @@ pub mod tests;
 pub mod config;
 pub mod response;
 pub mod dao;
+pub mod crypto;

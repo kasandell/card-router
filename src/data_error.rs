@@ -35,7 +35,22 @@ impl From<DieselError> for DataError {
     fn from(error: DieselError) -> DataError {
         info!("Converting from diesel error");
         match error {
-            DieselError::DatabaseError(_, err) => DataError::new(500, err.message().to_string()),
+            DieselError::DatabaseError(kind, err) => {
+                /*
+                    ForeignKeyViolation,
+                    UnableToSendCommand,
+                    SerializationFailure,
+                    ReadOnlyTransaction,
+                    NotNullViolation,
+                    CheckViolation,
+                    ClosedConnection,
+                 */
+                match kind {
+                    _UniqueViolation => DataError::new(409, err.message().to_string()),
+                    _ => DataError::new(500, err.message().to_string())
+                }
+
+            },
             DieselError::NotFound => DataError::new(404, "Record not found".to_string()),
             err => DataError::new(500, format!("Diesel error: {}", err)),
         }

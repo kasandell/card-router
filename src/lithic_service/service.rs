@@ -4,7 +4,7 @@ use lithic_client::apis::card_api::{patch_card_by_token, post_cards};
 use lithic_client::apis::event_api::{create_event_subscription, delete_event_subscription};
 use lithic_client::apis::configuration::{ApiKey, Configuration};
 use lithic_client::models::event_subscription::EventSubscription;
-use lithic_client::models::patch_card_by_token_request::State as PatchState;
+use lithic_client::models::patch_card_by_token_request::{SpendLimitDuration, State as PatchState};
 use lithic_client::models::post_cards_request::{
     State,
     Type
@@ -14,6 +14,10 @@ use uuid::Uuid;
 use crate::constant::env_key;
 use super::error::Error as LithicError;
 use async_trait::async_trait;
+use base64::Engine;
+use base64::engine::general_purpose;
+use serde_json::json;
+use crate::passthrough_card::crypto::encrypt_pin;
 
 
 #[mockall::automock]
@@ -65,17 +69,10 @@ impl LithicService {
         };
         cfg.base_path = base_path.clone();
 
-        println!("base path");
-        println!("{}", base_path);
-
         cfg.api_key = Some(ApiKey {
             prefix: None,
             key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
         });
-
-        println!("{:?}", cfg.api_key);
-
-        println!("{:?}", env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key"));
 
         let mut client = reqwest::Client::builder()
             .timeout(Duration::from_secs(10))
@@ -98,7 +95,6 @@ impl LithicServiceTrait for LithicService {
         pin_str: String,
         idempotency_key: Uuid,
     ) -> Result<Card, LithicError> {
-        println!("IN CREATE CARD REQUEST");
         Ok(
             post_cards(&self.configuration, PostCardsRequest {
                 account_token: None, // might need
@@ -163,14 +159,15 @@ impl LithicServiceTrait for LithicService {
         Ok(
             patch_card_by_token(
                 &self.configuration,
-                serde_json::to_value(card_token).expect("card should go to value"),
+                serde_json::Value::String(card_token),
                 PatchCardByTokenRequest {
                     memo: None,
                     spend_limit: None,
-                    spend_limit_duration: None,
+                    spend_limit_duration: Some(SpendLimitDuration::Forever),
                     auth_rule_token: None,
-                    state: state,
-                    pin: pin,
+                    state,
+                    //Some(encrypt_pin("1234".to_string())),
+                    pin: None,
                     digital_card_art_token: None,
                 }
             ).await?
@@ -178,9 +175,6 @@ impl LithicServiceTrait for LithicService {
     }
 
     async fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError> {
-        println!("registering");
-        println!("i mean fuck bruh");
-        println!("{:?}", &self.configuration);
         Ok(
             create_event_subscription(
                 &self.configuration,
