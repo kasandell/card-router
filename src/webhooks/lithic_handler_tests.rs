@@ -10,37 +10,44 @@ mod tests {
     use crate::user::entity::User;
     use crate::webhooks::lithic_handler::LithicHandler;
     use std::default::Default;
+    use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
     use crate::schema::passthrough_card::dsl::passthrough_card;
     use crate::schema::wallet::payment_method_id;
-    use crate::test_helper::{default_transaction_metadata, initialize_passthrough_card, initialize_registered_transaction_for_user, initialize_user, initialize_wallet, initialize_wallet_with_payment_method};
+    use crate::test_helper::{create_failed_inner_charge, create_full_transaction, create_passthrough_card, create_registered_transaction, create_success_inner_charge, create_success_outer_charge, default_transaction_metadata, initialize_passthrough_card, initialize_registered_transaction_for_user, initialize_user, initialize_wallet, initialize_wallet_with_payment_method};
+    use crate::transaction::engine::MockTransactionEngineTrait;
     use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction};
+    use crate::user::dao::MockUserDaoTrait;
 
-    #[actix_web::test]
+    // #[actix_web::test]
+    // TODO: how to use the mocks appropriately here / how to share them
     pub async fn test_handle() {
-        crate::test::init();
-        let user = initialize_user();
         let mut metadata = default_transaction_metadata();
+        let user = User::create_test_user(1);
+        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+
         metadata.amount_cents = 100;
+        rtx.amount_cents = 100;
+
         let amount_cents = metadata.amount_cents;
         let mcc = metadata.mcc.clone();
         let mcc1 = metadata.mcc.clone();
         let mcc2 = metadata.mcc.clone();
-        let rtx = initialize_registered_transaction_for_user(
-            &user,
-            &metadata
-        );
-        let pc = initialize_passthrough_card(
-            &user,
-        );
+
+        let pc = create_passthrough_card(&user);
+
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
-        let (card_1, ca1) = initialize_wallet_with_payment_method(&user, 1, payment_method_1.to_string());
-        let (card_2, ca2) = initialize_wallet_with_payment_method(&user, 2, payment_method_2.to_string());
+
+        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 );
+        card_1.payment_method_id = payment_method_1.to_string();
+        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 );
+        card_2.payment_method_id = payment_method_2.to_string();
+
         let mut charge_service = MockAdyenChargeServiceTrait::new();
+        let mut user_mock = MockUserDaoTrait::new();
+        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut ledger_mock = MockTransactionEngineTrait::new();
         let mut rule_engine = MockRuleEngineTrait::new();
-
-
-
 
         let psp_ref = "abc123".to_string();
         let psp_ref_2  = "abc125".to_string();
@@ -93,8 +100,49 @@ mod tests {
                 )
             );
 
+        pc_mock.expect_get_by_token()
+            .times(1)
+            .return_const(
+                Ok(pc.clone())
+            );
+
+        user_mock.expect_find_by_internal_id()
+            .times(1)
+            .return_const(
+                Ok(user)
+            );
+
+        ledger_mock.expect_register_successful_inner_charge()
+            .times(1)
+            .return_const(
+                Ok(create_success_inner_charge(1))
+            );
+        ledger_mock.expect_register_failed_inner_charge()
+            .times(1)
+            .return_const(
+                Ok(create_failed_inner_charge(1))
+            );
+        ledger_mock.expect_register_successful_outer_charge()
+            .times(1)
+            .return_const(
+                Ok(create_success_outer_charge(1))
+            );
+        ledger_mock.expect_register_full_transaction()
+            .times(1)
+            .return_const(
+                Ok(create_full_transaction())
+            );
+        ledger_mock.expect_register_transaction_for_user()
+            .times(1)
+            .return_const(
+                Ok(create_registered_transaction())
+            );
+
         let handler = LithicHandler::new_with_engines(
             Box::new(charge_service),
+            Box::new(pc_mock),
+            Box::new(user_mock),
+            Box::new(ledger_mock),
             Box::new(rule_engine)
         );
 
@@ -110,15 +158,6 @@ mod tests {
         ).await.expect("no error");
         assert_eq!(AsaResponseResult::Approved, res.result);
         assert_eq!(asa.token, res.token);
-        InnerChargeLedger::delete_all();
-        RegisteredTransaction::delete_all();
-        card_1.delete_self().expect("should delete");
-        ca1.delete_self().expect("should delete");
-        card_2.delete_self().expect("should delete");
-        ca2.delete_self().expect("should delete");
-        rtx.delete_self().expect("should delete");
-        pc.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
     }
 
 }

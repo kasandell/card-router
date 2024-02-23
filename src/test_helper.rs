@@ -1,7 +1,9 @@
+use chrono::{NaiveDate, Utc};
 use uuid::Uuid;
 use crate::data_error::DataError;
 use crate::passthrough_card::entity::{create_test_lithic_card, PassthroughCard};
-use crate::transaction::entity::{InsertableRegisteredTransaction, RegisteredTransaction, TransactionMetadata};
+use crate::transaction::constant::ChargeStatus;
+use crate::transaction::entity::{InnerChargeLedger, InsertableRegisteredTransaction, OuterChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::{User, UserMessage};
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt};
 
@@ -101,5 +103,112 @@ pub fn default_transaction_metadata() -> TransactionMetadata {
         amount_cents: 0,
         memo: "".to_string(),
         mcc: "7184".to_string()
+    }
+}
+
+
+#[cfg(test)]
+pub fn create_user_in_mem(id: i32) -> User {
+    User::create_test_user(id)
+}
+
+#[cfg(test)]
+pub fn create_failed_inner_charge(user_id: i32) -> InnerChargeLedger {
+    InnerChargeLedger {
+        id: 1,
+        registered_transaction_id: Uuid::new_v4(),
+        user_id: user_id,
+        wallet_card_id: 1,
+        amount_cents: 0,
+        status: ChargeStatus::Fail.as_str(),
+        is_success: None,
+        created_at: Utc::now().naive_utc(),
+        updated_at: Utc::now().naive_utc()
+    }
+}
+
+#[cfg(test)]
+pub fn create_success_inner_charge(user_id: i32) -> InnerChargeLedger {
+    InnerChargeLedger {
+        id: 1,
+        registered_transaction_id: Uuid::new_v4(),
+        user_id: user_id,
+        wallet_card_id: 1,
+        amount_cents: 0,
+        status: ChargeStatus::Success.as_str(),
+        is_success: Some(true),
+        created_at: Utc::now().naive_utc(),
+        updated_at: Utc::now().naive_utc()
+    }
+}
+
+#[cfg(test)]
+pub fn create_failed_outer_charge(user_id: i32) -> OuterChargeLedger {
+    OuterChargeLedger {
+        id: 1,
+        registered_transaction_id: Uuid::new_v4(),
+        user_id: user_id,
+        passthrough_card_id: 1,
+        amount_cents: 0,
+        status: ChargeStatus::Fail.as_str(),
+        is_success: None,
+        created_at: Utc::now().naive_utc(),
+        updated_at: Utc::now().naive_utc()
+    }
+}
+
+#[cfg(test)]
+pub fn create_success_outer_charge(user_id: i32) -> OuterChargeLedger {
+    OuterChargeLedger {
+        id: 1,
+        registered_transaction_id: Uuid::new_v4(),
+        user_id: user_id,
+        passthrough_card_id: 1,
+        amount_cents: 0,
+        status: ChargeStatus::Success.as_str(),
+        is_success: Some(true),
+        created_at: Utc::now().naive_utc(),
+        updated_at: Utc::now().naive_utc()
+    }
+}
+
+#[cfg(test)]
+pub fn create_full_transaction() -> TransactionLedger {
+    TransactionLedger {
+        id: 1,
+        transaction_id: Default::default(),
+        inner_charge_ledger_id: 1,
+        outer_charge_ledger_id: 1,
+    }
+}
+
+#[cfg(test)]
+pub fn create_registered_transaction() -> RegisteredTransaction {
+    RegisteredTransaction {
+        id: 1,
+        user_id: 1,
+        transaction_id: Default::default(),
+        memo: "".to_string(),
+        amount_cents: 0,
+        mcc: "".to_string(),
+    }
+}
+
+#[cfg(test)]
+pub fn create_passthrough_card(
+    user: &User
+) -> PassthroughCard {
+    PassthroughCard {
+        id: 0,
+        public_id: Default::default(),
+        passthrough_card_status: "".to_string(),
+        is_active: Some(true),
+        user_id: user.id,
+        token: "".to_string(),
+        expiration: NaiveDate::MAX,
+        last_four: "1234".to_string(),
+        passthrough_card_type: "VIRTUAL".to_string(),
+        created_at: Default::default(),
+        updated_at: Default::default(),
     }
 }

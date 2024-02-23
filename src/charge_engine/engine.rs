@@ -12,15 +12,19 @@ use crate::charge_engine::entity::{
     ChargeEngineResult,
     ChargeCardAttemptResult
 };
-use crate::passthrough_card::entity::PassthroughCard;
+use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::service_error::ServiceError;
 use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
-use crate::transaction::engine::Engine as Ledger;
+use crate::transaction::engine::{Engine as Ledger, TransactionEngineTrait};
+use crate::user::dao::{UserDao, UserDaoTrait};
 
 pub struct Engine {
     charge_service: Box<dyn AdyenChargeServiceTrait>,
+    passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
+    user_dao: Box<dyn UserDaoTrait>,
+    ledger: Box<dyn TransactionEngineTrait>
 }
 
 lazy_static! {
@@ -43,14 +47,25 @@ impl Engine {
 
     pub fn new() -> Self {
        Self {
-           charge_service: Box::new(ChargeService{})
+           charge_service: Box::new(ChargeService{}),
+           passthrough_card_dao: Box::new(PassthroughCardDao{}),
+           user_dao: Box::new(UserDao{}),
+           ledger: Box::new(Ledger::new())
        }
     }
 
     #[cfg(test)]
-    pub fn new_with_service(charge_service: Box<dyn AdyenChargeServiceTrait>) -> Self {
+    pub fn new_with_service(
+        charge_service: Box<dyn AdyenChargeServiceTrait>,
+        passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
+        user_dao: Box<dyn UserDaoTrait>,
+        ledger: Box<dyn TransactionEngineTrait>,
+    ) -> Self {
         Self {
-            charge_service
+            charge_service,
+            passthrough_card_dao,
+            user_dao,
+            ledger
         }
     }
 
@@ -60,9 +75,9 @@ impl Engine {
         wallet: &Vec<Wallet>
     ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ServiceError> {
         let metadata = TransactionMetadata::from(request);
-        let passthrough_card = PassthroughCard::get_by_token(request.token.clone())?;
-        let user = User::find_by_internal_id(passthrough_card.user_id)?;
-        let rtx = Ledger::register_transaction_for_user(
+        let passthrough_card = self.passthrough_card_dao.get_by_token(request.token.clone())?;
+        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id)?;
+        let rtx = self.ledger.register_transaction_for_user(
             &user,
             &metadata
         )?;
@@ -77,13 +92,13 @@ impl Engine {
             ChargeEngineResult::Approved => {
                 if let Some(ledger) = ledger {
                     // TODO: should verify that this is success
-                    let outer_successs = Ledger::register_successful_outer_charge(
+                    let outer_successs = self.ledger.register_successful_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
                     )?;
 
-                    let full_txn = Ledger::register_full_transaction(
+                    let full_txn = self.ledger.register_full_transaction(
                         &rtx,
                         &ledger,
                         &outer_successs
@@ -91,7 +106,7 @@ impl Engine {
                     Ok((charge_result, Some(full_txn)))
 
                 } else {
-                    Ledger::register_failed_outer_charge(
+                    self.ledger.register_failed_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
@@ -100,7 +115,7 @@ impl Engine {
                 }
             },
             _ => {
-                Ledger::register_failed_outer_charge(
+                self.ledger.register_failed_outer_charge(
                     &rtx,
                     &metadata,
                     &passthrough_card
@@ -173,7 +188,7 @@ impl Engine {
                 info!("Checkout returned code={:?} for card={} user={}", code, card.id, user.id);
                 if ACCEPTABLE_STATUSES.contains(&code) {
                     info!("Charged card={} for user={}", card.id, user.id);
-                    let ledger_entry = Ledger::register_successful_inner_charge(
+                    let ledger_entry = self.ledger.register_successful_inner_charge(
                         registered_transaction,
                         transaction_metadata,
                         card
@@ -184,7 +199,7 @@ impl Engine {
                     //add to ledger
                 } else if FINAL_STATE_ERROR_CODES.contains(&code) {
                     warn!("Error charging card={} for user={}", card.id, user.id);
-                    let ledger_entry = Ledger::register_failed_inner_charge(
+                    let ledger_entry = self.ledger.register_failed_inner_charge(
                         registered_transaction,
                         transaction_metadata,
                         card
@@ -199,7 +214,7 @@ impl Engine {
                         );
                         if let Ok(cancel) = cancel {
                             info!("Cancelled with status: {:?}", cancel.status);
-                            let ledger_entry = Ledger::register_failed_inner_charge(
+                            let ledger_entry = self.ledger.register_failed_inner_charge(
                                 registered_transaction,
                                 transaction_metadata,
                                 card
@@ -208,7 +223,7 @@ impl Engine {
                             //cancel received. block on webhook response?
                         } else {
                             error!("Error cancelling unsuccessful payment with psp={}", psp);
-                            let ledger_entry = Ledger::register_failed_inner_charge(
+                            let ledger_entry = self.ledger.register_failed_inner_charge(
                                 registered_transaction,
                                 transaction_metadata,
                                 card
@@ -220,6 +235,11 @@ impl Engine {
                 }
             }
         }
-        Ok((ChargeCardAttemptResult::Denied, None))
+        let ledger_entry = self.ledger.register_failed_inner_charge(
+            registered_transaction,
+            transaction_metadata,
+            card
+        )?;
+        Ok((ChargeCardAttemptResult::Denied, Some(ledger_entry)))
     }
 }

@@ -5,15 +5,13 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::data_error::DataError;
-use crate::user::entity::User;
 use crate::util::db;
-use crate::wallet::entity::Wallet;
 
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable)]
 #[diesel(table_name = credit_card)]
-#[diesel(belongs_to(CreditCardIssuer))]//, foreign_key="card_issuer"))]
-#[diesel(belongs_to(CreditCardType))]//, foreign_key="card_type"))]
+#[diesel(belongs_to(CreditCardIssuer))]
+#[diesel(belongs_to(CreditCardType))]
 pub struct CreditCard {
     pub id: i32,
     pub public_id: Uuid,

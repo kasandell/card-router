@@ -8,7 +8,10 @@ use crate::user::entity::User;
 use crate::rule_engine::engine::RuleEngineTrait;
 
 use crate::asa::response::{AsaResponse, AsaResponseResult};
+use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
+use crate::transaction::engine::TransactionEngineTrait;
+use crate::user::dao::{UserDao, UserDaoTrait};
 
 pub struct LithicHandler {
     pub charge_engine: ChargeEngine,
@@ -19,18 +22,26 @@ impl LithicHandler {
     pub fn new() -> Self {
         Self {
             charge_engine: ChargeEngine::new(),
-            rule_engine: Box::new(RuleEngine::new())
+            rule_engine: Box::new(RuleEngine::new()),
         }
     }
 
     #[cfg(test)]
     pub fn new_with_engines(
         charge_service: Box<dyn AdyenChargeServiceTrait>,
+        passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
+        user_dao: Box<dyn UserDaoTrait>,
+        ledger: Box<dyn TransactionEngineTrait>,
         rule_engine: Box<dyn RuleEngineTrait>
     ) -> Self {
         Self {
-            charge_engine: ChargeEngine::new_with_service(charge_service),
-            rule_engine: rule_engine
+            charge_engine: ChargeEngine::new_with_service(
+                charge_service,
+                passthrough_card_dao,
+                user_dao,
+                ledger
+            ),
+            rule_engine: rule_engine,
         }
     }
     pub async fn handle(&self, request: AsaRequest) -> Result<AsaResponse, ApiError>{

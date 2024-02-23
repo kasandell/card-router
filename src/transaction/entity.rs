@@ -180,6 +180,21 @@ impl RegisteredTransaction {
             .execute(&mut conn)?;
         Ok(res)
     }
+
+    #[cfg(test)]
+    pub fn create_test_transaction(
+        user_id: i32,
+        metadata: &TransactionMetadata
+    ) -> Self {
+        RegisteredTransaction {
+            id: 1,
+            user_id,
+            transaction_id: Default::default(),
+            memo: metadata.memo.clone(),
+            amount_cents: metadata.amount_cents,
+            mcc: metadata.mcc.clone()
+        }
+    }
 }
 
 
