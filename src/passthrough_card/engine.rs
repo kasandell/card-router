@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use base64::Engine as base64Engine;
 use uuid::Uuid;
 use crate::user::entity::User;
@@ -27,12 +28,13 @@ impl Engine {
             lithic_service: service
         }
     }
-    pub fn issue_card_to_user(
+    pub async fn issue_card_to_user(
         &self,
         user: &User,
         pin: String
     ) -> Result<PassthroughCard, ServiceError> {
-        let has_active = self.user_has_active_card(&user)?;
+        println!("HI");
+        let has_active = self.user_has_active_card(&user).await?;
         if has_active {
             return Err(ServiceError::new(409, "User has active card already".to_string()))
         }
@@ -41,7 +43,8 @@ impl Engine {
         let lithic_card = self.lithic_service.create_card(
             pin_encoded,
             idempotency_key
-        )?;
+        ).await?;
+        println!("NOT FUCKING WORKING");
         let inserted_card = PassthroughCard::create_from_api_card(
             &lithic_card,
             &user
@@ -51,7 +54,7 @@ impl Engine {
                 return Ok(card)
             }
             Err(e) => {
-                let closed = self.close_lithic_card(&lithic_card.token.to_string());
+                let closed = self.close_lithic_card(&lithic_card.token.to_string()).await;
                 match closed {
                     Ok(card) => info!("Rolled back lithic card successfully"),
                     Err(err) => {
@@ -65,7 +68,7 @@ impl Engine {
     }
 
     // really lets rewrite this to be atomic
-    pub fn update_card_status(
+    pub async fn update_card_status(
         &self,
         user: &User,
         status: PassthroughCardStatus
@@ -74,7 +77,7 @@ impl Engine {
         let card = self.find_card_for_user_in_status(
             &user,
             &status
-        )?;
+        ).await?;
         let previous_status = card.passthrough_card_status;
         info!("Found card={} for userId={}", card.id, user.id);
 
@@ -118,7 +121,7 @@ impl Engine {
         Ok(())
     }
 
-    pub fn find_card_for_user_in_status(
+    pub async fn find_card_for_user_in_status(
         &self,
         user: &User,
         status: &PassthroughCardStatus
@@ -155,7 +158,7 @@ impl Engine {
         }
     }
 
-    pub fn get_active_card_for_user(
+    pub async fn get_active_card_for_user(
         &self,
         user: &User
     ) -> Result<Option<PassthroughCard>, ServiceError> {
@@ -180,11 +183,11 @@ impl Engine {
         Ok(None)
     }
 
-    pub fn user_has_active_card(
+    pub async fn user_has_active_card(
         &self,
         user: &User
     ) -> Result<bool, ServiceError> {
-        if let Some(card) = self.get_active_card_for_user(&user)? {
+        if let Some(card) = self.get_active_card_for_user(&user).await? {
             return Ok(true)
         }
         Ok(false)
@@ -225,27 +228,27 @@ impl Engine {
         )?)
     }
 
-    fn close_lithic_card(
+    async fn close_lithic_card(
         &self,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.close_card(token.to_string())?;
+        let closed = self.lithic_service.close_card(token.to_string()).await?;
         Ok(closed)
     }
 
-    fn pause_lithic_card(
+    async fn pause_lithic_card(
         &self,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.pause_card(token.to_string())?;
+        let closed = self.lithic_service.pause_card(token.to_string()).await?;
         Ok(closed)
     }
 
-    fn activate_lithic_card(
+    async fn activate_lithic_card(
         &self,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.activate_card(token.to_string())?;
+        let closed = self.lithic_service.activate_card(token.to_string()).await?;
         Ok(closed)
     }
 }

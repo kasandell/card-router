@@ -65,7 +65,7 @@ async fn main() -> std::io::Result<()> {
     let lithic = LithicService::new();
     println!("getting registered");
     let idempotency_key = Uuid::new_v4().to_string();
-    let resp = lithic.register_webhook(idempotency_key).map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
+    let resp = lithic.register_webhook(idempotency_key).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
     println!("{}", resp.token.clone());
     warn!("{}", resp.token.clone());
 
@@ -85,7 +85,7 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await?;
 
-    lithic.deregister_webhook(resp.token).map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
+    lithic.deregister_webhook(resp.token).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
 
     Ok(())
 }

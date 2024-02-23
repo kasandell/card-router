@@ -13,30 +13,33 @@ use lithic_client::models::{PostCardsRequest, Card, PatchCardByTokenRequest, Cre
 use uuid::Uuid;
 use crate::constant::env_key;
 use super::error::Error as LithicError;
+use async_trait::async_trait;
+
 
 #[mockall::automock]
+#[async_trait]
 pub trait LithicServiceTrait {
-    fn create_card(
+    async fn create_card(
         &self,
         pin_str: String,
         idempotency_key: Uuid,
     ) -> Result<Card, LithicError>;
 
-    fn close_card(
+    async fn close_card(
         &self,
         card_token: String
     ) -> Result<Card, LithicError>;
 
-    fn activate_card(
+    async fn activate_card(
         &self,
         card_token: String,
     ) -> Result<Card, LithicError>;
-    fn pause_card(
+    async fn pause_card(
         &self,
         card_token: String,
     ) -> Result<Card, LithicError>;
 
-    fn patch_card(
+    async fn patch_card(
         &self,
         card_token: String,
         state: Option<PatchState>,
@@ -44,9 +47,9 @@ pub trait LithicServiceTrait {
     ) -> Result<Card, LithicError>;
 
     // TODO: this is not actually how we enroll. see https://github.com/lithic-com/asa-demo-python/blob/main/scripts/enroll.py
-    fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError>;
+    async fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError>;
 
-    fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError>;
+    async fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError>;
 }
 
 pub struct LithicService {
@@ -88,36 +91,36 @@ impl LithicService {
     }
 }
 
+#[async_trait]
 impl LithicServiceTrait for LithicService {
-    fn create_card(
+    async fn create_card(
         &self,
         pin_str: String,
         idempotency_key: Uuid,
     ) -> Result<Card, LithicError> {
+        println!("IN CREATE CARD REQUEST");
         Ok(
-            futures::executor::block_on(async {
-                post_cards(&self.configuration, PostCardsRequest {
-                    account_token: None, // might need
-                    card_program_token: None,
-                    exp_month: None,
-                    exp_year: None,
-                    memo: None,
-                    spend_limit: None,
-                    spend_limit_duration: None,
-                    state: Some(State::Open),
-                    r#type: Type::Virtual,
-                    pin: None,
-                    digital_card_art_token: None,
-                    product_id: None,
-                    shipping_address: None,
-                    shipping_method: None,
-                    carrier: None,
-                }, None).await
-            })?
+            post_cards(&self.configuration, PostCardsRequest {
+                account_token: None, // might need
+                card_program_token: None,
+                exp_month: None,
+                exp_year: None,
+                memo: None,
+                spend_limit: None,
+                spend_limit_duration: None,
+                state: Some(State::Open),
+                r#type: Type::Virtual,
+                pin: None,
+                digital_card_art_token: None,
+                product_id: None,
+                shipping_address: None,
+                shipping_method: None,
+                carrier: None,
+            }, None).await?
         )
     }
 
-    fn close_card(
+    async fn close_card(
         &self,
         card_token: String
     ) -> Result<Card, LithicError> {
@@ -125,11 +128,11 @@ impl LithicServiceTrait for LithicService {
             card_token,
             Some(PatchState::Closed),
             None
-        )
+        ).await
 
     }
 
-    fn pause_card(
+    async fn pause_card(
         &self,
         card_token: String,
     ) -> Result<Card, LithicError> {
@@ -137,10 +140,10 @@ impl LithicServiceTrait for LithicService {
             card_token,
             Some(PatchState::Paused),
             None
-        )
+        ).await
     }
 
-    fn activate_card(
+    async fn activate_card(
         &self,
         card_token: String,
     ) -> Result<Card, LithicError> {
@@ -148,73 +151,59 @@ impl LithicServiceTrait for LithicService {
             card_token,
             Some(PatchState::Open),
             None
-        )
+        ).await
     }
 
-    fn patch_card(
+    async fn patch_card(
         &self,
         card_token: String,
         state: Option<PatchState>,
         pin: Option<String>
     ) -> Result<Card, LithicError> {
         Ok(
-            futures::executor::block_on( async {
-                patch_card_by_token(
-                    &self.configuration,
-                    serde_json::to_value(card_token).expect("card should go to value"),
-                    PatchCardByTokenRequest {
-                        memo: None,
-                        spend_limit: None,
-                        spend_limit_duration: None,
-                        auth_rule_token: None,
-                        state: state,
-                        pin: pin,
-                        digital_card_art_token: None,
-                    }
-
-                ).await
-            })?
+            patch_card_by_token(
+                &self.configuration,
+                serde_json::to_value(card_token).expect("card should go to value"),
+                PatchCardByTokenRequest {
+                    memo: None,
+                    spend_limit: None,
+                    spend_limit_duration: None,
+                    auth_rule_token: None,
+                    state: state,
+                    pin: pin,
+                    digital_card_art_token: None,
+                }
+            ).await?
         )
     }
 
-    fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError> {
+    async fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError> {
         println!("registering");
-
+        println!("i mean fuck bruh");
+        println!("{:?}", &self.configuration);
         Ok(
-            futures::executor::block_on(async {
-                println!("i mean fuck bruh");
-                println!("{:?}", &self.configuration);
-                let res = create_event_subscription(
-                    &self.configuration,
-                    Some(serde_json::to_value(idempotency_key).expect("should work")),
-                    Some(
-                        CreateEventSubscriptionRequest {
-                            description: Some("base event subscription".to_string()),
-                            disabled: Some(false),
-                            event_types: None,
-                            url: env::var(crate::constant::env_key::LITHIC_WEBHOOK_URL_KEY).expect("Required config")
-                        }
-                    )
-                ).await;
-
-                println!("Made call");
-                println!("{}", res.is_err());
-                println!("{}", res.is_ok());
-
-                res
-            })?
+            create_event_subscription(
+                &self.configuration,
+                Some(serde_json::to_value(idempotency_key).expect("should work")),
+                Some(
+                    CreateEventSubscriptionRequest {
+                        description: Some("base event subscription".to_string()),
+                        disabled: Some(false),
+                        event_types: None,
+                        url: env::var(crate::constant::env_key::LITHIC_WEBHOOK_URL_KEY).expect("Required config")
+                    }
+                )
+            ).await?
         )
     }
 
-    fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError> {
+    async fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError> {
         Ok(
-            futures::executor::block_on(async {
-                delete_event_subscription(
-                    &self.configuration,
-                    event_subscription_token.as_str(),
-                    None
-                ).await
-            })?
+            delete_event_subscription(
+                &self.configuration,
+                event_subscription_token.as_str(),
+                None
+            ).await?
         )
     }
 }
