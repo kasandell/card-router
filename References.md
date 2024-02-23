@@ -41,6 +41,10 @@ https://danielbunte.medium.com/a-guide-to-testing-and-mocking-in-rust-a73d022b40
 DATABASE_URL=""
 ADYEN_API_KEY=""
 ADYEN_MERCHANT_ACCOUNT_NAME=""
+AUTHORITY=
+LITHIC_API_KEY=
+MODE=
+LITHIC_WEBHOOK_URL=
 
 # TODOs:
 Restructure data in such a way that we can mock it. ie without having to actually hit db for tests
@@ -51,3 +55,9 @@ line 618
 let local_var_uri_str = format!("{}/cards/{card_token}", local_var_configuration.base_path,
     card_token=card_token.as_str().ok_or(Error::Io(io::Error::new(Other, "")))?
 );
+
+
+FOR WALLET MATCHING TO WORK PROPERLY
+frontend needs two screens, the first one is where we select card type. this needs to call backend to create wallet card attempt
+do not present next screen until this is ready. 
+then present adyen screen. this guarantees that we have a wallet card attempt to match against on backend

@@ -21,7 +21,8 @@ mod tests {
             }
         ).expect("should create");
         assert_eq!(att1.status, WalletCardAttemptStatus::PENDING.as_str());
-        let _ = AdyenHandler::handle_item(
+        let adyen_handler = AdyenHandler::new();
+        let _ = adyen_handler.handle_item(
             RecurringContractNotificationRequestItemWrapper {
                 notification_request_item: Some(
                     Box::new(

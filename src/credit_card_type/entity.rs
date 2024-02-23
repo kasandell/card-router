@@ -93,6 +93,18 @@ impl CreditCard {
             updated_at: Utc::now().naive_utc()
         }
     }
+
+    pub fn find_by_public_id(
+        public_id: Uuid
+    ) -> Result<Self, DataError> {
+        let mut conn = db::connection()?;
+
+        let card = credit_card::table
+            .filter(credit_card::public_id.eq(public_id))
+            .first(&mut conn)?;
+
+        Ok(card)
+    }
 }
 
 #[cfg(test)]

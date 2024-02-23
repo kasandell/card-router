@@ -7,7 +7,9 @@ use actix_web::{
 
 use crate::api_error::ApiError;
 use crate::user::entity::User;
+use crate::wallet::engine::Engine;
 use crate::wallet::entity::DisplayableCardInfo;
+use crate::wallet::response::WalletCardAttemptResponse;
 use super::{
     request, 
     entity::{
@@ -30,18 +32,33 @@ async fn add_card(info: web::Json<request::AddCardRequest>) -> Result<HttpRespon
     Ok(HttpResponse::Ok().json(inserted_card))
 }
 
+
+#[post("/register-card-attempt/")]
+async fn register_new_card_attempt(
+    user: web::ReqData<User>,
+    info: web::Json<request::RegisterAttemptRequest>
+) -> Result<HttpResponse, ApiError> {
+    let user = user.into_inner();
+    let info = info.into_inner();
+    let engine = Engine::new();
+    let wca = engine.attempt_register_new_attempt(
+        &user,
+        &info
+    ).await?;
+    Ok(HttpResponse::Ok().json(
+        WalletCardAttemptResponse {
+            public_id: wca.public_id
+        }
+    ))
+}
+
 #[get("/list-cards/")]
 async fn list_cards(
     user: web::ReqData<User> // should extract from extensions
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
-    /*
-    let cards = Wallet::find_all_for_user(
-        &(User::find_by_internal_id(1)?)
-    )?;
-     */
     let cards: Vec<DisplayableCardInfo> = Wallet::find_all_for_user_with_card_info(
-        &user //(User::find_by_internal_id(1)?)
+        &user
     )?
         .iter()
         .map(|card| DisplayableCardInfo {

@@ -22,13 +22,6 @@ pub enum ChargeCardAttemptResult {
     PartialCancelFailed
 }
 
-/*
-impl Display for ChargeEngineResult {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.serialize_str(&self.to_string())
-    }
-}
- */
 
 impl From<&ChargeCardAttemptResult> for bool {
     fn from(value: &ChargeCardAttemptResult) -> Self {
