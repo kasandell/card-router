@@ -1,13 +1,14 @@
 use std::env;
-use std::slice::RSplit;
 use lithic_client::apis::card_api::{patch_card_by_token, post_cards};
+use lithic_client::apis::event_api::{create_event_subscription, delete_event_subscription};
 use lithic_client::apis::configuration::{ApiKey, Configuration};
+use lithic_client::models::event_subscription::EventSubscription;
 use lithic_client::models::patch_card_by_token_request::State as PatchState;
 use lithic_client::models::post_cards_request::{
     State,
     Type
 };
-use lithic_client::models::{PostCardsRequest, Card, PatchCardByTokenRequest};
+use lithic_client::models::{PostCardsRequest, Card, PatchCardByTokenRequest, CreateEventSubscriptionRequest};
 use uuid::Uuid;
 use crate::constant::env_key;
 use super::error::Error as LithicError;
@@ -41,7 +42,9 @@ pub trait LithicServiceTrait {
         pin: Option<String>
     ) -> Result<Card, LithicError>;
 
+    fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError>;
 
+    fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError>;
 }
 
 pub struct LithicService {
@@ -150,6 +153,37 @@ impl LithicServiceTrait for LithicService {
                         digital_card_art_token: None,
                     }
 
+                ).await
+            })?
+        )
+    }
+
+    fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError> {
+        Ok(
+            futures::executor::block_on(async {
+                create_event_subscription(
+                    &self.configuration,
+                    Some(serde_json::to_value(idempotency_key).expect("should work")),
+                    Some(
+                        CreateEventSubscriptionRequest {
+                            description: Some("base event subscription".to_string()),
+                            disabled: Some(false),
+                            event_types: None,
+                            url: env::var(crate::constant::env_key::LITHIC_WEBHOOK_URL_KEY).expect("Required config")
+                        }
+                    )
+                ).await
+            })?
+        )
+    }
+
+    fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError> {
+        Ok(
+            futures::executor::block_on(async {
+                delete_event_subscription(
+                    &self.configuration,
+                    event_subscription_token.as_str(),
+                    None
                 ).await
             })?
         )
