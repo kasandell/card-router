@@ -32,6 +32,7 @@ impl RuleEngineTrait for RuleEngine {
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
         let rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids)?;
         info!("Using {} rules", rules.len());
+        println!("Using {} rules", rules.len());
         let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, amount)?;
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
@@ -104,6 +105,7 @@ impl RuleEngine {
         let today = Utc::now().naive_utc().date();
         if rule.recurring_day_of_month.is_some() {
             info!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());
+            println!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());
             let Some(day_of_month) = rule.recurring_day_of_month.as_ref() else { return false; };
             let recur = DayOfMonth::from_str(
                 &day_of_month
@@ -112,12 +114,14 @@ impl RuleEngine {
             expected_date == today
         } else if rule.start_date.is_none() && rule.end_date.is_none() && rule.recurring_day_of_month.is_none() {
             info!("Rule {} has no dates so is always valid", rule.id);
+            println!("Rule {} has no dates so is always valid", rule.id);
             true
         } else {
             info!("Filtering rule id {} by start {:?} end {:?}", rule.id, rule.start_date.as_ref(), rule.end_date.as_ref());
+            println!("Filtering rule id {} by start {:?} end {:?}", rule.id, rule.start_date.as_ref(), rule.end_date.as_ref());
             let start_date = rule.start_date.unwrap();
             let end_date = rule.end_date.unwrap();
-            start_date <= today 
+            start_date <= today
             && today <= end_date
         }
     }

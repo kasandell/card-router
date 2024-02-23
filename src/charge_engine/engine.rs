@@ -75,7 +75,8 @@ impl Engine {
         wallet: &Vec<Wallet>
     ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ServiceError> {
         let metadata = TransactionMetadata::convert(&request)?;
-        let token = request.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
+        let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
+        let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
         let passthrough_card = self.passthrough_card_dao.get_by_token(token)?;
         let user = self.user_dao.find_by_internal_id(passthrough_card.user_id)?;
         let rtx = self.ledger.register_transaction_for_user(
@@ -122,7 +123,6 @@ impl Engine {
                     &passthrough_card
                 )?;
                 Ok((charge_result, None))
-
             }
         }
     }
@@ -140,6 +140,7 @@ impl Engine {
         let mut codes : Vec<ChargeCardAttemptResult> = vec![];
         let mut ledger_res: Option<InnerChargeLedger> = None;
         info!("Charging {} cards for user={}", wallet.len(), user.id);
+        println!("Charging {} cards for user={}", wallet.len(), user.id);
         for card in wallet {
             if success_charge { break; }
             if let Ok((charge_attempt, ledger)) = self.charge_card_with_cleanup(
@@ -150,6 +151,7 @@ impl Engine {
                 registered_transaction
             ).await {
                 info!("Successfully charged card={} for user={}", card.id, user.id);
+                println!("Successfully charged card={} for user={}", card.id, user.id);
                 success_charge = bool::from(&charge_attempt);
                 ledger_res = ledger;
                 codes.push(charge_attempt)

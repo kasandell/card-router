@@ -48,7 +48,9 @@ impl LithicHandler {
     pub async fn handle(&self, request: AsaRequest) -> Result<AsaResponse, ApiError>{
         // TODO: do a reverse lookup based on the card token to get the user
         info!("Identifying user by card");
-        let token = request.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
+        println!("Identifying user by card");
+        let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
+        let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
         let user = User::find_by_internal_id(
             PassthroughCard::get_by_token(
                 token.clone()
@@ -56,18 +58,23 @@ impl LithicHandler {
         )?;
 
         info!("Getting user cards for userId={}", user.id);
+        println!("Getting user cards for userId={}", user.id);
         let cards = self.rule_engine.order_user_cards_for_request(
             request.clone(),
             &user
         )?;
         info!("Got {} cards for userId={}", cards.len(), user.id);
+        println!("Got {} cards for userId={}", cards.len(), user.id);
 
         info!("Attempting to charge userId={}", user.id);
+        println!("Attempting to charge userId={}", user.id);
         let (result, ledger) = self.charge_engine.charge_from_asa_request(
             &request,
             &cards,
         ).await?;
-        info!("Charging success {} for userId={}", result, user.id);
+        println!("Done");
+        info!("Charging success {:?} for userId={}", &result, user.id);
+        println!("Charging success {:?} for userId={}", &result, user.id);
         Ok(
             AsaResponse {
                 token: token,
