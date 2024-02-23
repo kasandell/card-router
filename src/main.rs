@@ -7,11 +7,15 @@ extern crate log;
 extern crate num;
 extern crate num_derive;
 extern crate env_logger;
+extern crate console_subscriber;
 
+use std::io::ErrorKind;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
 use dotenv::dotenv;
+use uuid::Uuid;
+use crate::lithic_service::service::{LithicService, LithicServiceTrait};
 
 
 mod adyen_service;
@@ -46,12 +50,24 @@ async fn manual_hello() -> impl Responder {
     HttpResponse::Ok().body("Hey there!")
 }
 
-#[actix_web::main]
+//#[actix_web::main]
+// TODO: why does tokio vs actix cause inner requests not to hang
+#[tokio::main(flavor = "multi_thread", worker_threads = 32)]
 async fn main() -> std::io::Result<()> {
+    console_subscriber::init();
+    println!("HELLO");
+    warn!("HI");
     dotenv().ok();
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
     util::db::init();
+    println!("made it out cuh");
+    let lithic = LithicService::new();
+    println!("getting registered");
+    let idempotency_key = Uuid::new_v4().to_string();
+    let resp = lithic.register_webhook(idempotency_key).map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
+    println!("{}", resp.token.clone());
+    warn!("{}", resp.token.clone());
 
     HttpServer::new(move || {
         App::new()
@@ -67,5 +83,9 @@ async fn main() -> std::io::Result<()> {
     })
     .bind(("127.0.0.1", 8080))?
     .run()
-    .await
+    .await?;
+
+    lithic.deregister_webhook(resp.token).map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
+
+    Ok(())
 }

@@ -27,11 +27,12 @@ impl RuleEngineTrait for RuleEngine {
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
+        let amount = request.amount.ok_or(ServiceError::new(400, "expect amount".to_string()))?;
         let cards = Wallet::find_all_for_user_with_card_info(user)?;
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
         let rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids)?;
         info!("Using {} rules", rules.len());
-        let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, request.amount)?;
+        let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, amount)?;
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
 }
@@ -87,12 +88,15 @@ impl RuleEngine {
     }
 
     fn filter_rule_by_merchant(rule: &Rule, asa_request: &AsaRequest) -> bool {
+        let Some(merchant) = asa_request.merchant.clone() else { return false; };
         if rule.merchant_name.is_some() {
-            let Some(merchant) = rule.merchant_name.as_ref() else { return false; };
-            asa_request.merchant.descriptor.to_lowercase() == *merchant.to_lowercase()
+            let Some(rule_merchant) = rule.merchant_name.as_ref() else { return false; };
+            let Some(descriptor) = merchant.descriptor.clone() else { return false; };
+            descriptor.to_lowercase() == *rule_merchant.to_lowercase()
         } else {
             let Some(mcc) = rule.rule_mcc.as_ref() else { return false; };
-            asa_request.merchant.mcc == *mcc
+            let Some(request_mcc) = merchant.mcc.clone() else { return false; };
+            request_mcc == *mcc
         }
     }
 

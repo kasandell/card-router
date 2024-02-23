@@ -538,7 +538,7 @@ mod tests {
             Box::new(ledger_mock)
         );
         let mut asa = create_example_asa(amount_cents, mcc2.to_string());
-        asa.token = pc.token.to_string();
+        asa.token = Some(pc.token.to_string());
         let (res, l) = engine.charge_from_asa_request(
             &asa,
             &vec![card_1.clone(), card_2.clone()]

@@ -150,14 +150,15 @@ mod tests {
             amount_cents,
             mcc.to_string()
         );
-        asa.token = pc.token.clone();
+        asa.token = Some(pc.token.clone());
 
 
         let res = handler.handle(
             asa.clone()
         ).await.expect("no error");
         assert_eq!(AsaResponseResult::Approved, res.result);
-        assert_eq!(asa.token, res.token);
+        assert_eq!(asa.token, Some(res.token));
     }
+
 
 }

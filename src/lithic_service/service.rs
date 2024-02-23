@@ -1,4 +1,5 @@
 use std::env;
+use std::time::Duration;
 use lithic_client::apis::card_api::{patch_card_by_token, post_cards};
 use lithic_client::apis::event_api::{create_event_subscription, delete_event_subscription};
 use lithic_client::apis::configuration::{ApiKey, Configuration};
@@ -42,6 +43,7 @@ pub trait LithicServiceTrait {
         pin: Option<String>
     ) -> Result<Card, LithicError>;
 
+    // TODO: this is not actually how we enroll. see https://github.com/lithic-com/asa-demo-python/blob/main/scripts/enroll.py
     fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError>;
 
     fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError>;
@@ -58,11 +60,28 @@ impl LithicService {
             "production" => "https://api.lithic.com/v1".to_owned(),
             _ => "https://sandbox.lithic.com/v1".to_owned(),
         };
+        cfg.base_path = base_path.clone();
+
+        println!("base path");
+        println!("{}", base_path);
+
         cfg.api_key = Some(ApiKey {
             prefix: None,
             key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
         });
-        cfg.base_path = base_path;
+
+        println!("{:?}", cfg.api_key);
+
+        println!("{:?}", env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key"));
+
+        let mut client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .connect_timeout(Duration::from_secs(10))
+            .connection_verbose(true)
+            .build().expect("Fuck this");
+        cfg.client = client;
+
+        //cfg.base_path = base_path;
         LithicService {
             configuration: cfg
         }
@@ -159,9 +178,13 @@ impl LithicServiceTrait for LithicService {
     }
 
     fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError> {
+        println!("registering");
+
         Ok(
             futures::executor::block_on(async {
-                create_event_subscription(
+                println!("i mean fuck bruh");
+                println!("{:?}", &self.configuration);
+                let res = create_event_subscription(
                     &self.configuration,
                     Some(serde_json::to_value(idempotency_key).expect("should work")),
                     Some(
@@ -172,7 +195,13 @@ impl LithicServiceTrait for LithicService {
                             url: env::var(crate::constant::env_key::LITHIC_WEBHOOK_URL_KEY).expect("Required config")
                         }
                     )
-                ).await
+                ).await;
+
+                println!("Made call");
+                println!("{}", res.is_err());
+                println!("{}", res.is_ok());
+
+                res
             })?
         )
     }

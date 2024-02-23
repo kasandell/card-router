@@ -377,12 +377,19 @@ impl TransactionLedger {
 }
 
 
-impl From<&AsaRequest> for TransactionMetadata {
-    fn from(request: &AsaRequest) -> Self {
-        TransactionMetadata {
-            memo: request.merchant.descriptor.clone(),
-            amount_cents: request.amount,
-            mcc: request.merchant.mcc.clone(),
-        }
+impl TransactionMetadata {
+    pub fn convert(request: &AsaRequest) -> Result<Self, DataError> {
+        let error = DataError::new(400, "missing field".to_string());
+        let merchant = request.merchant.clone().ok_or(error.clone())?;
+        let descriptor = merchant.descriptor.clone().ok_or(error.clone())?;
+        let mcc = merchant.mcc.clone().ok_or(error.clone())?;
+        let amount = request.amount.ok_or(error.clone())?;
+        Ok(
+            TransactionMetadata {
+                memo: descriptor,
+                amount_cents: amount,
+                mcc: mcc
+            }
+        )
     }
 }

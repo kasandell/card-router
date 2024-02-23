@@ -10,6 +10,7 @@ use crate::rule_engine::engine::RuleEngineTrait;
 use crate::asa::response::{AsaResponse, AsaResponseResult};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
+use crate::service_error::ServiceError;
 use crate::transaction::engine::TransactionEngineTrait;
 use crate::user::dao::{UserDao, UserDaoTrait};
 
@@ -47,8 +48,11 @@ impl LithicHandler {
     pub async fn handle(&self, request: AsaRequest) -> Result<AsaResponse, ApiError>{
         // TODO: do a reverse lookup based on the card token to get the user
         info!("Identifying user by card");
+        let token = request.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
         let user = User::find_by_internal_id(
-            PassthroughCard::get_by_token(request.token.clone())?.user_id
+            PassthroughCard::get_by_token(
+                token.clone()
+            )?.user_id
         )?;
 
         info!("Getting user cards for userId={}", user.id);
@@ -66,7 +70,7 @@ impl LithicHandler {
         info!("Charging success {} for userId={}", result, user.id);
         Ok(
             AsaResponse {
-                token: request.token,
+                token: token,
                 result: AsaResponseResult::from(result),
                 avs_result: None,
                 balance: None,

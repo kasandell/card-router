@@ -74,8 +74,9 @@ impl Engine {
         request: &AsaRequest,
         wallet: &Vec<Wallet>
     ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ServiceError> {
-        let metadata = TransactionMetadata::from(request);
-        let passthrough_card = self.passthrough_card_dao.get_by_token(request.token.clone())?;
+        let metadata = TransactionMetadata::convert(&request)?;
+        let token = request.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
+        let passthrough_card = self.passthrough_card_dao.get_by_token(token)?;
         let user = self.user_dao.find_by_internal_id(passthrough_card.user_id)?;
         let rtx = self.ledger.register_transaction_for_user(
             &user,

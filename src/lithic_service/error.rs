@@ -30,6 +30,7 @@ impl From<SerdeError> for Error {
 
 impl <T> From<LithicError<T>> for Error {
     fn from(error: LithicError<T>) -> Error {
+        println!("{}", error.to_string());
         match error {
             err => Error::new(format!("Lithic error: {}", err)),
         }
