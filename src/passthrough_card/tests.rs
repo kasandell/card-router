@@ -41,7 +41,7 @@ mod tests {
         let ret = engine.issue_card_to_user(
             &user,
             pin.to_string()
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
         assert_eq!(String::from(&PassthroughCardStatus::OPEN), ret.passthrough_card_status);
@@ -72,14 +72,14 @@ mod tests {
         let ret = engine.issue_card_to_user(
             &user,
             pin.to_string()
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
         assert_eq!(String::from(&PassthroughCardStatus::OPEN), ret.passthrough_card_status);
         let error = engine.issue_card_to_user(
             &user,
             pin.to_string()
-        ).expect_err("This should throw an error");
+        ).await.expect_err("This should throw an error");
         assert_eq!(409, error.status_code);
         ret.delete_self().expect("Should delete");
         user.delete_self().expect("Should delete");
@@ -98,7 +98,7 @@ mod tests {
         let mut lithic_return = card.clone();
         lithic_return.state = State::Paused;
         lithic_service.expect_pause_card()
-            .times(0) //TODO: revert back to 1
+            .times(1) //TODO: revert back to 1
             .return_const(
                 Ok(lithic_return)
             );
@@ -110,7 +110,7 @@ mod tests {
         let res = engine.update_card_status(
             &user,
             PassthroughCardStatus::PAUSED
-        );
+        ).await;
 
         assert!(res.is_ok());
         created_card = PassthroughCard::get(created_card.id).expect("card should be found");
@@ -136,7 +136,7 @@ mod tests {
         let mut lithic_return = card.clone();
         lithic_return.state = State::Closed;
         lithic_service.expect_close_card()
-            .times(0) // TODO: bring back to 1 once we have the code working in prod with lithic key
+            .times(1) // TODO: bring back to 1 once we have the code working in prod with lithic key
             .return_const(
                 Ok(lithic_return)
             );
@@ -148,7 +148,7 @@ mod tests {
         let res = engine.update_card_status(
             &user,
             PassthroughCardStatus::CLOSED
-        );
+        ).await;
 
         assert!(res.is_ok());
         created_card = PassthroughCard::get(created_card.id).expect("card should be found");
@@ -174,7 +174,7 @@ mod tests {
         let mut lithic_return = card.clone();
         lithic_return.state = State::Closed;
         lithic_service.expect_close_card()
-            .times(0) //TODO: revert back to 1
+            .times(1) //TODO: revert back to 1
             .return_const(
                 Ok(lithic_return)
             );
@@ -187,7 +187,7 @@ mod tests {
         let res = engine.update_card_status(
             &user,
             PassthroughCardStatus::CLOSED
-        );
+        ).await;
 
         assert!(res.is_ok());
         created_card = PassthroughCard::get(created_card.id).expect("card should be found");
@@ -199,7 +199,7 @@ mod tests {
         let res = engine.update_card_status(
             &user,
             PassthroughCardStatus::OPEN
-        ).expect_err("Should throw api errror");
+        ).await.expect_err("Should throw api errror");
 
         assert_eq!(404, res.status_code);
 

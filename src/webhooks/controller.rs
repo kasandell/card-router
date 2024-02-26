@@ -17,7 +17,8 @@ use crate::webhooks::lithic_handler::LithicHandler;
 
 #[post("/adyen-webhook/")]
 async fn adyen_webhook(notification: web::Json<RecurringContractNotificationRequest>) -> Result<HttpResponse, ApiError> {
-    AdyenHandler::handle(notification.into_inner()).await?;
+    let handler = AdyenHandler::new();
+    handler.handle(notification.into_inner()).await?;
     Ok(
         HttpResponse::Ok().json(
             NotificationResponse {
