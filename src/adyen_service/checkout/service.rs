@@ -18,6 +18,7 @@ use serde_json::to_value;
 use uuid::Uuid;
 
 use crate::constant::env_key;
+use crate::environment::ENVIRONMENT;
 
 use crate::service_error::ServiceError;
 use super::request::ChargeCardRequest;
@@ -52,7 +53,7 @@ impl AdyenChargeServiceTrait for ChargeService {
                     api_key: Some(
                         ApiKey {
                             prefix: None,
-                            key: env::var(env_key::ADYEN_API_KEY).expect("api key should exist")
+                            key: ENVIRONMENT.adyen_api_key.clone()
                         }
                     ),
                     ..Default::default()
@@ -97,7 +98,7 @@ impl AdyenChargeServiceTrait for ChargeService {
                     localized_shopper_statement: None,
                     mandate: None,
                     mcc: Some(request.mcc),
-                    merchant_account: env::var(env_key::ADYEN_MERCHANT_ACCOUNT_NAME).expect("merchant account should exist"),
+                    merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
                     merchant_order_reference: None,
                     merchant_risk_indicator: None,
                     metadata: None,
@@ -204,7 +205,7 @@ impl AdyenChargeServiceTrait for ChargeService {
                     api_key: Some(
                         ApiKey {
                             prefix: None,
-                            key: env::var(env_key::ADYEN_API_KEY).expect("api key should exist")
+                            key: ENVIRONMENT.adyen_api_key.clone()
                         }
                     ),
                     ..Default::default()
@@ -214,7 +215,7 @@ impl AdyenChargeServiceTrait for ChargeService {
                 Some(
                     PaymentCancelRequest {
                         application_info: None,
-                        merchant_account: env::var(env_key::ADYEN_MERCHANT_ACCOUNT_NAME).expect("merchant account should exist"),
+                        merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
                         reference: Some(Uuid::new_v4().to_string()),
                     }
                 )

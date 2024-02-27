@@ -6,6 +6,7 @@ use std::env;
 use std::time::Duration;
 use lazy_static::lazy_static;
 use r2d2::Error;
+use crate::environment::ENVIRONMENT;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 pub type DbConnection = r2d2::PooledConnection<ConnectionManager<PgConnection>>;
@@ -20,7 +21,7 @@ fn run_migration(conn: &mut impl MigrationHarness<DB>) {
 
 lazy_static! {
     static ref POOL: Pool = {
-        let db_url = env::var("DATABASE_URL").expect("Database url not set");
+        let db_url = ENVIRONMENT.database_url.clone();
         let manager = ConnectionManager::<PgConnection>::new(db_url);
         let pool_size = match cfg!(test) {
             true => 1,

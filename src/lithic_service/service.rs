@@ -17,6 +17,7 @@ use async_trait::async_trait;
 use base64::Engine;
 use base64::engine::general_purpose;
 use serde_json::json;
+use crate::environment::ENVIRONMENT;
 use crate::passthrough_card::crypto::encrypt_pin;
 
 
@@ -63,7 +64,7 @@ pub struct LithicService {
 impl LithicService {
     pub fn new() -> Self {
         let mut cfg = Configuration::new();
-        let base_path = match env::var(env_key::MODE_KEY).expect("need mode").as_str() {
+        let base_path = match ENVIRONMENT.mode.as_str() {
             "production" => "https://api.lithic.com/v1".to_owned(),
             _ => "https://sandbox.lithic.com/v1".to_owned(),
         };
@@ -71,7 +72,7 @@ impl LithicService {
 
         cfg.api_key = Some(ApiKey {
             prefix: None,
-            key: env::var(env_key::LITHIC_API_KEY_NAME).expect("need api key")
+            key: ENVIRONMENT.lithic_api_key.clone(),
         });
 
         let mut client = reqwest::Client::builder()
@@ -184,7 +185,7 @@ impl LithicServiceTrait for LithicService {
                         description: Some("base event subscription".to_string()),
                         disabled: Some(false),
                         event_types: None,
-                        url: env::var(crate::constant::env_key::LITHIC_WEBHOOK_URL_KEY).expect("Required config")
+                        url: ENVIRONMENT.lithic_webhook_url.clone()
                     }
                 )
             ).await?

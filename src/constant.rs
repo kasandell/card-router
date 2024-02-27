@@ -6,4 +6,6 @@ pub mod env_key {
     pub const MODE_KEY:  &str = "MODE";
 
     pub const LITHIC_WEBHOOK_URL_KEY: &str = "LITHIC_WEBHOOK_URL";
+
+    pub const DATABASE_URL: &str = "DATABASE_URL";
 }

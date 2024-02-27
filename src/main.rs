@@ -45,6 +45,7 @@ mod test;
 mod test_helper;
 mod data_error;
 mod service_error;
+mod environment;
 
 
 async fn manual_hello() -> impl Responder {
