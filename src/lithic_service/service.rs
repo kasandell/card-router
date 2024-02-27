@@ -11,14 +11,10 @@ use lithic_client::models::post_cards_request::{
 };
 use lithic_client::models::{PostCardsRequest, Card, PatchCardByTokenRequest, CreateEventSubscriptionRequest};
 use uuid::Uuid;
-use crate::constant::env_key;
 use super::error::Error as LithicError;
 use async_trait::async_trait;
 use base64::Engine;
-use base64::engine::general_purpose;
-use serde_json::json;
 use crate::environment::ENVIRONMENT;
-use crate::passthrough_card::crypto::encrypt_pin;
 
 
 #[mockall::automock]
