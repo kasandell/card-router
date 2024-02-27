@@ -4,6 +4,7 @@ use crate::data_error::DataError;
 use adyen_checkout::apis::Error as AdyenCheckoutError;
 use crate::adyen_service::checkout::error::Error as AdyenServiceError;
 use crate::lithic_service::error::Error as LithicServiceError;
+use serde_json::{json, Error as SerdeError};
 use crate::charge_engine::error::Error as ChargeEngineError;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -51,5 +52,14 @@ impl From<LithicServiceError> for ServiceError {
     fn from(_: LithicServiceError) -> Self {
         info!("converting from lithic service error");
         ServiceError::new(500, "Lithic service error".to_string())
+    }
+}
+
+impl From<SerdeError> for ServiceError {
+    fn from(error: SerdeError) -> ServiceError {
+        info!("Converting from serde error");
+        match error {
+            err => ServiceError::new(500, format!("Serde Error error: {}", err)),
+        }
     }
 }

@@ -184,7 +184,7 @@ impl Engine {
                 reference: Uuid::new_v4().to_string(), // TODO: this will later be done with what we put in ledger for attempts
                 statement: transaction_metadata.memo.clone(),
             }
-        );
+        ).await;
 
         if let Ok(response) = resp {
             if let Some(code) = response.result_code {
@@ -214,7 +214,7 @@ impl Engine {
                     if let Some(psp) = response.psp_reference {
                         let cancel = self.charge_service.cancel_transaction(
                             &psp
-                        );
+                        ).await;
                         if let Ok(cancel) = cancel {
                             info!("Cancelled with status: {:?}", cancel.status);
                             let ledger_entry = self.ledger.register_failed_inner_charge(
