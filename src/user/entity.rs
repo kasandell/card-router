@@ -8,9 +8,9 @@ use crate::data_error::DataError;
 
 #[derive(Serialize, Deserialize, AsChangeset)]
 #[diesel(table_name = users)]
-pub struct UserMessage {
-    pub email: String,
-    pub password: String,
+pub struct UserMessage<'a> {
+    pub email: &'a str,
+    pub password: &'a str,
 }
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
@@ -24,14 +24,12 @@ pub struct User {
     pub updated_at: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Insertable)]
+#[derive(Insertable)]
 #[diesel(table_name = users)]
-pub struct InsertableUser {
-    pub public_id: Uuid,
-    pub email: String,
-    pub password: String,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+pub struct InsertableUser<'a> {
+    pub public_id: &'a Uuid,
+    pub email: &'a str,
+    pub password: &'a str,
 }
 
 impl User {
@@ -44,7 +42,7 @@ impl User {
         Ok(users)
     }
 
-    pub fn find(id: Uuid) -> Result<Self, DataError> {
+    pub fn find(id: &Uuid) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let user = users::table
@@ -80,9 +78,13 @@ impl User {
         Ok(user)
     }
 
-    pub fn create(user: UserMessage) -> Result<Self, DataError> {
+    pub fn create(user: &UserMessage) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
-        let user = InsertableUser::from(user);
+        let user =  InsertableUser {
+            public_id: &Uuid::new_v4(),
+            email: user.email,
+            password: user.password,
+        };
         let user = diesel::insert_into(users::table)
             .values(user)
             .get_result(&mut conn)?;
@@ -90,7 +92,7 @@ impl User {
         Ok(user)
     }
 
-    pub fn update(id: Uuid, user: UserMessage) -> Result<Self, DataError> {
+    pub fn update(id: &Uuid, user: &UserMessage) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
         let user = diesel::update(users::table)
@@ -146,14 +148,14 @@ impl User {
     }
 }
 
-impl From<UserMessage> for InsertableUser {
-    fn from(user: UserMessage) -> Self {
+/*
+impl From<&UserMessage> for InsertableUser {
+    fn from(user: &UserMessage) -> Self {
         InsertableUser {
-            public_id: Uuid::new_v4(),
+            public_id: &Uuid::new_v4(),
             email: user.email,
             password: user.password,
-            created_at: Utc::now().naive_utc(),
-            updated_at: Utc::now().naive_utc(),
         }
     }
 }
+ */

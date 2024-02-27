@@ -27,16 +27,16 @@ mod tests {
         // TODO: data exceptions are bubbling up as 500, but for conflict we want 409
         assert!(resp.status().is_client_error(), "Should not be possible to create user with same email twice");
         user.delete_self().expect("user should delete");
-        assert!(User::find(user.public_id).is_err())
+        assert!(User::find(&user.public_id).is_err())
     }
 
     #[actix_web::test]
     async fn test_list() {
         crate::test::init(); 
         let user = User::create(
-            UserMessage {
-                email: "test@example.com".to_owned(),
-                password: "password".to_owned()
+            &UserMessage {
+                email: "test@example.com",
+                password: "password",
             }
         ).expect("User should exist");
         let public_id = user.public_id;
@@ -47,6 +47,6 @@ mod tests {
         assert!(body_json.is_array());
         // assert_eq!(body_json.as_array().unwrap().len(), 1);
         user.delete_self().expect("Should delete");
-        assert!(User::find(public_id).is_err())
+        assert!(User::find(&public_id).is_err())
     }
 }

@@ -65,7 +65,7 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
         let uid = match_jwt(request.headers(), &Role::User);
         if let Ok(user_public_id) = uid {
             if let Ok(id) = Uuid::from_str(&user_public_id) {
-                if let Ok(user) = User::find(id) {
+                if let Ok(user) = User::find(&id) {
                     // insert data into extensions if enabled
                     is_logged_in = true;
                     request.extensions_mut()

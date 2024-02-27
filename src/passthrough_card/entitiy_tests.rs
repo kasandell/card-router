@@ -195,9 +195,9 @@ mod tests {
         crate::test::init();
         let user = initialize_user();
         let user2 = User::create(
-            UserMessage {
-                email: "kyle2@gmail.com".to_string(),
-                password: "1234".to_string()
+            &UserMessage {
+                email: "kyle2@gmail.com",
+                password: "1234"
             }
         ).expect("User should be created");
         let token = "12345";

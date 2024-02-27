@@ -8,15 +8,15 @@ use mockall::{automock, predicate::*};
 #[cfg_attr(test, automock)]
 pub trait UserDaoTrait {
     fn find_all(&self) -> Result<Vec<User>, DataError>;
-    fn find(&self, id: Uuid) -> Result<User, DataError>;
+    fn find(&self, id: &Uuid) -> Result<User, DataError>;
     fn find_by_email_password(
         &self,
         email: &str,
         password: &str
     ) -> Result<User, DataError>;
     fn find_by_internal_id(&self, id: i32) -> Result<User, DataError>;
-    fn create(&self, user: UserMessage) -> Result<User, DataError>;
-    fn update(&self, id: Uuid, user: UserMessage) -> Result<User, DataError>;
+    fn create<'a>(&self, user: &UserMessage<'a>) -> Result<User, DataError>;
+    fn update<'a>(&self, id: &Uuid, user: &UserMessage<'a>) -> Result<User, DataError>;
 }
 
 pub struct UserDao {}
@@ -32,7 +32,7 @@ impl UserDaoTrait for UserDao {
         User::find_all()
     }
 
-    fn find(&self, id: Uuid) -> Result<User, DataError> {
+    fn find(&self, id: &Uuid) -> Result<User, DataError> {
         User::find(id)
     }
 
@@ -48,11 +48,11 @@ impl UserDaoTrait for UserDao {
         User::find_by_internal_id(id)
     }
 
-    fn create(&self, user: UserMessage) -> Result<User, DataError> {
+    fn create(&self, user: &UserMessage) -> Result<User, DataError> {
         User::create(user)
     }
 
-    fn update(&self, id: Uuid, user: UserMessage) -> Result<User, DataError> {
+    fn update(&self, id: &Uuid, user: &UserMessage) -> Result<User, DataError> {
         User::update(id, user)
     }
 }

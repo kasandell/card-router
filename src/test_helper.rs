@@ -11,9 +11,9 @@ use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAt
 #[cfg(test)]
 pub fn initialize_user() -> User {
     User::create(
-        UserMessage {
-            email: "test@example.com".to_string(),
-            password: "1234".to_string()
+        &UserMessage {
+            email: "test@example.com",
+            password: "1234",
         }
     ).expect("User should be created")
 }

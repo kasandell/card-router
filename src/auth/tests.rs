@@ -44,7 +44,7 @@ mod tests {
         assert_eq!(id, user.public_id);
 
         user.delete_self().expect("user should delete");
-        assert!(User::find(user.public_id).is_err())
+        assert!(User::find(&user.public_id).is_err())
     }
 
     #[actix_web::test]
@@ -62,7 +62,7 @@ mod tests {
         assert!(!resp.status().is_success(), "Login should fail");
         assert_eq!(401, resp.status().as_u16());
         user.delete_self().expect("user should delete");
-        assert!(User::find(user.public_id).is_err())
+        assert!(User::find(&user.public_id).is_err())
     }
 
     #[actix_web::test]
@@ -103,7 +103,7 @@ mod tests {
         assert!(!get_resp.status().is_success());
 
         user.delete_self().expect("user should delete");
-        assert!(User::find(user.public_id).is_err())
+        assert!(User::find(&user.public_id).is_err())
     }
 
 
