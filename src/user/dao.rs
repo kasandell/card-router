@@ -11,8 +11,8 @@ pub trait UserDaoTrait {
     fn find(&self, id: Uuid) -> Result<User, DataError>;
     fn find_by_email_password(
         &self,
-        email: String,
-        password: String
+        email: &str,
+        password: &str
     ) -> Result<User, DataError>;
     fn find_by_internal_id(&self, id: i32) -> Result<User, DataError>;
     fn create(&self, user: UserMessage) -> Result<User, DataError>;
@@ -38,8 +38,8 @@ impl UserDaoTrait for UserDao {
 
     fn find_by_email_password(
         &self,
-        email: String,
-        password: String
+        email: &str,
+        password: &str
     ) -> Result<User, DataError> {
         User::find_by_email_password(email, password)
     }

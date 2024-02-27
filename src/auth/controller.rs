@@ -10,8 +10,8 @@ use crate::user::entity::User;
 async fn login(request: web::Json<LoginRequest>) -> Result<HttpResponse, ApiError>{
     let request = request.into_inner();
     let user = User::find_by_email_password(
-        request.email.clone(),
-        request.password.clone()
+        &request.email,
+        &request.password
     );
     match user {
         Ok(user) => {

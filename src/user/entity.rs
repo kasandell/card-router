@@ -55,8 +55,8 @@ impl User {
     }
 
     pub fn find_by_email_password(
-        email: String,
-        password: String
+        email: &str,
+        password: &str
     ) -> Result<Self, DataError> {
         let mut conn = db::connection()?;
 
