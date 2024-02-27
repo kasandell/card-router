@@ -24,37 +24,37 @@ use crate::passthrough_card::crypto::encrypt_pin;
 #[mockall::automock]
 #[async_trait]
 pub trait LithicServiceTrait {
-    async fn create_card(
+    async fn create_card<'a>(
         &self,
-        pin_str: String,
-        idempotency_key: Uuid,
+        pin_str: &'a str,
+        idempotency_key: &'a Uuid,
     ) -> Result<Card, LithicError>;
 
     async fn close_card(
         &self,
-        card_token: String
+        card_token: &str,
     ) -> Result<Card, LithicError>;
 
     async fn activate_card(
         &self,
-        card_token: String,
+        card_token: &str,
     ) -> Result<Card, LithicError>;
     async fn pause_card(
         &self,
-        card_token: String,
+        card_token: &str,
     ) -> Result<Card, LithicError>;
 
-    async fn patch_card(
+    async fn patch_card<'a>(
         &self,
-        card_token: String,
-        state: Option<PatchState>,
-        pin: Option<String>
+        card_token: &'a str,
+        state: Option<&'a PatchState>,
+        pin: Option<&'a str>
     ) -> Result<Card, LithicError>;
 
     // TODO: this is not actually how we enroll. see https://github.com/lithic-com/asa-demo-python/blob/main/scripts/enroll.py
-    async fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError>;
+    async fn register_webhook(&self, idempotency_key: &str) -> Result<EventSubscription, LithicError>;
 
-    async fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError>;
+    async fn deregister_webhook(&self, event_subscription_token: &str) -> Result<(), LithicError>;
 }
 
 pub struct LithicService {
@@ -91,10 +91,10 @@ impl LithicService {
 
 #[async_trait]
 impl LithicServiceTrait for LithicService {
-    async fn create_card(
+    async fn create_card<'a>(
         &self,
-        pin_str: String,
-        idempotency_key: Uuid,
+        pin_str: &'a str,
+        idempotency_key: &'a Uuid,
     ) -> Result<Card, LithicError> {
         Ok(
             post_cards(&self.configuration, PostCardsRequest {
@@ -119,11 +119,11 @@ impl LithicServiceTrait for LithicService {
 
     async fn close_card(
         &self,
-        card_token: String
+        card_token: &str
     ) -> Result<Card, LithicError> {
         self.patch_card(
             card_token,
-            Some(PatchState::Closed),
+            Some(&PatchState::Closed),
             None
         ).await
 
@@ -131,42 +131,42 @@ impl LithicServiceTrait for LithicService {
 
     async fn pause_card(
         &self,
-        card_token: String,
+        card_token: &str,
     ) -> Result<Card, LithicError> {
         self.patch_card(
             card_token,
-            Some(PatchState::Paused),
+            Some(&PatchState::Paused),
             None
         ).await
     }
 
     async fn activate_card(
         &self,
-        card_token: String,
+        card_token: &str,
     ) -> Result<Card, LithicError> {
         self.patch_card(
             card_token,
-            Some(PatchState::Open),
+            Some(&PatchState::Open),
             None
         ).await
     }
 
-    async fn patch_card(
+    async fn patch_card<'a>(
         &self,
-        card_token: String,
-        state: Option<PatchState>,
-        pin: Option<String>
+        card_token: &'a str,
+        state: Option<&'a PatchState>,
+        pin: Option<&'a str>
     ) -> Result<Card, LithicError> {
         Ok(
             patch_card_by_token(
                 &self.configuration,
-                serde_json::Value::String(card_token),
+                serde_json::Value::String(card_token.to_string()),
                 PatchCardByTokenRequest {
                     memo: None,
                     spend_limit: None,
                     spend_limit_duration: Some(SpendLimitDuration::Forever),
                     auth_rule_token: None,
-                    state,
+                    state: state.copied(),
                     //Some(encrypt_pin("1234".to_string())),
                     pin: None,
                     digital_card_art_token: None,
@@ -175,7 +175,7 @@ impl LithicServiceTrait for LithicService {
         )
     }
 
-    async fn register_webhook(&self, idempotency_key: String) -> Result<EventSubscription, LithicError> {
+    async fn register_webhook(&self, idempotency_key: &str) -> Result<EventSubscription, LithicError> {
         Ok(
             create_event_subscription(
                 &self.configuration,
@@ -192,11 +192,11 @@ impl LithicServiceTrait for LithicService {
         )
     }
 
-    async fn deregister_webhook(&self, event_subscription_token: String) -> Result<(), LithicError> {
+    async fn deregister_webhook(&self, event_subscription_token: &str) -> Result<(), LithicError> {
         Ok(
             delete_event_subscription(
                 &self.configuration,
-                event_subscription_token.as_str(),
+                event_subscription_token,
                 None
             ).await?
         )

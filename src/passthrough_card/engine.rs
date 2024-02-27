@@ -41,8 +41,8 @@ impl Engine {
         let idempotency_key = Uuid::new_v4();
         let pin_encoded = encrypt_pin(pin);
         let lithic_card = self.lithic_service.create_card(
-            pin_encoded,
-            idempotency_key
+            &pin_encoded,
+            &idempotency_key
         ).await?;
         let inserted_card = PassthroughCard::create_from_api_card(
             &lithic_card,
@@ -245,7 +245,7 @@ impl Engine {
         &self,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.close_card(token.to_string()).await?;
+        let closed = self.lithic_service.close_card(token).await?;
         Ok(closed)
     }
 
@@ -253,7 +253,7 @@ impl Engine {
         &self,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.pause_card(token.to_string()).await?;
+        let closed = self.lithic_service.pause_card(token).await?;
         Ok(closed)
     }
 
@@ -261,7 +261,7 @@ impl Engine {
         &self,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.activate_card(token.to_string()).await?;
+        let closed = self.lithic_service.activate_card(token).await?;
         Ok(closed)
     }
 }
