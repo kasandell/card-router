@@ -1,5 +1,6 @@
 use chrono::{NaiveDate, Utc};
 use uuid::Uuid;
+use crate::credit_card_type::entity::CreditCard;
 use crate::data_error::DataError;
 use crate::passthrough_card::entity::{create_test_lithic_card, PassthroughCard};
 use crate::transaction::constant::ChargeStatus;
@@ -210,5 +211,50 @@ pub fn create_passthrough_card(
         passthrough_card_type: "VIRTUAL".to_string(),
         created_at: Default::default(),
         updated_at: Default::default(),
+    }
+}
+
+#[cfg(test)]
+pub fn create_credit_card(id: i32) -> CreditCard {
+    CreditCard {
+        id: id,
+        public_id: Default::default(),
+        name: "".to_string(),
+        credit_card_type_id: 0,
+        credit_card_issuer_id: 0,
+        card_image_url: "".to_string(),
+        created_at: Default::default(),
+        updated_at: Default::default(),
+    }
+
+}
+
+#[cfg(test)]
+pub fn create_wallet_card_attempt(user_id: i32, credit_card_id: i32) -> WalletCardAttempt {
+    WalletCardAttempt {
+        id: 0,
+        public_id: Default::default(),
+        user_id: user_id,
+        credit_card_id: credit_card_id,
+        expected_reference_id: "".to_string(),
+        psp_id: None,
+        status: "".to_string(),
+        recurring_detail_reference: None,
+        created_at: Default::default(),
+        updated_at: Default::default(),
+    }
+}
+
+#[cfg(test)]
+pub fn create_wallet_card(user_id: i32) -> Wallet {
+    Wallet {
+        id: 0,
+        public_id: Default::default(),
+        user_id: user_id,
+        payment_method_id: "".to_string(),
+        created_at: Default::default(),
+        updated_at: Default::default(),
+        credit_card_id: 0,
+        wallet_card_attempt_id: 0,
     }
 }

@@ -37,15 +37,14 @@ impl AdyenHandler {
 
     pub async fn handle(&self, request: RecurringContractNotificationRequest) -> Result<(), ApiError> {
         if let Some(notification_items) = request.notification_items.to_owned() {
-            notification_items.iter().for_each(|item| {
-                let _ = self.handle_item(item.clone());
-                return ().into();
-            });
+            for item in notification_items.iter() {
+                let _ = self.handle_item(item.clone()).await;
+            }
         }
         Ok(())
     }
 
-    pub fn handle_item(&self, item: RecurringContractNotificationRequestItemWrapper) -> Result<(), ApiError> {
+    pub async fn handle_item(&self, item: RecurringContractNotificationRequestItemWrapper) -> Result<(), ApiError> {
         if let Some(inner_item) = item.notification_request_item {
             if inner_item.event_code == EventCode::RecurringContract && inner_item.success == "true" {
                 let psp_reference = inner_item.psp_reference; // new card psp
@@ -59,7 +58,7 @@ impl AdyenHandler {
                 };
                 let card = self.wallet_engine.attempt_match(
                     &match_attempt_request
-                )?;
+                ).await?;
                 info!("Added card {} for user id {} with id {}", card.id, card.user_id, psp_reference);
             }
         }

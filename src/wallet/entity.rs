@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 
-#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone)]
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet_card_attempt)]
@@ -50,7 +50,7 @@ pub struct UpdateCardAttempt {
 }
 
 
-#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone)]
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]

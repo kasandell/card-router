@@ -51,7 +51,7 @@ impl Engine {
         Ok(wca)
     }
 
-    pub fn attempt_match(
+    pub async fn attempt_match(
         &self,
         request: &MatchAttemptRequest
     ) -> Result<Wallet, ApiError> {
@@ -69,10 +69,10 @@ impl Engine {
 
         let created_card = self.wallet_dao.insert_card(
             NewCard {
-                user_id: card_attempt.user_id,
+                user_id: update.user_id,
                 payment_method_id: request.psp_reference.clone(),
-                credit_card_id: card_attempt.credit_card_id,
-                wallet_card_attempt_id: card_attempt.id,
+                credit_card_id: update.credit_card_id,
+                wallet_card_attempt_id: update.id,
             }
         )?;
         info!("Created card: {}", &created_card.public_id);

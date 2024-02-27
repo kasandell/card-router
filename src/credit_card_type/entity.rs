@@ -8,7 +8,7 @@ use crate::data_error::DataError;
 use crate::util::db;
 
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable, Clone)]
 #[diesel(table_name = credit_card)]
 #[diesel(belongs_to(CreditCardIssuer))]
 #[diesel(belongs_to(CreditCardType))]
