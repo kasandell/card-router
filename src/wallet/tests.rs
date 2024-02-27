@@ -258,10 +258,102 @@ mod tests {
 
     #[actix_web::test]
     async fn test_match_fails_already_matched() {
+        let mut cc_dao = MockCreditCardDaoTrait::new();
+        let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
+        let mut w_dao = MockWalletDaoTrait::new();
 
+        let cc = create_credit_card(CREDIT_CARD_ID);
+
+        let user = create_user_in_mem(USER_ID);
+
+        let expected_reference_id = Uuid::new_v4().to_string();
+
+        let new_card_id = Uuid::new_v4().to_string();
+        let psp_id = Uuid::new_v4().to_string();
+
+        let mut matched = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
+        matched.id = 1;
+        matched.credit_card_id = 1;
+        matched.expected_reference_id = expected_reference_id.clone();
+        matched.psp_id = Some(psp_id.clone());
+        matched.recurring_detail_reference = Some(new_card_id.clone());
+        matched.status = WalletCardAttemptStatus::MATCHED.as_str();
+
+        wca_dao.expect_find_by_reference_id()
+            .times(1)
+            .with(eq(expected_reference_id.clone()))
+            .return_const(
+                Ok(matched.clone())
+            );
+
+        wca_dao.expect_update_card()
+            .times(0);
+
+
+        w_dao.expect_insert_card()
+            .times(0);
+
+
+        let wallet_engine = Engine::new_with_services(
+            Box::new(cc_dao),
+            Box::new(wca_dao),
+            Box::new(w_dao)
+        );
+
+        let error = wallet_engine.attempt_match(
+            &MatchAttemptRequest {
+                merchant_reference_id: expected_reference_id.clone(),
+                original_psp_reference: psp_id.clone(),
+                psp_reference: new_card_id.clone()
+            }
+        ).await.expect_err("should throw error on match");
+
+        assert_eq!(409, error.status_code);
     }
 
     #[actix_web::test]
     async fn test_match_fails_to_find() {
+        let mut cc_dao = MockCreditCardDaoTrait::new();
+        let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
+        let mut w_dao = MockWalletDaoTrait::new();
+
+        let user = create_user_in_mem(USER_ID);
+
+        let expected_reference_id = Uuid::new_v4().to_string();
+        let new_card_id = Uuid::new_v4().to_string();
+        let psp_id = Uuid::new_v4().to_string();
+
+        let wallet_card = create_wallet_card(USER_ID);
+
+        wca_dao.expect_find_by_reference_id()
+            .times(1)
+            .with(eq(expected_reference_id.clone()))
+            .return_const(
+                Err(DataError::new(404, "record not found".to_string()))
+            );
+
+        wca_dao.expect_update_card()
+            .times(0);
+
+
+        w_dao.expect_insert_card()
+            .times(0);
+
+
+        let wallet_engine = Engine::new_with_services(
+            Box::new(cc_dao),
+            Box::new(wca_dao),
+            Box::new(w_dao)
+        );
+
+        let error = wallet_engine.attempt_match(
+            &MatchAttemptRequest {
+                merchant_reference_id: expected_reference_id.clone(),
+                original_psp_reference: psp_id.clone(),
+                psp_reference: new_card_id.clone()
+            }
+        ).await.expect_err("should throw error on match");
+
+        assert_eq!(404, error.status_code);
     }
 }

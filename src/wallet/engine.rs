@@ -1,5 +1,6 @@
 use crate::api_error::ApiError;
 use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
+use crate::service_error::ServiceError;
 use crate::user::entity::User;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
@@ -54,11 +55,15 @@ impl Engine {
     pub async fn attempt_match(
         &self,
         request: &MatchAttemptRequest
-    ) -> Result<Wallet, ApiError> {
+    ) -> Result<Wallet, ServiceError> {
         let card_attempt = self.wallet_card_attempt_dao.find_by_reference_id(
             request.merchant_reference_id.clone()
         )?;
         info!("Found wallet card attempt id {}", card_attempt.id);
+
+        if card_attempt.status.eq(&WalletCardAttemptStatus::MATCHED.as_str()) {
+            return Err(ServiceError::new(409, "Card already matched".to_string()));
+        }
 
         let update = self.wallet_card_attempt_dao.update_card(card_attempt.id, UpdateCardAttempt {
             recurring_detail_reference: request.psp_reference.clone(),
