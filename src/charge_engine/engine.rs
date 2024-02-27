@@ -175,14 +175,14 @@ impl Engine {
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ServiceError> {
         let resp = self.charge_service.charge_card_on_file(
-            ChargeCardRequest {
+            &ChargeCardRequest {
                 amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
-                mcc: transaction_metadata.mcc.to_string(),
-                payment_method_id: card.payment_method_id.clone(),
-                customer_public_id: user.public_id.clone(),
-                idempotency_key: idempotency_key.to_string(),
-                reference: Uuid::new_v4().to_string(), // TODO: this will later be done with what we put in ledger for attempts
-                statement: transaction_metadata.memo.clone(),
+                mcc: &transaction_metadata.mcc,
+                payment_method_id: &card.payment_method_id,
+                customer_public_id: &user.public_id,
+                idempotency_key: &idempotency_key,
+                reference: &Uuid::new_v4().to_string(), // TODO: this will later be done with what we put in ledger for attempts
+                statement: &transaction_metadata.memo,
             }
         ).await;
 

@@ -29,9 +29,9 @@ pub struct ChargeService {}
 #[async_trait]
 pub trait AdyenChargeServiceTrait {
     //TODO: is making these not async going to make them run slower/block
-    async fn charge_card_on_file(
+    async fn charge_card_on_file<'a>(
         &self,
-        request: ChargeCardRequest
+        request: &ChargeCardRequest<'a>
     ) -> Result<PaymentResponse, ServiceError>;
 
     async fn cancel_transaction(
@@ -43,9 +43,9 @@ pub trait AdyenChargeServiceTrait {
 
 #[async_trait]
 impl AdyenChargeServiceTrait for ChargeService {
-    async fn charge_card_on_file(
+    async fn charge_card_on_file<'a>(
         &self,
-        request: ChargeCardRequest
+        request: &ChargeCardRequest<'a>
     ) -> Result<PaymentResponse, ServiceError> {
         Ok(
             post_payments(
@@ -97,7 +97,7 @@ impl AdyenChargeServiceTrait for ChargeService {
                     line_items: None,
                     localized_shopper_statement: None,
                     mandate: None,
-                    mcc: Some(request.mcc),
+                    mcc: Some(request.mcc.to_string()),
                     merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
                     merchant_order_reference: None,
                     merchant_risk_indicator: None,
@@ -168,7 +168,7 @@ impl AdyenChargeServiceTrait for ChargeService {
                     recurring_processing_model: Some(adyen_checkout::models::payment_request::RecurringProcessingModel::CardOnFile),
                     redirect_from_issuer_method: None,
                     redirect_to_issuer_method: None,
-                    reference: request.reference,
+                    reference: request.reference.to_string(),
                     return_url: "".to_string(),
                     risk_data: None,
                     session_validity: None,
@@ -179,7 +179,7 @@ impl AdyenChargeServiceTrait for ChargeService {
                     shopper_name: None,
                     shopper_reference: None,
                     shopper_statement: Some(
-                        request.statement
+                        request.statement.to_string()
                     ),
                     social_security_number: None,
                     splits: None,

@@ -74,7 +74,7 @@ mod tests {
                     charge_request.amount_cents == amount_cents
                         && charge_request.mcc == mcc1
                         && charge_request.payment_method_id == payment_method_1.to_string()
-                        && charge_request.customer_public_id == user.public_id
+                        && charge_request.customer_public_id == &user.public_id
                 }
             )
             .times(1)
@@ -90,7 +90,7 @@ mod tests {
                     charge_request.amount_cents == amount_cents
                         && charge_request.mcc == mcc2
                         && charge_request.payment_method_id == payment_method_2.to_string()
-                        && charge_request.customer_public_id == user.public_id
+                        && charge_request.customer_public_id == &user.public_id
                 }
             )
             .times(1)

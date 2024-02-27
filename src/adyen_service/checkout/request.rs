@@ -13,13 +13,13 @@ pub struct AddCardRequest {
 
 
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChargeCardRequest {
+#[derive(Debug)]
+pub struct ChargeCardRequest<'a> {
     pub amount_cents: i32,
-    pub mcc: String,
-    pub payment_method_id: String,
-    pub customer_public_id: Uuid,
-    pub idempotency_key: String,
-    pub reference: String,
-    pub statement: String,
+    pub mcc: &'a str,
+    pub payment_method_id: &'a str,
+    pub customer_public_id: &'a Uuid,
+    pub idempotency_key: &'a Uuid,
+    pub reference: &'a str,
+    pub statement: &'a str,
 }
