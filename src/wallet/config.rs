@@ -8,7 +8,6 @@ pub fn config(cfg: &mut web::ServiceConfig) -> () {
         .service(
             web::scope("")
                 .wrap(auth::Auth)
-                .service(controller::add_card)
                 .service(controller::list_cards)
                 .service(controller::register_new_card_attempt)
 

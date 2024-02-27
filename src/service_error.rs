@@ -2,7 +2,7 @@ use std::fmt;
 use serde::Deserialize;
 use crate::data_error::DataError;
 use adyen_checkout::apis::Error as AdyenCheckoutError;
-use crate::adyen_service::checkout::error::Error as AdyenServiceError;
+use crate::adyen_service::checkout::error::Error as AdyenCheckoutServiceError;
 use crate::lithic_service::error::Error as LithicServiceError;
 use serde_json::{json, Error as SerdeError};
 use crate::charge_engine::error::Error as ChargeEngineError;
@@ -40,13 +40,14 @@ impl <T> From<AdyenCheckoutError<T>> for ServiceError {
     }
 }
 
-impl From<AdyenServiceError> for ServiceError {
-    fn from(_: AdyenServiceError) -> Self {
+impl From<AdyenCheckoutServiceError> for ServiceError {
+    fn from(_: AdyenCheckoutServiceError) -> Self {
         info!("Converting from adyen service error");
         ServiceError::new(500, "Service error".to_string())
 
     }
 }
+
 
 impl From<LithicServiceError> for ServiceError {
     fn from(_: LithicServiceError) -> Self {

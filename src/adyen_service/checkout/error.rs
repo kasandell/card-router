@@ -1,6 +1,6 @@
 use std::fmt;
 use serde::Deserialize;
-use adyen_checkout::apis::Error as AdyenError;
+use adyen_checkout::apis::Error as AdyenCheckoutError;
 use serde_json::Error as SerdeError;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -28,8 +28,8 @@ impl From<SerdeError> for Error {
     }
 }
 
-impl <T> From<AdyenError<T>> for Error {
-    fn from(error: AdyenError<T>) -> Error {
+impl <T> From<AdyenCheckoutError<T>> for Error {
+    fn from(error: AdyenCheckoutError<T>) -> Error {
         match error {
             err => Error::new(format!("Adyen checkout error: {}", err)),
         }

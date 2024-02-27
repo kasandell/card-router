@@ -1,3 +1,5 @@
+use uuid::Uuid;
+use crate::adyen_service::checkout::service::{AdyenChargeServiceTrait, ChargeService};
 use crate::api_error::ApiError;
 use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
 use crate::service_error::ServiceError;
@@ -5,12 +7,15 @@ use crate::user::entity::User;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, Wallet, WalletCardAttempt};
-use crate::wallet::request::{MatchAttemptRequest, RegisterAttemptRequest};
+use crate::wallet::request::{AddCardRequest, MatchAttemptRequest, RegisterAttemptRequest};
 
+// TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
+// and make the network call in one
 pub struct Engine {
     pub credit_card_dao: Box<dyn CreditCardDaoTrait>,
     pub wallet_card_attempt_dao: Box<dyn WalletCardAttemtDaoTrait>,
     pub wallet_dao: Box<dyn WalletDaoTrait>,
+    pub adyen_service: Box<dyn AdyenChargeServiceTrait>
 }
 
 
@@ -19,7 +24,8 @@ impl Engine {
         Self {
             credit_card_dao: Box::new(CreditCardDao::new()),
             wallet_card_attempt_dao: Box::new(WalletCardAttemptDao::new()),
-            wallet_dao: Box::new(WalletDao::new())
+            wallet_dao: Box::new(WalletDao::new()),
+            adyen_service: Box::new(ChargeService::new())
         }
     }
 
@@ -28,12 +34,43 @@ impl Engine {
         credit_card_dao: Box<dyn CreditCardDaoTrait>,
         wallet_card_attempt_dao: Box<dyn WalletCardAttemtDaoTrait>,
         wallet_dao: Box<dyn WalletDaoTrait>,
+        adyen_service: Box<dyn AdyenChargeServiceTrait>,
     ) -> Self {
         Self {
             credit_card_dao,
             wallet_card_attempt_dao,
-            wallet_dao
+            wallet_dao,
+            adyen_service
         }
+    }
+
+    pub async fn register_attempt_and_send_card_to_adyen(
+        &self,
+        user: &User,
+        request: &AddCardRequest
+    ) -> Result<WalletCardAttempt, ServiceError> {
+
+        let expected_reference_id = Uuid::new_v4();
+        let credit_card = self.credit_card_dao.find_by_public_id(request.credit_card_type_public_id.clone())?;
+        let wca = self.wallet_card_attempt_dao.insert(
+            InsertableCardAttempt {
+                user_id: user.id,
+                credit_card_id: credit_card.id,
+                expected_reference_id: expected_reference_id.to_string()
+            }
+        )?;
+        /*
+        self.adyen_service.add_card(
+            &Uuid::new_v4().to_string(),
+            &user,
+            &
+
+        )
+        Ok(wca)
+         */
+
+        Err(ServiceError::new(500, "not implemented".to_string()))
+
     }
 
     pub async fn attempt_register_new_attempt(

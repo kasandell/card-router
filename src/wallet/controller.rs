@@ -19,20 +19,6 @@ use super::{
 };
 
 
-// TODO: this needs to be adjusted to create a card attempt
-#[post("/add-card/")]
-async fn add_card(info: web::Json<request::AddCardRequest>) -> Result<HttpResponse, ApiError> {
-    let new_card = NewCard {
-        user_id: 1, // TODO: populate from request
-        payment_method_id: info.into_inner().stripe_payment_method_id,
-        credit_card_id: 1,
-        wallet_card_attempt_id: 0,
-    };
-    let inserted_card = Wallet::insert_card(new_card)?;
-    Ok(HttpResponse::Ok().json(inserted_card))
-}
-
-
 #[post("/register-card-attempt/")]
 async fn register_new_card_attempt(
     user: web::ReqData<User>,

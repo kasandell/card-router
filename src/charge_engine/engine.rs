@@ -47,7 +47,7 @@ impl Engine {
 
     pub fn new() -> Self {
        Self {
-           charge_service: Box::new(ChargeService{}),
+           charge_service: Box::new(ChargeService::new()),
            passthrough_card_dao: Box::new(PassthroughCardDao{}),
            user_dao: Box::new(UserDao{}),
            ledger: Box::new(Ledger::new())

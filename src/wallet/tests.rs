@@ -1,8 +1,10 @@
+// TODO: everything needs a rewrite
 #[cfg(test)]
 mod tests {
     use actix_web;
     use mockall::predicate::eq;
     use uuid::Uuid;
+    use crate::adyen_service::checkout::service::MockAdyenChargeServiceTrait;
     use crate::api_error::ApiError;
     use crate::credit_card_type::dao::MockCreditCardDaoTrait;
     use crate::data_error::DataError;
@@ -23,6 +25,7 @@ mod tests {
         let mut cc_dao = MockCreditCardDaoTrait::new();
         let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
         let mut w_dao = MockWalletDaoTrait::new();
+        let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
         let cc = create_credit_card(CREDIT_CARD_ID);
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
@@ -53,7 +56,8 @@ mod tests {
         let wallet_engine = Engine::new_with_services(
             Box::new(cc_dao),
             Box::new(wca_dao),
-            Box::new(w_dao)
+            Box::new(w_dao),
+            Box::new(adyen_service),
         );
 
         let wca_ret = wallet_engine.attempt_register_new_attempt(
@@ -72,6 +76,7 @@ mod tests {
         let mut cc_dao = MockCreditCardDaoTrait::new();
         let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
         let mut w_dao = MockWalletDaoTrait::new();
+        let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
         let cc = create_credit_card(CREDIT_CARD_ID);
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
@@ -102,7 +107,8 @@ mod tests {
         let wallet_engine = Engine::new_with_services(
             Box::new(cc_dao),
             Box::new(wca_dao),
-            Box::new(w_dao)
+            Box::new(w_dao),
+            Box::new(adyen_service)
         );
 
         let err: ApiError = wallet_engine.attempt_register_new_attempt(
@@ -121,6 +127,7 @@ mod tests {
         let mut cc_dao = MockCreditCardDaoTrait::new();
         let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
         let mut w_dao = MockWalletDaoTrait::new();
+        let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
         let cc = create_credit_card(CREDIT_CARD_ID);
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
@@ -151,7 +158,8 @@ mod tests {
         let wallet_engine = Engine::new_with_services(
             Box::new(cc_dao),
             Box::new(wca_dao),
-            Box::new(w_dao)
+            Box::new(w_dao),
+            Box::new(adyen_service)
         );
 
         let wca_ret = wallet_engine.attempt_register_new_attempt(
@@ -180,6 +188,7 @@ mod tests {
         let mut cc_dao = MockCreditCardDaoTrait::new();
         let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
         let mut w_dao = MockWalletDaoTrait::new();
+        let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
         let cc = create_credit_card(CREDIT_CARD_ID);
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
@@ -242,7 +251,8 @@ mod tests {
         let wallet_engine = Engine::new_with_services(
             Box::new(cc_dao),
             Box::new(wca_dao),
-            Box::new(w_dao)
+            Box::new(w_dao),
+            Box::new(adyen_service)
         );
 
         let created_card = wallet_engine.attempt_match(
@@ -261,6 +271,7 @@ mod tests {
         let mut cc_dao = MockCreditCardDaoTrait::new();
         let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
         let mut w_dao = MockWalletDaoTrait::new();
+        let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
         let cc = create_credit_card(CREDIT_CARD_ID);
 
@@ -297,7 +308,8 @@ mod tests {
         let wallet_engine = Engine::new_with_services(
             Box::new(cc_dao),
             Box::new(wca_dao),
-            Box::new(w_dao)
+            Box::new(w_dao),
+            Box::new(adyen_service)
         );
 
         let error = wallet_engine.attempt_match(
@@ -316,6 +328,7 @@ mod tests {
         let mut cc_dao = MockCreditCardDaoTrait::new();
         let mut wca_dao = MockWalletCardAttemtDaoTrait::new();
         let mut w_dao = MockWalletDaoTrait::new();
+        let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
         let user = create_user_in_mem(USER_ID);
 
@@ -343,7 +356,8 @@ mod tests {
         let wallet_engine = Engine::new_with_services(
             Box::new(cc_dao),
             Box::new(wca_dao),
-            Box::new(w_dao)
+            Box::new(w_dao),
+            Box::new(adyen_service)
         );
 
         let error = wallet_engine.attempt_match(
