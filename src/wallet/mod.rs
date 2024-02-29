@@ -8,3 +8,4 @@ pub mod dao;
 pub mod engine;
 pub mod response;
 pub mod tests;
+pub mod converter;

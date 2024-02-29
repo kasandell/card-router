@@ -34,8 +34,10 @@ impl From<DataError> for ServiceError {
 impl <T> From<AdyenCheckoutError<T>> for ServiceError {
     fn from(error: AdyenCheckoutError<T>) -> ServiceError {
         info!("Converting from adyen checkout error");
+        println!("Converting from adyen checkout error");
+        println!("{}", error);
         match error {
-            err => ServiceError::new(500, format!("Adyen error: {}", err)),
+            err => ServiceError::new(500, format!("Adyen error")),
         }
     }
 }
@@ -43,6 +45,7 @@ impl <T> From<AdyenCheckoutError<T>> for ServiceError {
 impl From<AdyenCheckoutServiceError> for ServiceError {
     fn from(_: AdyenCheckoutServiceError) -> Self {
         info!("Converting from adyen service error");
+        println!("Converting from adyen service error");
         ServiceError::new(500, "Service error".to_string())
 
     }

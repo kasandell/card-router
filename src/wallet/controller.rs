@@ -19,6 +19,31 @@ use super::{
 };
 
 
+#[post("/add-card/")]
+async fn add_card(
+    user: web::ReqData<User>,
+    info: web::Json<request::AddCardRequest>
+) -> Result<HttpResponse, ApiError> {
+    println!("IN REQUEST");
+    let user = user.into_inner();
+    println!("GOT USER");
+    let info = info.into_inner();
+    println!("GOT INFO");
+    println!("{:?}", &info);
+    let engine = Engine::new();
+    println!("GOT ENGINE");
+    let wca = engine.register_attempt_and_send_card_to_adyen(
+        &user,
+        &info
+    ).await?;
+    println!("done registering");
+    Ok(HttpResponse::Ok().json(
+        WalletCardAttemptResponse {
+            public_id: wca.public_id
+        }
+    ))
+}
+
 #[post("/register-card-attempt/")]
 async fn register_new_card_attempt(
     user: web::ReqData<User>,

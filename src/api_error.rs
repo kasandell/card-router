@@ -36,6 +36,7 @@ impl fmt::Display for ApiError {
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
         info!("Converting from serde error");
+        println!("SERDE ERROR");
         match error {
             err => ApiError::new(500, format!("Serde Error error: {}", err)),
         }

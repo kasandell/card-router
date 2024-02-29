@@ -8,6 +8,7 @@ use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, Wallet, WalletCardAttempt};
 use crate::wallet::request::{AddCardRequest, MatchAttemptRequest, RegisterAttemptRequest};
+use adyen_checkout::models::PaymentRequestPaymentMethod as AdyenPaymentMethod;
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one
@@ -50,8 +51,10 @@ impl Engine {
         request: &AddCardRequest
     ) -> Result<WalletCardAttempt, ServiceError> {
 
+        println!("registering new attempt");
         let expected_reference_id = Uuid::new_v4();
         let credit_card = self.credit_card_dao.find_by_public_id(request.credit_card_type_public_id.clone())?;
+        println!("found credit card id");
         let wca = self.wallet_card_attempt_dao.insert(
             InsertableCardAttempt {
                 user_id: user.id,
@@ -59,18 +62,16 @@ impl Engine {
                 expected_reference_id: expected_reference_id.to_string()
             }
         )?;
-        /*
-        self.adyen_service.add_card(
+        println!("CREATED WALLET CARED");
+        let card_resp = self.adyen_service.add_card(
             &Uuid::new_v4().to_string(),
             &user,
-            &
-
-        )
+            &expected_reference_id.to_string(),
+            &AdyenPaymentMethod::from(request.payment_method.clone())
+        ).await?;
+        println!("GOT CARD RESPONSE");
         Ok(wca)
-         */
-
-        Err(ServiceError::new(500, "not implemented".to_string()))
-
+        // Err(ServiceError::new(500, "not implemented".to_string()))
     }
 
     pub async fn attempt_register_new_attempt(

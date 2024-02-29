@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 
 use adyen_checkout::{
@@ -11,6 +12,7 @@ use adyen_checkout::{
 };
 use adyen_checkout::apis::modifications_api::post_payments_payment_psp_reference_cancels;
 use adyen_checkout::models::{PaymentCancelRequest, PaymentCancelResponse};
+use adyen_checkout::models::payment_request::RecurringProcessingModel;
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
@@ -48,7 +50,8 @@ pub trait AdyenChargeServiceTrait {
         &self,
         idempotency_key: &str,
         user: &User,
-        request: &PaymentRequest
+        reference_id: &str,
+        request: &PaymentRequestPaymentMethod
     ) -> Result<PaymentResponse, ServiceError>;
 }
 
@@ -239,18 +242,22 @@ impl AdyenChargeServiceTrait for ChargeService {
         &self,
         idempotency_key: &str,
         user: &User,
-        request: &PaymentRequest
+        reference_id: &str,
+        request: &PaymentRequestPaymentMethod,
     ) -> Result<PaymentResponse, ServiceError> {
+        println!("IN ADD CARD REQUEST");
+        let additional_data: HashMap<String, String> =
+            [("allow3DS2".to_string(), "true".to_string())].iter().cloned().collect();
         Ok(
             post_payments(
                 &self.configuration,
-                Some(to_value(idempotency_key.to_string())?),
+                None,//Some(to_value(idempotency_key.to_string())?),
                 // TODO: make sure we transform this appropriately to only take in required components from frontend
                 Some(
                     PaymentRequest {
                         account_info: None,
                         additional_amount: None,
-                        additional_data: None,
+                        additional_data: Some(Some(additional_data)),
                         amount: Box::new(Amount {
                             currency: "USD".to_string(),
                             value: 0
@@ -293,16 +300,16 @@ impl AdyenChargeServiceTrait for ChargeService {
                         order_reference: None,
                         origin: None,
                         // TODO: is this okay?
-                        payment_method: request.payment_method.clone(),
+                        payment_method: Box::new(request.clone()),
                         platform_chargeback_logic: None,
                         recurring_expiry: None,
                         recurring_frequency: None,
-                        recurring_processing_model: None,
+                        recurring_processing_model: Some(RecurringProcessingModel::CardOnFile),
                         redirect_from_issuer_method: None,
                         redirect_to_issuer_method: None,
                         // this needs to be same as wallet match reference
-                        reference: "".to_string(),
-                        return_url: "".to_string(),
+                        reference: reference_id.to_string(),
+                        return_url: "myapp://payment".to_string(),
                         risk_data: None,
                         session_validity: None,
                         shopper_email: None,
