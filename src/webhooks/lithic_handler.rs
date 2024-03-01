@@ -1,3 +1,5 @@
+use std::time::Instant;
+use chrono::Utc;
 use crate::adyen_service::checkout::service::AdyenChargeServiceTrait;
 
 use crate::api_error::ApiError;
@@ -49,6 +51,7 @@ impl LithicHandler {
         // TODO: do a reverse lookup based on the card token to get the user
         info!("Identifying user by card");
         println!("Identifying user by card");
+        let mut start = Instant::now();
         let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
         let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
         let user = User::find_by_internal_id(
@@ -56,6 +59,8 @@ impl LithicHandler {
                 token.clone()
             )?.user_id
         )?;
+        println!("Find user, card, token took {:?}", start.elapsed());
+        start = Instant::now();
 
         info!("Getting user cards for userId={}", user.id);
         println!("Getting user cards for userId={}", user.id);
@@ -63,15 +68,20 @@ impl LithicHandler {
             request.clone(),
             &user
         )?;
+        println!("Rule engine order cards took {:?}", start.elapsed());
+
         info!("Got {} cards for userId={}", cards.len(), user.id);
         println!("Got {} cards for userId={}", cards.len(), user.id);
 
         info!("Attempting to charge userId={}", user.id);
         println!("Attempting to charge userId={}", user.id);
+
+        start = Instant::now();
         let (result, ledger) = self.charge_engine.charge_from_asa_request(
             &request,
             &cards,
         ).await?;
+        println!("Charge engine from asa request took {:?}", start.elapsed());
         println!("Done");
         info!("Charging success {:?} for userId={}", &result, user.id);
         println!("Charging success {:?} for userId={}", &result, user.id);

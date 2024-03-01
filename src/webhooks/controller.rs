@@ -1,9 +1,11 @@
+use std::time::Instant;
 use actix_web::{
     web,
     post,
     HttpResponse,
 };
 use actix_web::web::Bytes;
+use chrono::{NaiveDateTime, Utc};
 
 use crate::api_error::ApiError;
 use crate::asa::request::AsaRequest;
@@ -31,10 +33,15 @@ async fn adyen_webhook(notification: web::Json<AuthorisationNotificationRequest>
 
 #[post("/lithic-asa-webhook/")]
 async fn lithic_asa_webhook(asa: web::Json<AsaRequest>) -> Result<HttpResponse, ApiError> {
+    let mut start = Instant::now();
     let handler = LithicHandler::new();
+    println!("Init Lithic Handler took {:?}", start.elapsed());
+    start = Instant::now();
+    let resp = handler.handle(asa.into_inner()).await?;
+    println!("Lithic handler took {:?}", start.elapsed());
     Ok(
         HttpResponse::Ok().json(
-            handler.handle(asa.into_inner()).await?
+            resp
         )
     )
 }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::env;
+use std::time::Instant;
 
 use adyen_checkout::{
     apis::{
@@ -78,111 +79,114 @@ impl AdyenChargeServiceTrait for ChargeService {
         &self,
         request: &ChargeCardRequest<'a>
     ) -> Result<PaymentResponse, ServiceError> {
-        Ok(
-            post_payments(
-                &self.configuration,
-                Some(to_value(request.idempotency_key)?),
-                Some(PaymentRequest {
-                    account_info: None,
-                    additional_amount: None,
-                    additional_data: None,
-                    amount: Box::new(
-                        Amount {
-                            currency: "USD".to_string(),
-                            value: request.amount_cents as i64
-                        }
-                    ),
-                    application_info: None,
-                    authentication_data: None,
-                    billing_address: None,
-                    browser_info: None,
-                    capture_delay_hours: None,
-                    channel: None,
-                    checkout_attempt_id: None,
-                    company: None,
-                    conversion_id: None,
-                    country_code: None,
-                    date_of_birth: None,
-                    dcc_quote: None,
-                    deliver_at: None,
-                    delivery_address: None,
-                    delivery_date: None,
-                    device_fingerprint: None,
-                    enable_one_click: None,
-                    enable_pay_out: None,
-                    enable_recurring: None,
-                    entity_type: None,
-                    fraud_offset: None,
-                    fund_origin: None,
-                    fund_recipient: None,
-                    industry_usage: None,
-                    installments: None,
-                    line_items: None,
-                    localized_shopper_statement: None,
-                    mandate: None,
-                    mcc: Some(request.mcc.to_string()),
-                    merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
-                    merchant_order_reference: None,
-                    merchant_risk_indicator: None,
-                    metadata: None,
-                    mpi_data: None,
-                    order: None,
-                    order_reference: None,
-                    origin: None,
-                    payment_method: Box::new(
-                        PaymentRequestPaymentMethod {
-                            checkout_attempt_id: None,
-                            recurring_detail_reference: None,
-                            stored_payment_method_id: Some(Some(to_value(request.payment_method_id)?)),
-                            r#type: Some(Some(adyen_checkout::models::payment_request_payment_method::Type::Scheme)),
-                            funding_source: None,
-                            holder_name: None,
-                            brand: None,
-                            cupsecureplus_period_smscode: None,
-                            cvc: None,
-                            encrypted_card_number: None,
-                            encrypted_expiry_month: None,
-                            encrypted_expiry_year: None,
-                            encrypted_security_code: None,
-                            expiry_month: None,
-                            expiry_year: None,
-                            network_payment_reference: None,
-                            number: None,
-                            shopper_notification_reference: None,
-                            three_ds2_sdk_version: None,
-                        }
-                    ),
-                    platform_chargeback_logic: None,
-                    recurring_expiry: None,
-                    recurring_frequency: None,
-                    recurring_processing_model: Some(adyen_checkout::models::payment_request::RecurringProcessingModel::CardOnFile),
-                    redirect_from_issuer_method: None,
-                    redirect_to_issuer_method: None,
-                    reference: request.reference.to_string(),
-                    return_url: "".to_string(),
-                    risk_data: None,
-                    session_validity: None,
-                    shopper_email: None,
-                    shopper_ip: None,
-                    shopper_interaction: None,
-                    shopper_locale: None,
-                    shopper_name: None,
-                    shopper_reference: None,
-                    shopper_statement: Some(
-                        request.statement.to_string()
-                    ),
-                    social_security_number: None,
-                    splits: None,
-                    store: None,
-                    store_payment_method: None,
-                    telephone_number: None,
-                    three_ds2_request_data: None,
-                    three_ds_authentication_only: None,
-                    trusted_shopper: None
+        let mut start = Instant::now();
+        let body = Some(PaymentRequest {
+            account_info: None,
+            additional_amount: None,
+            additional_data: None,
+            amount: Box::new(
+                Amount {
+                    currency: "USD".to_string(),
+                    value: request.amount_cents as i64
                 }
-                )
-            ).await?
-        )
+            ),
+            application_info: None,
+            authentication_data: None,
+            billing_address: None,
+            browser_info: None,
+            capture_delay_hours: None,
+            channel: None,
+            checkout_attempt_id: None,
+            company: None,
+            conversion_id: None,
+            country_code: None,
+            date_of_birth: None,
+            dcc_quote: None,
+            deliver_at: None,
+            delivery_address: None,
+            delivery_date: None,
+            device_fingerprint: None,
+            enable_one_click: None,
+            enable_pay_out: None,
+            enable_recurring: None,
+            entity_type: None,
+            fraud_offset: None,
+            fund_origin: None,
+            fund_recipient: None,
+            industry_usage: None,
+            installments: None,
+            line_items: None,
+            localized_shopper_statement: None,
+            mandate: None,
+            mcc: None, //Some(request.mcc.to_string()), // TODO: this causes txn to block
+            merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
+            merchant_order_reference: None,
+            merchant_risk_indicator: None,
+            metadata: None,
+            mpi_data: None,
+            order: None,
+            order_reference: None,
+            origin: None,
+            payment_method: Box::new(
+                PaymentRequestPaymentMethod {
+                    checkout_attempt_id: None,
+                    recurring_detail_reference: None,
+                    stored_payment_method_id: Some(Some(to_value(request.payment_method_id)?)),
+                    r#type: None,//Some(Some(adyen_checkout::models::payment_request_payment_method::Type::Scheme)),
+                    funding_source: None,
+                    holder_name: None,
+                    brand: None,
+                    cupsecureplus_period_smscode: None,
+                    cvc: None,
+                    encrypted_card_number: None,
+                    encrypted_expiry_month: None,
+                    encrypted_expiry_year: None,
+                    encrypted_security_code: None,
+                    expiry_month: None,
+                    expiry_year: None,
+                    network_payment_reference: None,
+                    number: None,
+                    shopper_notification_reference: None,
+                    three_ds2_sdk_version: None,
+                }
+            ),
+            platform_chargeback_logic: None,
+            recurring_expiry: None,
+            recurring_frequency: None,
+            recurring_processing_model: Some(adyen_checkout::models::payment_request::RecurringProcessingModel::UnscheduledCardOnFile),
+            redirect_from_issuer_method: None,
+            redirect_to_issuer_method: None,
+            reference: request.reference.to_string(),
+            return_url: "".to_string(),
+            risk_data: None,
+            session_validity: None,
+            shopper_email: None,
+            shopper_ip: None,
+            shopper_interaction: Some(ShopperInteraction::ContAuth), // needed to run the payment
+            shopper_locale: None,
+            shopper_name: None,
+            shopper_reference: Some(request.customer_public_id.to_string()),
+            shopper_statement: Some(
+                request.statement.to_string()
+            ),
+            social_security_number: None,
+            splits: None,
+            store: None,
+            store_payment_method: None,
+            telephone_number: None,
+            three_ds2_request_data: None,
+            three_ds_authentication_only: None,
+            trusted_shopper: None
+        });
+        println!("Creating body took {:?}", start.elapsed());
+        start = Instant::now();
+        let resp = post_payments(
+            &self.configuration,
+            Some(to_value(request.idempotency_key)?),
+            body
+        ).await?;
+        println!("ACTUAL CALL TOOK {:?}", start.elapsed());
+        Ok(resp)
     }
 
     async fn cancel_transaction(
@@ -266,7 +270,7 @@ impl AdyenChargeServiceTrait for ChargeService {
             platform_chargeback_logic: None,
             recurring_expiry: None,
             recurring_frequency: None,
-            recurring_processing_model: Some(RecurringProcessingModel::CardOnFile),
+            recurring_processing_model: Some(RecurringProcessingModel::UnscheduledCardOnFile),
             redirect_from_issuer_method: None,
             redirect_to_issuer_method: None,
             // this needs to be same as wallet match reference

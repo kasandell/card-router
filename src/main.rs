@@ -61,9 +61,6 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
     util::db::init();
-    let lithic = LithicService::new();
-    let idempotency_key = Uuid::new_v4().to_string();
-    //let resp = lithic.register_webhook(idempotency_key).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
 
     HttpServer::new(move || {
         App::new()
