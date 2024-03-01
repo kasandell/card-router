@@ -225,19 +225,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "adyen-payment"
-version = "68.0.0"
-dependencies = [
- "reqwest",
- "serde",
- "serde_derive",
- "serde_json",
- "serde_with 2.3.3",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "adyen-webhooks"
 version = "1.0.0"
 dependencies = [
@@ -507,7 +494,6 @@ dependencies = [
  "actix-web",
  "actix-web-httpauth",
  "adyen-checkout",
- "adyen-payment",
  "adyen-webhooks",
  "async-trait",
  "base64 0.21.5",

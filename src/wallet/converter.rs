@@ -10,32 +10,18 @@ use adyen_checkout::models::{
 impl From<PaymentMethod> for AdyenPaymentMethod {
     fn from(value: PaymentMethod) -> Self {
         AdyenPaymentMethod {
-            bank_account_number: None,
-            bank_account_type: None,
-            bank_location_id: None,
             checkout_attempt_id: match value.checkout_attempt_id {
                 Some(v) => Some(Some(serde_json::Value::from(v))),
                 None => None
             },
-            encrypted_bank_account_number: None,
-            encrypted_bank_location_id: None,
-            owner_name: None,
             recurring_detail_reference: None,
             stored_payment_method_id: None,
-            r#type: Some(AdyenType::Scheme),/*match value.r#type {
+            r#type: Some(Some(AdyenType::Scheme)),/*match value.r#type {
                 Some(r#type) => Some(AdyenType::from(r#type)),
                 None => None
             },*/
-            billing_address: None,
-            delivery_address: None,
-            personal_details: None,
-            amazon_pay_token: None,
-            checkout_session_id: None,
-            apple_pay_token: None,
             funding_source: None,
             holder_name: None,
-            issuer: None,
-            blik_code: None,
             brand: match value.brand {
                 Some(v) => Some(Some(serde_json::Value::from(v))),
                 None => None
@@ -67,25 +53,6 @@ impl From<PaymentMethod> for AdyenPaymentMethod {
                 Some(v) => Some(Some(serde_json::Value::from(v))),
                 None => None
             },
-            first_name: None,
-            last_name: None,
-            shopper_email: None,
-            telephone_number: None,
-            google_pay_token: None,
-            subtype: None,
-            masterpass_transaction_id: None,
-            order_id: None,
-            payee_preferred: None,
-            payer_id: None,
-            payer_selected: None,
-            virtual_payment_address: None,
-            samsung_pay_token: None,
-            iban: None,
-            billing_sequence_number: None,
-            visa_checkout_call_id: None,
-            app_id: None,
-            openid: None,
-            click_and_collect: None,
         }
     }
 }

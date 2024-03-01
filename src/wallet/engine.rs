@@ -8,7 +8,8 @@ use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, Wallet, WalletCardAttempt};
 use crate::wallet::request::{AddCardRequest, MatchAttemptRequest, RegisterAttemptRequest};
-use adyen_checkout::models::PaymentRequestPaymentMethod as AdyenPaymentMethod;
+use adyen_checkout::models::{PaymentRequestPaymentMethod as AdyenPaymentMethod, PaymentResponse};
+use crate::constant::constant;
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one
@@ -49,7 +50,7 @@ impl Engine {
         &self,
         user: &User,
         request: &AddCardRequest
-    ) -> Result<WalletCardAttempt, ServiceError> {
+    ) -> Result<(WalletCardAttempt, PaymentResponse), ServiceError> {
 
         println!("registering new attempt");
         let expected_reference_id = Uuid::new_v4();
@@ -70,8 +71,33 @@ impl Engine {
             &AdyenPaymentMethod::from(request.payment_method.clone())
         ).await?;
         println!("GOT CARD RESPONSE");
-        Ok(wca)
+        println!("{:?}", card_resp);
+        Ok((wca, card_resp))
         // Err(ServiceError::new(500, "not implemented".to_string()))
+    }
+
+    pub async fn attempt_match_from_response(
+        &self,
+        payment_response: &PaymentResponse
+    ) -> Result<Option<Wallet>, ServiceError> {
+        let Some(Some(additional_data)) = payment_response.additional_data.clone() else { return Ok(None); };
+        let Some(recurring_detail) = additional_data.get(constant::RECURRING_DETAIL_KEY).cloned() else { return Ok(None); };
+        let Some(merchant_reference) = payment_response.merchant_reference.clone() else { return Ok(None); };
+        let Some(original_reference) = payment_response.psp_reference.clone() else { return Ok(None); };
+
+        let match_attempt = self.attempt_match(
+            &MatchAttemptRequest {
+                merchant_reference_id: merchant_reference,
+                original_psp_reference: original_reference,
+                psp_reference: recurring_detail
+            }
+        ).await;
+
+        // we want to swallow errors. this is optional
+        match match_attempt {
+            Ok(wallet) => Ok(Some(wallet)),
+            Err(err) => Ok(None)
+        }
     }
 
     pub async fn attempt_register_new_attempt(

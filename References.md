@@ -61,3 +61,7 @@ FOR WALLET MATCHING TO WORK PROPERLY
 frontend needs two screens, the first one is where we select card type. this needs to call backend to create wallet card attempt
 do not present next screen until this is ready. 
 then present adyen screen. this guarantees that we have a wallet card attempt to match against on backend
+
+
+openapi anyof is forcing some of the api parameters to show as required even though they're not and we're getting 
+bad request from it. need to make a custom api schema probably.

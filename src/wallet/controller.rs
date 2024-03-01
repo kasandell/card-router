@@ -29,13 +29,13 @@ async fn add_card(
     println!("GOT USER");
     let info = info.into_inner();
     println!("GOT INFO");
-    println!("{:?}", &info);
     let engine = Engine::new();
     println!("GOT ENGINE");
-    let wca = engine.register_attempt_and_send_card_to_adyen(
+    let (wca, payment_response) = engine.register_attempt_and_send_card_to_adyen(
         &user,
         &info
     ).await?;
+    let match_from_response = engine.attempt_match_from_response(&payment_response).await;
     println!("done registering");
     Ok(HttpResponse::Ok().json(
         WalletCardAttemptResponse {

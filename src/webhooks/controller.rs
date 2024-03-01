@@ -9,16 +9,17 @@ use crate::api_error::ApiError;
 use crate::asa::request::AsaRequest;
 use adyen_webhooks::models::{
     RecurringContractNotificationRequest,
-    NotificationResponse
+    NotificationResponse,
+    AuthorisationNotificationRequest
 };
 use crate::webhooks::adyen_handler::AdyenHandler;
 use crate::webhooks::lithic_handler::LithicHandler;
 
 
 #[post("/adyen-webhook/")]
-async fn adyen_webhook(notification: web::Json<RecurringContractNotificationRequest>) -> Result<HttpResponse, ApiError> {
-    let handler = AdyenHandler::new();
-    handler.handle(notification.into_inner()).await?;
+async fn adyen_webhook(notification: web::Json<AuthorisationNotificationRequest>) -> Result<HttpResponse, ApiError> {
+    //let handler = AdyenHandler::new();
+    //handler.handle(notification.into_inner()).await?;
     Ok(
         HttpResponse::Ok().json(
             NotificationResponse {
