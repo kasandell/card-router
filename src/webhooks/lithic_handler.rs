@@ -57,8 +57,8 @@ impl LithicHandler {
         let user = User::find_by_internal_id(
             PassthroughCard::get_by_token(
                 token.clone()
-            )?.user_id
-        )?;
+            ).await?.user_id
+        ).await?;
         println!("Find user, card, token took {:?}", start.elapsed());
         start = Instant::now();
 
@@ -67,7 +67,7 @@ impl LithicHandler {
         let cards = self.rule_engine.order_user_cards_for_request(
             request.clone(),
             &user
-        )?;
+        ).await?;
         println!("Rule engine order cards took {:?}", start.elapsed());
 
         info!("Got {} cards for userId={}", cards.len(), user.id);

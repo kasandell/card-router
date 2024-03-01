@@ -9,7 +9,7 @@ use super::entity::CreditCard;
 #[get("/list/")]
 async fn list_cards() -> Result<HttpResponse, ApiError>{
     warn!("Hi Im here");
-    let cards: Vec<CardTypeResponse> = CreditCard::list_all_card_types()?
+    let cards: Vec<CardTypeResponse> = CreditCard::list_all_card_types().await?
         .iter()
         .map(|card| CardTypeResponse {
             public_id: card.0.public_id,

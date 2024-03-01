@@ -1,4 +1,5 @@
 use std::collections::{hash_map::Entry, HashMap};
+use async_trait::async_trait;
 
 use chrono::Utc;
 
@@ -17,23 +18,25 @@ pub struct RuleEngine {
 }
 
 #[mockall::automock]
+#[async_trait]
 pub trait RuleEngineTrait {
-    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
+    async fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
 }
 
+#[async_trait]
 impl RuleEngineTrait for RuleEngine {
-    fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
+    async fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
         let amount = request.amount.ok_or(ServiceError::new(400, "expect amount".to_string()))?;
-        let cards = Wallet::find_all_for_user_with_card_info(user)?;
+        let cards = Wallet::find_all_for_user_with_card_info(user).await?;
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
-        let rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids)?;
+        let rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids).await?;
         info!("Using {} rules", rules.len());
         println!("Using {} rules", rules.len());
-        let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, amount)?;
+        let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, amount).await?;
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
 }
@@ -42,7 +45,7 @@ impl RuleEngine {
     pub fn new() -> Self {
         Self {}
     }
-    pub fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
+    pub async fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
@@ -75,15 +78,16 @@ impl RuleEngine {
         Ok(cards_only)
     }
 
-    fn find_and_filter_rules(request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
+    async fn find_and_filter_rules(request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
         Ok(
-            Rule::get_rules_for_card_ids(card_type_ids)?
+            Rule::get_rules_for_card_ids(card_type_ids).await?
                 .into_iter()
                 .filter(|rule| rule.is_valid() && RuleEngine::filter_rule_for_request(&rule, &request))
                 .collect()
         )
     }
 
+    // TODO: async?
     fn filter_rule_for_request(rule: &Rule, asa_request: &AsaRequest) -> bool {
         RuleEngine::filter_rule_by_merchant(rule, asa_request) && RuleEngine::filter_rule_by_date(rule)
     }

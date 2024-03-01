@@ -1,16 +1,19 @@
 use crate::category::entity::{Category, InsertableCategory, InsertableMccMapping, MccMapping};
 use crate::data_error::DataError;
+use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 #[cfg_attr(test, automock)]
+#[async_trait]
 pub trait CategoryDaoTrait {
-    fn create(&self, category: InsertableCategory) -> Result<Category, DataError>;
+    async fn create(&self, category: InsertableCategory) -> Result<Category, DataError>;
 }
 
 #[cfg_attr(test, automock)]
+#[async_trait]
 pub trait MccMappingDaoTrait {
-    fn create(&self, mapping: InsertableMccMapping) -> Result<MccMapping, DataError>;
+    async fn create(&self, mapping: InsertableMccMapping) -> Result<MccMapping, DataError>;
 }
 
 pub struct CategoryDao{}
@@ -18,26 +21,29 @@ pub struct CategoryDao{}
 pub struct MccMappingDao{}
 
 
+// async?
 impl CategoryDao {
     pub fn new() -> Self {
         Self{}
     }
 }
 
+#[async_trait]
 impl CategoryDaoTrait for CategoryDao {
-    fn create(&self, category: InsertableCategory) -> Result<Category, DataError> {
-        Category::create(category)
+    async fn create(&self, category: InsertableCategory) -> Result<Category, DataError> {
+        Category::create(category).await
     }
 }
 
 impl MccMappingDao {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
         Self{}
     }
 }
 
+#[async_trait]
 impl MccMappingDaoTrait for MccMappingDao {
-    fn create(&self, mapping: InsertableMccMapping) -> Result<MccMapping, DataError> {
-        MccMapping::create(mapping)
+    async fn create(&self, mapping: InsertableMccMapping) -> Result<MccMapping, DataError> {
+        MccMapping::create(mapping).await
     }
 }

@@ -2,6 +2,7 @@ use std::fmt;
 use std::num::ParseIntError;
 use serde::Deserialize;
 use diesel::result::Error as DieselError;
+use diesel_async::pooled_connection::bb8::RunError;
 use r2d2::Error as R2D2Error;
 use serde_json::{json, Error as SerdeError};
 use crate::api_error::ApiError;
@@ -27,6 +28,13 @@ impl fmt::Display for DataError {
 impl From<R2D2Error> for DataError {
     fn from(_: R2D2Error) -> DataError {
         DataError::new(500, "R2D2 error".to_string())
+    }
+
+}
+
+impl From<RunError> for DataError {
+    fn from(_: RunError) -> DataError {
+        DataError::new(500, "BB8 error".to_string())
     }
 
 }

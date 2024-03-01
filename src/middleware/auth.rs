@@ -3,6 +3,7 @@ use reqwest;
 use std::future::{Ready, ready};
 use std::pin::Pin;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 use actix_web::{dev::ServiceRequest, Error, HttpMessage, HttpResponse};
 use actix_web::dev::{Service, ServiceResponse, Transform};
@@ -25,29 +26,33 @@ use futures_util::future::LocalBoxFuture;
 
 pub struct Auth;
 
-impl<S, B> Transform<S, ServiceRequest> for Auth
+impl<S: 'static, B> Transform<S, ServiceRequest> for Auth
     where
         S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
         S::Future: 'static,
         B: 'static,
 {
-    type Response = ServiceResponse<EitherBody<B>>;
+    type Response = ServiceResponse<EitherBody<B>>;//ServiceResponse<B>;
     type Error = Error;
     type InitError = ();
     type Transform = AuthMiddleware<S>;
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(AuthMiddleware { service }))
+        ready(Ok(AuthMiddleware {
+            service: Arc::new(service),
+        }))
     }
 }
+
 pub struct AuthMiddleware<S> {
-    service: S,
+    // This is special: We need this to avoid lifetime issues.
+    service: Arc<S>,
 }
 
 impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
     where
-        S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+        S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
         S::Future: 'static,
         B: 'static,
 {
@@ -57,37 +62,50 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
 
     dev::forward_ready!(service);
 
-    fn call(&self, request: ServiceRequest) -> Self::Future {
-        // Change this to see the change in outcome in the browser.
-        // Usually this boolean would be acquired from a password check or other auth verification.
-        let mut is_logged_in = false;
+    fn call(&self, mut request: ServiceRequest) -> Self::Future {
+        let svc = self.service.clone();
 
-        let uid = match_jwt(request.headers(), &Role::User);
-        if let Ok(user_public_id) = uid {
-            if let Ok(id) = Uuid::from_str(&user_public_id) {
-                if let Ok(user) = User::find(&id) {
-                    // insert data into extensions if enabled
-                    is_logged_in = true;
-                    request.extensions_mut()
-                        .insert(user);
+        Box::pin(async move {
+            let mut is_logged_in = false;
+            let uid = match_jwt(request.headers(), &Role::User);
+            if let Ok(user_public_id) = uid {
+                if let Ok(id) = Uuid::from_str(&user_public_id) {
+                    if let Ok(user) = User::find(&id).await {
+                        // insert data into extensions if enabled
+                        is_logged_in = true;
+                        request.extensions_mut()
+                            .insert(user);
 
-                    //return Box::pin(self.service.call(request))
+                        //return Box::pin(self.service.call(request))
+                    }
                 }
             }
-        }
 
-        if is_logged_in {
-            let res = self.service.call(request);
-
-            Box::pin(async move {
+            if is_logged_in {
+                let res = svc.call(request);
                 // forwarded responses map to "left" body
-                res.await.map(ServiceResponse::map_into_left_body)
-            })
-        } else {
-            let response = HttpResponse::Unauthorized().finish().map_into_right_body();
-            let (request, _pl) = request.into_parts();
-            return Box::pin(async { Ok(ServiceResponse::new(request, response)) })
-        }
+                return res.await.map(ServiceResponse::map_into_left_body)
+            } else {
+                let response = HttpResponse::Unauthorized().finish().map_into_right_body();
+                let (request, _pl) = request.into_parts();
+                return Ok(ServiceResponse::new(request, response))
+            }
+            /*
+            Could be useful later
+            let mut body = BytesMut::new();
+            let mut stream = req.take_payload();
+            while let Some(chunk) = stream.next().await {
+                body.extend_from_slice(&chunk?);
+            }
+
+            println!("request body: {body:?}");
+            let res = svc.call(req).await?;
+
+            println!("response: {:?}", res.headers());
+
+            Ok(res)
+             */
+        })
     }
 }
 

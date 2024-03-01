@@ -15,13 +15,13 @@ use super::entity::{User, UserMessage};
 async fn find(user_id: web::Path<Uuid>) -> Result<HttpResponse, ApiError> {
     let id = user_id.into_inner();
     info!("Finding user by public id {}", id.clone());
-    let user = User::find(&id)?;
+    let user = User::find(&id).await?;
     Ok(HttpResponse::Ok().json(user))
 }
 #[get("/list/")]
 async fn list() -> Result<HttpResponse, ApiError> {
     info!("Listing users");
-    let users = User::find_all()?;
+    let users = User::find_all().await?;
     info!("Found {} users", users.len());
     Ok(HttpResponse::Ok().json(users))
 }
@@ -35,6 +35,6 @@ async fn create(request: web::Json<CreateUserRequest>) -> Result<HttpResponse, A
             email: &request.email,
             password: &request.password
         }
-    )?;
+    ).await?;
     Ok(HttpResponse::Ok().json(user))
 }

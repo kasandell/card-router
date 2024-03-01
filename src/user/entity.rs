@@ -2,6 +2,8 @@ use crate::util::db;
 use crate::schema::users;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
+#[cfg(not(test))]
+use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::data_error::DataError;
@@ -33,53 +35,53 @@ pub struct InsertableUser<'a> {
 }
 
 impl User {
-    pub fn find_all() -> Result<Vec<Self>, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn find_all() -> Result<Vec<Self>, DataError> {
+        let mut conn = db::connection().await?;
 
         let users = users::table
-            .load::<User>(&mut conn)?;
+            .load::<User>(&mut conn).await?;
 
         Ok(users)
     }
 
-    pub fn find(id: &Uuid) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn find(id: &Uuid) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
 
         let user = users::table
             .filter(users::public_id.eq(id))
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
 
         Ok(user)
     }
 
-    pub fn find_by_email_password(
+    pub async fn find_by_email_password(
         email: &str,
         password: &str
     ) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+        let mut conn = db::connection().await?;
 
         let user = users::table
             .filter(
                 users::email.eq(email)
                     .and(users::password.eq(password))
             )
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
 
         Ok(user)
     }
 
-    pub fn find_by_internal_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn find_by_internal_id(id: i32) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
 
         let user = users::table
             .filter(users::id.eq(id))
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
 
         Ok(user)
     }
 
-    pub fn create(user: &UserMessage) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn create<'a>(user: &UserMessage<'a>) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let user =  InsertableUser {
             public_id: &Uuid::new_v4(),
             email: user.email,
@@ -87,42 +89,42 @@ impl User {
         };
         let user = diesel::insert_into(users::table)
             .values(user)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
 
         Ok(user)
     }
 
-    pub fn update(id: &Uuid, user: &UserMessage) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn update<'a>(id: &Uuid, user: &UserMessage<'a>) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
 
         let user = diesel::update(users::table)
             .filter(users::public_id.eq(id))
             .set(user)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
 
         Ok(user)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
                 users::table
                     .filter(users::id.eq(id))
             )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
 
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         User::delete(self.id)
     }
 
     #[cfg(test)]
-    pub fn create_test_user(
+    pub async fn create_test_user(
         id: i32,
     ) -> Self {
         User {
@@ -136,13 +138,13 @@ impl User {
     }
 
     #[cfg(test)]
-    pub fn delete_all() -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete_all() -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             users::table
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
 
         Ok(res)
     }
@@ -150,7 +152,7 @@ impl User {
 
 /*
 impl From<&UserMessage> for InsertableUser {
-    fn from(user: &UserMessage) -> Self {
+    async fn from(user: &UserMessage) -> Self {
         InsertableUser {
             public_id: &Uuid::new_v4(),
             email: user.email,

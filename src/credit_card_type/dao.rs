@@ -1,15 +1,17 @@
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
 use crate::data_error::DataError;
+use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 use uuid::Uuid;
 
 #[cfg_attr(test, automock)]
+#[async_trait]
 pub trait CreditCardDaoTrait {
-    fn list_all_card_types(&self) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
-    fn search_all_card_types(&self, query: String) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
-    fn find_by_public_id(&self, public_id: Uuid) -> Result<CreditCard, DataError>;
+    async fn list_all_card_types(&self) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
+    async fn search_all_card_types(&self, query: String) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
+    async fn find_by_public_id(&self, public_id: Uuid) -> Result<CreditCard, DataError>;
 }
 
 pub struct CreditCardDao {}
@@ -21,15 +23,16 @@ impl CreditCardDao {
     }
 }
 
+#[async_trait]
 impl CreditCardDaoTrait for CreditCardDao {
-    fn list_all_card_types(&self) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
-        CreditCard::list_all_card_types()
+    async fn list_all_card_types(&self) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
+        CreditCard::list_all_card_types().await
     }
 
-    fn search_all_card_types(&self, query: String) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
-        CreditCard::search_all_card_types(query)
+    async fn search_all_card_types(&self, query: String) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
+        CreditCard::search_all_card_types(query).await
     }
-    fn find_by_public_id(&self, public_id: Uuid) -> Result<CreditCard, DataError> {
-        CreditCard::find_by_public_id(public_id)
+    async fn find_by_public_id(&self, public_id: Uuid) -> Result<CreditCard, DataError> {
+        CreditCard::find_by_public_id(public_id).await
     }
 }

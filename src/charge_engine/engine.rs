@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::sync::Arc;
 use std::time::Instant;
 use adyen_checkout::models::payment_response::ResultCode;
 use chrono::Utc;
@@ -26,7 +27,7 @@ pub struct Engine {
     charge_service: Box<dyn AdyenChargeServiceTrait>,
     passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
     user_dao: Box<dyn UserDaoTrait>,
-    ledger: Box<dyn TransactionEngineTrait>
+    ledger: Arc<dyn TransactionEngineTrait>
 }
 
 lazy_static! {
@@ -52,7 +53,7 @@ impl Engine {
            charge_service: Box::new(ChargeService::new()),
            passthrough_card_dao: Box::new(PassthroughCardDao{}),
            user_dao: Box::new(UserDao{}),
-           ledger: Box::new(Ledger::new())
+           ledger: Arc::new(Ledger::new())
        }
     }
 
@@ -61,7 +62,7 @@ impl Engine {
         charge_service: Box<dyn AdyenChargeServiceTrait>,
         passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
         user_dao: Box<dyn UserDaoTrait>,
-        ledger: Box<dyn TransactionEngineTrait>,
+        ledger: Arc<dyn TransactionEngineTrait>,
     ) -> Self {
         Self {
             charge_service,
@@ -81,15 +82,15 @@ impl Engine {
         let metadata = TransactionMetadata::convert(&request)?;
         let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
         let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
-        let passthrough_card = self.passthrough_card_dao.get_by_token(token)?;
-        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id)?;
+        let passthrough_card = self.passthrough_card_dao.get_by_token(token).await?;
+        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id).await?;
         println!("Charge Asa data setup took {:?}", start.elapsed());
         println!("Registering txn");
         start = Instant::now();
-        let rtx = self.ledger.register_transaction_for_user(
+        let rtx = self.ledger.clone().register_transaction_for_user(
             &user,
             &metadata
-        )?;
+        ).await?;
         println!("Register txn took {:?}", start.elapsed());
 
         println!("Charging wallet");
@@ -106,36 +107,36 @@ impl Engine {
             ChargeEngineResult::Approved => {
                 if let Some(ledger) = ledger {
                     // TODO: should verify that this is success
-                    let outer_successs = self.ledger.register_successful_outer_charge(
+                    let outer_successs = self.ledger.clone().register_successful_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
-                    )?;
+                    ).await?;
 
-                    let full_txn = self.ledger.register_full_transaction(
+                    let full_txn = self.ledger.clone().register_full_transaction(
                         &rtx,
                         &ledger,
                         &outer_successs
-                    )?;
+                    ).await?;
                     println!("match result and add ledger took {:?}", start.elapsed());
                     Ok((charge_result, Some(full_txn)))
 
                 } else {
-                    self.ledger.register_failed_outer_charge(
+                    self.ledger.clone().register_failed_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
-                    )?;
+                    ).await?;
                     println!("match result and add ledger took {:?}", start.elapsed());
                     Err(ServiceError::new(500, "Approved inner charge with no ledger entry, should not be possible".to_string()))
                 }
             },
             _ => {
-                self.ledger.register_failed_outer_charge(
+                self.ledger.clone().register_failed_outer_charge(
                     &rtx,
                     &metadata,
                     &passthrough_card
-                )?;
+                ).await?;
                 println!("match result and add ledger took {:?}", start.elapsed());
                 Ok((charge_result, None))
             }
@@ -211,11 +212,11 @@ impl Engine {
                 info!("Checkout returned code={:?} for card={} user={}", code, card.id, user.id);
                 if ACCEPTABLE_STATUSES.contains(&code) {
                     info!("Charged card={} for user={}", card.id, user.id);
-                    let ledger_entry = self.ledger.register_successful_inner_charge(
+                    let ledger_entry = self.ledger.clone().register_successful_inner_charge(
                         registered_transaction,
                         transaction_metadata,
                         card
-                    )?;
+                    ).await?;
                     println!("Match network code & insert ledger took {:?}", start.elapsed());
                     return Ok((ChargeCardAttemptResult::from(code), Some(ledger_entry)));
 
@@ -223,11 +224,11 @@ impl Engine {
                     //add to ledger
                 } else if FINAL_STATE_ERROR_CODES.contains(&code) {
                     warn!("Error charging card={} for user={}", card.id, user.id);
-                    let ledger_entry = self.ledger.register_failed_inner_charge(
+                    let ledger_entry = self.ledger.clone().register_failed_inner_charge(
                         registered_transaction,
                         transaction_metadata,
                         card
-                    )?;
+                    ).await?;
                     println!("Match network code & insert ledger took {:?}", start.elapsed());
                     return Ok((ChargeCardAttemptResult::Denied, Some(ledger_entry)));
                     //can safely bypass this branch
@@ -240,21 +241,21 @@ impl Engine {
                         ).await;
                         if let Ok(cancel) = cancel {
                             info!("Cancelled with status: {:?}", cancel.status);
-                            let ledger_entry = self.ledger.register_failed_inner_charge(
+                            let ledger_entry = self.ledger.clone().register_failed_inner_charge(
                                 registered_transaction,
                                 transaction_metadata,
                                 card
-                            )?;
+                            ).await?;
                             println!("Cleanup took {:?}", start.elapsed());
                             return Ok((ChargeCardAttemptResult::PartialCancelSucceeded, Some(ledger_entry)));
                             //cancel received. block on webhook response?
                         } else {
                             error!("Error cancelling unsuccessful payment with psp={}", psp);
-                            let ledger_entry = self.ledger.register_failed_inner_charge(
+                            let ledger_entry = self.ledger.clone().register_failed_inner_charge(
                                 registered_transaction,
                                 transaction_metadata,
                                 card
-                            )?;
+                            ).await?;
                             println!("Cleanup took {:?}", start.elapsed());
                             return Ok((ChargeCardAttemptResult::PartialCancelFailed, Some(ledger_entry)));
                             // error cancelling. figure out what to do
@@ -263,11 +264,11 @@ impl Engine {
                 }
             }
         }
-        let ledger_entry = self.ledger.register_failed_inner_charge(
+        let ledger_entry = self.ledger.clone().register_failed_inner_charge(
             registered_transaction,
             transaction_metadata,
             card
-        )?;
+        ).await?;
         println!("Couldn't match, took {:?}", start.elapsed());
         Ok((ChargeCardAttemptResult::Denied, Some(ledger_entry)))
     }

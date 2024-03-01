@@ -2,14 +2,17 @@
 #![allow(warnings)]
 extern crate diesel;
 extern crate diesel_migrations;
+extern crate diesel_async;
 #[macro_use]
 extern crate log;
 extern crate num;
 extern crate num_derive;
 extern crate env_logger;
 extern crate console_subscriber;
+extern crate uuidv7;
 
 use std::io::ErrorKind;
+use std::str::FromStr;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
@@ -58,6 +61,10 @@ async fn manual_hello() -> impl Responder {
 async fn main() -> std::io::Result<()> {
     console_subscriber::init();
     dotenv().ok();
+    let orig_id = uuidv7::create();
+    println!("{:?}", orig_id.to_string());
+    let id = Uuid::from_str(orig_id.as_str()).expect("should serialize");
+    println!("{:?}", id.to_string());
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
     util::db::init();

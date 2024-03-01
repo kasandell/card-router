@@ -2,6 +2,8 @@ use crate::schema::rule;
 use super::request::CreateRuleRequest;
 use chrono::NaiveDate;
 use diesel::prelude::*;
+#[cfg(not(test))]
+use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
@@ -45,20 +47,20 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn create(new_rule: CreateRuleRequest) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn create(new_rule: CreateRuleRequest) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let rule = diesel::insert_into(rule::table)
             .values(InsertableRule::from(new_rule))
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
         Ok(rule)
     }
 
-    pub fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, DataError> {
+        let mut conn = db::connection().await?;
 
         let rules = rule::table
             .filter(rule::credit_card_id.eq_any(ids))
-            .load::<Rule>(&mut conn)?;
+            .load::<Rule>(&mut conn).await?;
         Ok(rules)
     }
 
@@ -117,19 +119,19 @@ impl Rule {
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
                 rule::table
                     .filter(rule::id.eq(id))
             )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         Rule::delete(self.id)
     }
 }

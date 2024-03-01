@@ -12,7 +12,7 @@ async fn login(request: web::Json<LoginRequest>) -> Result<HttpResponse, ApiErro
     let user = User::find_by_email_password(
         &request.email,
         &request.password
-    );
+    ).await;
     match user {
         Ok(user) => {
             let token = create_jwt(&user.public_id.to_string(), &Role::User)

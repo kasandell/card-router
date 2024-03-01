@@ -2,22 +2,25 @@ use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardTy
 use crate::data_error::DataError;
 use crate::user::entity::User;
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt, UpdateCardAttempt};
+use async_trait::async_trait;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 
 #[cfg_attr(test, automock)]
+#[async_trait]
 pub trait WalletDaoTrait {
-    fn find_all_for_user(&self, user: &User) -> Result<Vec<Wallet>, DataError>;
-    fn find_all_for_user_with_card_info(&self, user: &User) -> Result<Vec<(Wallet, CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
-    fn insert_card(&self, card: NewCard) -> Result<Wallet, DataError>;
+    async fn find_all_for_user(&self, user: &User) -> Result<Vec<Wallet>, DataError>;
+    async fn find_all_for_user_with_card_info(&self, user: &User) -> Result<Vec<(Wallet, CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
+    async fn insert_card(&self, card: NewCard) -> Result<Wallet, DataError>;
 }
 
 
 #[cfg_attr(test, automock)]
+#[async_trait]
 pub trait WalletCardAttemtDaoTrait {
-    fn insert(&self, card_attempt: InsertableCardAttempt) -> Result<WalletCardAttempt, DataError>;
-    fn find_by_reference_id(&self, reference: String) -> Result<WalletCardAttempt, DataError>;
-    fn update_card(&self, id: i32, card: UpdateCardAttempt) -> Result<WalletCardAttempt, DataError>;
+    async fn insert(&self, card_attempt: InsertableCardAttempt) -> Result<WalletCardAttempt, DataError>;
+    async fn find_by_reference_id(&self, reference: String) -> Result<WalletCardAttempt, DataError>;
+    async fn update_card(&self, id: i32, card: UpdateCardAttempt) -> Result<WalletCardAttempt, DataError>;
 
 
 }
@@ -31,17 +34,18 @@ impl WalletDao {
     }
 }
 
+#[async_trait]
 impl WalletDaoTrait for WalletDao {
-    fn find_all_for_user(&self, user: &User) -> Result<Vec<Wallet>, DataError> {
-        Wallet::find_all_for_user(user)
+    async fn find_all_for_user(&self, user: &User) -> Result<Vec<Wallet>, DataError> {
+        Wallet::find_all_for_user(user).await
     }
 
-    fn find_all_for_user_with_card_info(&self, user: &User) -> Result<Vec<(Wallet, CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
-        Wallet::find_all_for_user_with_card_info(user)
+    async fn find_all_for_user_with_card_info(&self, user: &User) -> Result<Vec<(Wallet, CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
+        Wallet::find_all_for_user_with_card_info(user).await
     }
 
-    fn insert_card(&self, card: NewCard) -> Result<Wallet, DataError> {
-        Wallet::insert_card(card)
+    async fn insert_card(&self, card: NewCard) -> Result<Wallet, DataError> {
+        Wallet::insert_card(card).await
     }
 }
 
@@ -51,17 +55,18 @@ impl WalletCardAttemptDao {
     }
 }
 
+#[async_trait]
 impl WalletCardAttemtDaoTrait for WalletCardAttemptDao {
-    fn insert(&self, card_attempt: InsertableCardAttempt) -> Result<WalletCardAttempt, DataError> {
-        WalletCardAttempt::insert(card_attempt)
+    async fn insert(&self, card_attempt: InsertableCardAttempt) -> Result<WalletCardAttempt, DataError> {
+        WalletCardAttempt::insert(card_attempt).await
     }
 
-    fn find_by_reference_id(&self, reference: String) -> Result<WalletCardAttempt, DataError> {
-        WalletCardAttempt::find_by_reference_id(reference)
+    async fn find_by_reference_id(&self, reference: String) -> Result<WalletCardAttempt, DataError> {
+        WalletCardAttempt::find_by_reference_id(reference).await
     }
 
-    fn update_card(&self, id: i32, card: UpdateCardAttempt) -> Result<WalletCardAttempt, DataError> {
-        WalletCardAttempt::update_card(id, card)
+    async fn update_card(&self, id: i32, card: UpdateCardAttempt) -> Result<WalletCardAttempt, DataError> {
+        WalletCardAttempt::update_card(id, card).await
     }
 }
 

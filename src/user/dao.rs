@@ -1,22 +1,24 @@
 use uuid::Uuid;
 use crate::data_error::DataError;
 use crate::user::entity::{User, UserMessage};
+use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 
 #[cfg_attr(test, automock)]
+#[async_trait]
 pub trait UserDaoTrait {
-    fn find_all(&self) -> Result<Vec<User>, DataError>;
-    fn find(&self, id: &Uuid) -> Result<User, DataError>;
-    fn find_by_email_password(
+    async fn find_all(&self) -> Result<Vec<User>, DataError>;
+    async fn find(&self, id: &Uuid) -> Result<User, DataError>;
+    async fn find_by_email_password(
         &self,
         email: &str,
         password: &str
     ) -> Result<User, DataError>;
-    fn find_by_internal_id(&self, id: i32) -> Result<User, DataError>;
-    fn create<'a>(&self, user: &UserMessage<'a>) -> Result<User, DataError>;
-    fn update<'a>(&self, id: &Uuid, user: &UserMessage<'a>) -> Result<User, DataError>;
+    async fn find_by_internal_id(&self, id: i32) -> Result<User, DataError>;
+    async fn create<'a>(&self, user: &UserMessage<'a>) -> Result<User, DataError>;
+    async fn update<'a>(&self, id: &Uuid, user: &UserMessage<'a>) -> Result<User, DataError>;
 }
 
 pub struct UserDao {}
@@ -27,32 +29,33 @@ impl UserDao {
     }
 }
 
+#[async_trait]
 impl UserDaoTrait for UserDao {
-    fn find_all(&self) -> Result<Vec<User>, DataError> {
-        User::find_all()
+    async fn find_all(&self) -> Result<Vec<User>, DataError> {
+        User::find_all().await
     }
 
-    fn find(&self, id: &Uuid) -> Result<User, DataError> {
-        User::find(id)
+    async fn find(&self, id: &Uuid) -> Result<User, DataError> {
+        User::find(id).await
     }
 
-    fn find_by_email_password(
+    async fn find_by_email_password(
         &self,
         email: &str,
         password: &str
     ) -> Result<User, DataError> {
-        User::find_by_email_password(email, password)
+        User::find_by_email_password(email, password).await
     }
 
-    fn find_by_internal_id(&self, id: i32) -> Result<User, DataError> {
-        User::find_by_internal_id(id)
+    async fn find_by_internal_id(&self, id: i32) -> Result<User, DataError> {
+        User::find_by_internal_id(id).await
     }
 
-    fn create(&self, user: &UserMessage) -> Result<User, DataError> {
-        User::create(user)
+    async fn create<'a>(&self, user: &UserMessage<'a>) -> Result<User, DataError> {
+        User::create(user).await
     }
 
-    fn update(&self, id: &Uuid, user: &UserMessage) -> Result<User, DataError> {
-        User::update(id, user)
+    async fn update<'a>(&self, id: &Uuid, user: &UserMessage<'a>) -> Result<User, DataError> {
+        User::update(id, user).await
     }
 }

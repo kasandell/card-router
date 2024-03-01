@@ -70,7 +70,7 @@ async fn list_cards(
     let user = user.into_inner();
     let cards: Vec<DisplayableCardInfo> = Wallet::find_all_for_user_with_card_info(
         &user
-    )?
+    ).await?
         .iter()
         .map(|card| DisplayableCardInfo {
             public_id: card.0.public_id,

@@ -1,6 +1,8 @@
 use chrono::NaiveDateTime;
 use crate::schema::{registered_transactions, outer_charge_ledger, inner_charge_ledger, transaction_ledger};
-use diesel::{BoolExpressionMethods, Identifiable, Insertable, Queryable, RunQueryDsl, Selectable};
+use diesel::{BoolExpressionMethods, Identifiable, Insertable, Queryable, Selectable};
+#[cfg(not(test))]
+use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
@@ -129,60 +131,60 @@ pub struct InsertableTransactionLedger {
 
 
 impl RegisteredTransaction {
-    pub fn insert(transaction: InsertableRegisteredTransaction) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn insert(transaction: InsertableRegisteredTransaction) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = diesel::insert_into(registered_transactions::table)
             .values(transaction)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
         Ok(txn)
     }
 
-    pub fn get_by_transaction_id(id: Uuid) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_by_transaction_id(id: Uuid) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = registered_transactions::table.filter(
             registered_transactions::transaction_id.eq(id)
-        ).first::<RegisteredTransaction>(&mut conn)?;
+        ).first::<RegisteredTransaction>(&mut conn).await?;
         Ok(txn)
     }
 
-    pub fn get(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get(id: i32) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = registered_transactions::table.filter(
             registered_transactions::id.eq(id)
-        ).first::<RegisteredTransaction>(&mut conn)?;
+        ).first::<RegisteredTransaction>(&mut conn).await?;
         Ok(txn)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             registered_transactions::table
                 .filter(registered_transactions::id.eq(id))
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         RegisteredTransaction::delete(self.id)
     }
 
     #[cfg(test)]
-    pub fn delete_all() -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete_all() -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             registered_transactions::table
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn create_test_transaction(
+    pub async fn create_test_transaction(
         user_id: i32,
         metadata: &TransactionMetadata
     ) -> Self {
@@ -199,26 +201,26 @@ impl RegisteredTransaction {
 
 
 impl InnerChargeLedger {
-    pub fn insert(transaction: InsertableInnerChargeLedger) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn insert(transaction: InsertableInnerChargeLedger) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = diesel::insert_into(inner_charge_ledger::table)
             .values(transaction)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
         Ok(txn)
     }
 
-    pub fn get_inner_charges_by_registered_transaction(registered_transaction: Uuid) -> Result<Vec<Self>, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_inner_charges_by_registered_transaction(registered_transaction: Uuid) -> Result<Vec<Self>, DataError> {
+        let mut conn = db::connection().await?;
         let txns = inner_charge_ledger::table
             .filter(
                 inner_charge_ledger::registered_transaction_id.eq(registered_transaction)
             )
-            .load::<InnerChargeLedger>(&mut conn)?;
+            .load::<InnerChargeLedger>(&mut conn).await?;
         Ok(txns)
     }
 
-    pub fn get_successful_inner_charge_by_registered_transaction(registered_transaction: Uuid) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_successful_inner_charge_by_registered_transaction(registered_transaction: Uuid) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = inner_charge_ledger::table
             .filter(
                 inner_charge_ledger::registered_transaction_id.eq(registered_transaction)
@@ -226,151 +228,151 @@ impl InnerChargeLedger {
                         inner_charge_ledger::is_success.eq(Some(true))
                     )
             )
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(txn)
 
     }
 
-    pub fn get_by_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = inner_charge_ledger::table
             .filter(
                 inner_charge_ledger::id.eq(id)
             )
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(txn)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             inner_charge_ledger::table
                 .filter(inner_charge_ledger::id.eq(id))
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         InnerChargeLedger::delete(self.id)
     }
 
     #[cfg(test)]
-    pub fn delete_all() -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete_all() -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             inner_charge_ledger::table
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 }
 
 impl OuterChargeLedger {
-    pub fn insert(transaction: InsertableOuterChargeLedger) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn insert(transaction: InsertableOuterChargeLedger) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = diesel::insert_into(outer_charge_ledger::table)
             .values(transaction)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
         Ok(txn)
     }
 
-    pub fn get_outer_charge_by_registered_transaction(registered_transaction: Uuid) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_outer_charge_by_registered_transaction(registered_transaction: Uuid) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = outer_charge_ledger::table
             .filter(
                 outer_charge_ledger::registered_transaction_id.eq(registered_transaction)
             )
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(txn)
     }
 
-    pub fn get_by_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = outer_charge_ledger::table
             .filter(
                 outer_charge_ledger::id.eq(id)
             )
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(txn)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             outer_charge_ledger::table
                 .filter(outer_charge_ledger::id.eq(id))
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         OuterChargeLedger::delete(self.id)
     }
 
     #[cfg(test)]
-    pub fn delete_all() -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete_all() -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             outer_charge_ledger::table
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 }
 
 impl TransactionLedger {
-    pub fn insert(transaction: InsertableTransactionLedger) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn insert(transaction: InsertableTransactionLedger) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = diesel::insert_into(transaction_ledger::table)
             .values(transaction)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
         Ok(txn)
     }
 
-    pub fn get_by_registered_transaction_id(id: Uuid) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_by_registered_transaction_id(id: Uuid) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = transaction_ledger::table
             .filter(
                 transaction_ledger::transaction_id.eq(id)
             )
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(txn)
     }
 
-    pub fn get_by_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let txn = transaction_ledger::table
             .filter(
                 transaction_ledger::id.eq(id)
             )
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(txn)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             transaction_ledger::table
                 .filter(transaction_ledger::id.eq(id))
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         TransactionLedger::delete(self.id)
     }
 

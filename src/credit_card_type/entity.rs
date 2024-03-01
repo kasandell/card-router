@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::data_error::DataError;
 use crate::util::db;
+#[cfg(not(test))]
+use diesel_async::RunQueryDsl;
 
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable, Clone)]
@@ -44,21 +46,21 @@ pub struct CreditCardIssuer {
 }
 
 impl CreditCard {
-    pub fn list_all_card_types() -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn list_all_card_types() -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
+        let mut conn = db::connection().await?;
         let cards = credit_card::table
             .inner_join(credit_card_type::table)
             .inner_join(credit_card_issuer::table)
             .select((Self::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
-            .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn)?;
+            .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn).await?;
         info!("Query executed ok");
         Ok(cards)
     }
 
-    pub fn search_all_card_types(
+    pub async fn search_all_card_types(
         query: String
     ) -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
-        let mut conn = db::connection()?;
+        let mut conn = db::connection().await?;
         let cards = credit_card::table
             .inner_join(credit_card_type::table)
             .inner_join(credit_card_issuer::table)
@@ -68,19 +70,19 @@ impl CreditCard {
                 )
             ))
             .select((Self::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
-            .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn)?;
+            .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn).await?;
         info!("Query executed ok");
         Ok(cards)
     }
 
-    pub fn find_by_public_id(
+    pub async fn find_by_public_id(
         public_id: Uuid
     ) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+        let mut conn = db::connection().await?;
 
         let card = credit_card::table
             .filter(credit_card::public_id.eq(public_id))
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
 
         Ok(card)
     }
@@ -88,7 +90,7 @@ impl CreditCard {
 
 #[cfg(test)]
 impl CreditCard {
-    pub fn create_test_credit_card(
+    pub async fn create_test_credit_card(
         id: i32,
         name: String,
         credit_card_type_id: i32,

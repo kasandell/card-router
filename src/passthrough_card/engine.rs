@@ -47,7 +47,7 @@ impl Engine {
         let inserted_card = PassthroughCard::create_from_api_card(
             &lithic_card,
             &user
-        );
+        ).await;
         return match inserted_card {
             Ok(card) => {
                 return Ok(card)
@@ -90,7 +90,7 @@ impl Engine {
         let updated = PassthroughCard::update_status(
             card.id,
             status.clone()
-        )?;
+        ).await?;
 
         info!("Updated card={} for userId={}", card.id, user.id);
 
@@ -115,7 +115,7 @@ impl Engine {
                 let rollback = PassthroughCard::update_status(
                     updated.id,
                     PassthroughCardStatus::from(&*previous_status)
-                );
+                ).await;
 
                 match rollback {
                     Ok(card) => {
@@ -141,14 +141,14 @@ impl Engine {
     ) -> Result<PassthroughCard, ServiceError> {
         return match status {
             PassthroughCardStatus::CLOSED => {
-                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id)?;
+                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
                 self.filter_cards(
                     &v,
                     |card| {card.is_active.is_some_and(|active|active)}
                 ).cloned()
             },
             PassthroughCardStatus::OPEN => {
-                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id)?;
+                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
                 self.filter_cards(
                     &v,
                     |item| {
@@ -158,7 +158,7 @@ impl Engine {
                 ).cloned()
             },
             PassthroughCardStatus::PAUSED => {
-                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id)?;
+                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
                 self.filter_cards(
                     &v,
                     |item| {
@@ -175,7 +175,7 @@ impl Engine {
         &self,
         user: &User
     ) -> Result<Option<PassthroughCard>, ServiceError> {
-        let cards = PassthroughCard::find_cards_for_user(user.id)?;
+        let cards = PassthroughCard::find_cards_for_user(user.id).await?;
         if cards.len() == 0 {
             return Ok(None);
         }

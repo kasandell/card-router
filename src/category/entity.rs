@@ -10,6 +10,8 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+#[cfg(not(test))]
+use diesel_async::RunQueryDsl;
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
 #[diesel(table_name = category)]
@@ -51,55 +53,55 @@ pub struct MccMapping {
 }
 
 impl Category {
-    pub fn create(category: InsertableCategory) -> Result<Self, DataError>{
-        let mut conn = db::connection()?;
+    pub async fn create(category: InsertableCategory) -> Result<Self, DataError>{
+        let mut conn = db::connection().await?;
         let cat = diesel::insert_into(category::table)
         .values(category)
-        .get_result(&mut conn)?;
+        .get_result(&mut conn).await?;
         Ok(cat)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
                 category::table
                     .filter(category::id.eq(id))
             )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         Category::delete(self.id)
     }
 }
 
 impl MccMapping {
-    pub fn create(mapping: InsertableMccMapping) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn create(mapping: InsertableMccMapping) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let map = diesel::insert_into(mcc_mapping::table)
         .values(mapping)
-        .get_result(&mut conn)?;
+        .get_result(&mut conn).await?;
         Ok(map)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
                 mcc_mapping::table
                     .filter(mcc_mapping::id.eq(id))
             )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         MccMapping::delete(self.id)
     }
 }

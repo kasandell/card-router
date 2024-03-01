@@ -1,6 +1,8 @@
 use crate::schema::passthrough_card;
 use chrono::{NaiveDateTime, NaiveDate, Utc};
 use diesel::prelude::*;
+#[cfg(not(test))]
+use diesel_async::RunQueryDsl;
 use lithic_client::models::{Card, FundingAccount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -66,32 +68,32 @@ pub struct PassthroughCardStatusUpdate {
 
 
 impl PassthroughCard {
-    pub fn create(card: LithicCard, user: &User) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn create(card: LithicCard, user: &User) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
 
         let mut card = InsertablePassthroughCard::from(card);
         card.user_id = user.id;
         //TODO: populate with user_id
         let card = diesel::insert_into(passthrough_card::table)
             .values(card)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
         Ok(card)
     }
 
-    pub fn create_from_api_card(card: &Card, user: &User) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn create_from_api_card(card: &Card, user: &User) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
 
         let mut card = InsertablePassthroughCard::convert_from(&card)?;
         card.user_id = user.id;
         //TODO: populate with user_id
         let card = diesel::insert_into(passthrough_card::table)
             .values(card)
-            .get_result(&mut conn)?;
+            .get_result(&mut conn).await?;
         Ok(card)
     }
 
-    pub fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
         let update = PassthroughCardStatusUpdate {
             id: id,
             passthrough_card_status: String::from(&status),
@@ -100,42 +102,42 @@ impl PassthroughCard {
         let update = diesel::update(passthrough_card::table)
         .filter(passthrough_card::id.eq(id))
         .set(update)
-        .get_result(&mut conn)?;
+        .get_result(&mut conn).await?;
         Ok(update)
     }
 
-    pub fn get(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get(id: i32) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
 
         let card = passthrough_card::table
             .filter(passthrough_card::id.eq(id))
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(card)
     }
 
-    pub fn get_by_token(token: String) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn get_by_token(token: String) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
 
         let card = passthrough_card::table
             .filter(passthrough_card::token.eq(token))
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(card)
     }
 
-    pub fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, DataError> {
+        let mut conn = db::connection().await?;
 
         let cards = passthrough_card::table
             .filter(passthrough_card::user_id.eq(user_id))
-            .load::<PassthroughCard>(&mut conn)?;
+            .load::<PassthroughCard>(&mut conn).await?;
         Ok(cards)
     }
 
-    pub fn find_card_for_user_in_status(
+    pub async fn find_card_for_user_in_status(
         user_id: i32,
         status: PassthroughCardStatus
     ) -> Result<Self, DataError> {
-        let mut conn = db::connection()?;
+        let mut conn = db::connection().await?;
 
         let card = passthrough_card::table
             .filter(
@@ -145,24 +147,24 @@ impl PassthroughCard {
                     )
             )
             .order(passthrough_card::id.desc())
-            .first(&mut conn)?;
+            .first(&mut conn).await?;
         Ok(card)
     }
 
     #[cfg(test)]
-    pub fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection()?;
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
+        let mut conn = db::connection().await?;
 
         let res = diesel::delete(
             passthrough_card::table
                 .filter(passthrough_card::id.eq(id))
         )
-            .execute(&mut conn)?;
+            .execute(&mut conn).await?;
         Ok(res)
     }
 
     #[cfg(test)]
-    pub fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         PassthroughCard::delete(self.id)
     }
 
@@ -183,6 +185,7 @@ impl From<LithicCard> for InsertablePassthroughCard {
     }
 }
 
+// async.await?
 impl InsertablePassthroughCard {
     pub fn convert_from(card: &Card) -> Result<Self, DataError> {
         let exp_year = card.exp_year.clone().ok_or(
