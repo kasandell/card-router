@@ -20,3 +20,4 @@ Cargo.log
 .vscode
 .env
 api.lithic.com.pub.pem
+countlines.sh
