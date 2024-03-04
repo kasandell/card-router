@@ -76,6 +76,7 @@ impl TransactionEngineTrait for Engine {
         user: &User,
         metadata: &TransactionMetadata,
     ) -> Result<RegisteredTransaction, ServiceError> {
+        // TODO: this call takes a long time
         let res = self.dao.clone().insert_registered_transaction(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -98,7 +99,7 @@ impl TransactionEngineTrait for Engine {
         Ok(
             self.dao.clone().insert_inner_charge(
                 InsertableInnerChargeLedger {
-                    registered_transaction_id: registered_transaction.transaction_id,
+                    registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     wallet_card_id: card.id,
                     amount_cents: metadata.amount_cents,
@@ -119,7 +120,7 @@ impl TransactionEngineTrait for Engine {
         Ok(
             self.dao.clone().insert_inner_charge(
                 InsertableInnerChargeLedger {
-                    registered_transaction_id: registered_transaction.transaction_id,
+                    registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     wallet_card_id: card.id,
                     amount_cents: metadata.amount_cents,
@@ -140,7 +141,7 @@ impl TransactionEngineTrait for Engine {
         Ok(
             self.dao.clone().insert_outer_charge(
                 InsertableOuterChargeLedger {
-                    registered_transaction_id: registered_transaction.transaction_id,
+                    registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     passthrough_card_id: card.id,
                     amount_cents: metadata.amount_cents,
@@ -161,7 +162,7 @@ impl TransactionEngineTrait for Engine {
         Ok(
             self.dao.clone().insert_outer_charge(
                 InsertableOuterChargeLedger {
-                    registered_transaction_id: registered_transaction.transaction_id,
+                    registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     passthrough_card_id: card.id,
                     amount_cents: metadata.amount_cents,
@@ -181,7 +182,7 @@ impl TransactionEngineTrait for Engine {
         Ok(
             self.dao.clone().insert_transaction_ledger(
                 InsertableTransactionLedger {
-                    transaction_id: registered_transaction.transaction_id,
+                    registered_transaction_id: registered_transaction.id,
                     inner_charge_ledger_id: successful_inner_charge.id,
                     outer_charge_ledger_id: successful_outer_charge.id
                 }

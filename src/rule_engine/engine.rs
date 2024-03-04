@@ -1,5 +1,6 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::sync::Arc;
+use std::time::Instant;
 use async_trait::async_trait;
 
 use chrono::Utc;
@@ -50,12 +51,20 @@ impl RuleEngineTrait for RuleEngine {
         //wallet, credit_card, credit_card_type, credit_card_issuer
         let amount = request.amount.ok_or(ServiceError::new(400, "expect amount".to_string()))?;
         // TODO: not from dao
+        let mut start = Instant::now();
         let cards = Wallet::find_all_for_user_with_card_info(user).await?;
+        println!("Find cards for user with info took {:?}", start.elapsed());
+        start = Instant::now();
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
+        println!("card type id get took {:?}", start.elapsed());
+        start = Instant::now();
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
+        println!("find and filter rules took {:?}", start.elapsed());
         info!("Using {} rules", rules.len());
         println!("Using {} rules", rules.len());
+        start = Instant::now();
         let ordered_cards = self.clone().get_card_order_from_rules(&cards, &rules, amount).await?;
+        println!("Order cards took {:?}", start.elapsed());
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
 

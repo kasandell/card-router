@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS registered_transactions(
 
 CREATE TABLE IF NOT EXISTS outer_charge_ledger(
     id SERIAL PRIMARY KEY,
-    registered_transaction_id UUID NOT NULL REFERENCES registered_transactions(transaction_id),
+    registered_transaction_id INT NOT NULL REFERENCES registered_transactions(id),
     user_id INT NOT NULL REFERENCES users(id),
     passthrough_card_id INT NOT NULL REFERENCES passthrough_card(id),
     amount_cents INT NOT NULL,
@@ -24,7 +24,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS outer_charge_success_txn ON outer_charge_ledge
 
 CREATE TABLE IF NOT EXISTS inner_charge_ledger(
     id SERIAL PRIMARY KEY,
-    registered_transaction_id UUID NOT NULL REFERENCES registered_transactions(transaction_id),
+    registered_transaction_id INT NOT NULL REFERENCES registered_transactions(id),
     user_id INT NOT NULL REFERENCES users(id),
     wallet_card_id INT NOT NULL REFERENCES wallet(id),
     amount_cents INT NOT NULL,
@@ -38,7 +38,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS inner_charge_success_txn ON inner_charge_ledge
 
 CREATE TABLE IF NOT EXISTS transaction_ledger(
     id SERIAL PRIMARY KEY,
-    transaction_id UUID NOT NULL REFERENCES registered_transactions(transaction_id),
+    registered_transaction_id INT NOT NULL REFERENCES registered_transactions(id),
     inner_charge_ledger_id INT NOT NULL REFERENCES inner_charge_ledger(id),
     outer_charge_ledger_id INT NOT NULL REFERENCES outer_charge_ledger(id)
 );

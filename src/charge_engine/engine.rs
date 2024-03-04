@@ -16,6 +16,7 @@ use crate::charge_engine::entity::{
     ChargeCardAttemptResult
 };
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
+use crate::passthrough_card::entity::PassthroughCard;
 use crate::service_error::ServiceError;
 use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
@@ -74,15 +75,17 @@ impl Engine {
     pub async fn charge_from_asa_request(
         self: Arc<Self>,
         request: &AsaRequest,
-        wallet: &Vec<Wallet>
+        wallet: &Vec<Wallet>,
+        passthrough_card: &PassthroughCard,
+        user: &User,
     ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ServiceError> {
         println!("Starting charge");
         let mut start = Instant::now();
         let metadata = TransactionMetadata::convert(&request)?;
         let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
         let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
-        let passthrough_card = self.passthrough_card_dao.clone().get_by_token(token).await?;
-        let user = self.user_dao.clone().find_by_internal_id(passthrough_card.user_id).await?;
+        //let passthrough_card = self.passthrough_card_dao.clone().get_by_token(token).await?;
+        //let user = self.user_dao.clone().find_by_internal_id(passthrough_card.user_id).await?;
         println!("Charge Asa data setup took {:?}", start.elapsed());
         println!("Registering txn");
         start = Instant::now();

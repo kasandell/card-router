@@ -51,7 +51,7 @@ diesel::table! {
 diesel::table! {
     inner_charge_ledger (id) {
         id -> Int4,
-        registered_transaction_id -> Uuid,
+        registered_transaction_id -> Int4,
         user_id -> Int4,
         wallet_card_id -> Int4,
         amount_cents -> Int4,
@@ -78,7 +78,7 @@ diesel::table! {
 diesel::table! {
     outer_charge_ledger (id) {
         id -> Int4,
-        registered_transaction_id -> Uuid,
+        registered_transaction_id -> Int4,
         user_id -> Int4,
         passthrough_card_id -> Int4,
         amount_cents -> Int4,
@@ -145,7 +145,7 @@ diesel::table! {
 diesel::table! {
     transaction_ledger (id) {
         id -> Int4,
-        transaction_id -> Uuid,
+        registered_transaction_id -> Int4,
         inner_charge_ledger_id -> Int4,
         outer_charge_ledger_id -> Int4,
     }
@@ -197,10 +197,12 @@ diesel::table! {
 
 diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
+diesel::joinable!(inner_charge_ledger -> registered_transactions (registered_transaction_id));
 diesel::joinable!(inner_charge_ledger -> users (user_id));
 diesel::joinable!(inner_charge_ledger -> wallet (wallet_card_id));
 diesel::joinable!(mcc_mapping -> category (category_id));
 diesel::joinable!(outer_charge_ledger -> passthrough_card (passthrough_card_id));
+diesel::joinable!(outer_charge_ledger -> registered_transactions (registered_transaction_id));
 diesel::joinable!(outer_charge_ledger -> users (user_id));
 diesel::joinable!(passthrough_card -> users (user_id));
 diesel::joinable!(registered_transactions -> users (user_id));
@@ -208,6 +210,7 @@ diesel::joinable!(rule -> category (rule_category_id));
 diesel::joinable!(rule -> credit_card (credit_card_id));
 diesel::joinable!(transaction_ledger -> inner_charge_ledger (inner_charge_ledger_id));
 diesel::joinable!(transaction_ledger -> outer_charge_ledger (outer_charge_ledger_id));
+diesel::joinable!(transaction_ledger -> registered_transactions (registered_transaction_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 diesel::joinable!(wallet -> wallet_card_attempt (wallet_card_attempt_id));

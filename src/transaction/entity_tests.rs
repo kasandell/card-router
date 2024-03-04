@@ -485,7 +485,7 @@ mod entity_tests {
 
         let final_tx = TransactionLedger::insert(
             InsertableTransactionLedger {
-                transaction_id: rtx.transaction_id,
+                registered_transaction_id: rtx.transaction_id,
                 inner_charge_ledger_id: inner_charge.id,
                 outer_charge_ledger_id: outer_charge.id
             }

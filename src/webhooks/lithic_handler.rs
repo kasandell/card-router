@@ -66,11 +66,8 @@ impl LithicHandler {
         let mut start = Instant::now();
         let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
         let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
-        let user = User::find_by_internal_id(
-            PassthroughCard::get_by_token(
-                token.clone()
-            ).await?.user_id
-        ).await?;
+        let passthrough_card = PassthroughCard::get_by_token(token.clone()).await?;
+        let user = User::find_by_internal_id(passthrough_card.user_id).await?;
         println!("Find user, card, token took {:?}", start.elapsed());
         start = Instant::now();
 
@@ -92,6 +89,8 @@ impl LithicHandler {
         let (result, ledger) = self.charge_engine.clone().charge_from_asa_request(
             &request,
             &cards,
+            &passthrough_card,
+            &user
         ).await?;
         println!("Charge engine from asa request took {:?}", start.elapsed());
         println!("Done");

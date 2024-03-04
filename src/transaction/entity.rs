@@ -48,7 +48,7 @@ pub struct RegisteredTransaction {
 #[diesel(table_name = outer_charge_ledger)]
 pub struct OuterChargeLedger {
     pub id: i32,
-    pub registered_transaction_id: Uuid,
+    pub registered_transaction_id: i32,
     pub user_id: i32,
     pub passthrough_card_id: i32,
     pub amount_cents: i32,
@@ -64,7 +64,7 @@ pub struct OuterChargeLedger {
 #[diesel(belongs_to(PassthroughCard))]
 #[diesel(table_name = outer_charge_ledger)]
 pub struct InsertableOuterChargeLedger {
-    pub registered_transaction_id: Uuid,
+    pub registered_transaction_id: i32,
     pub user_id: i32,
     pub passthrough_card_id: i32,
     pub amount_cents: i32,
@@ -79,7 +79,7 @@ pub struct InsertableOuterChargeLedger {
 #[diesel(table_name = inner_charge_ledger)]
 pub struct InnerChargeLedger {
     pub id: i32,
-    pub registered_transaction_id: Uuid,
+    pub registered_transaction_id: i32,
     pub user_id: i32,
     pub wallet_card_id: i32,
     pub amount_cents: i32,
@@ -95,7 +95,7 @@ pub struct InnerChargeLedger {
 #[diesel(belongs_to(Wallet))]
 #[diesel(table_name = inner_charge_ledger)]
 pub struct InsertableInnerChargeLedger {
-    pub registered_transaction_id: Uuid,
+    pub registered_transaction_id: i32,
     pub user_id: i32,
     pub wallet_card_id: i32,
     pub amount_cents: i32,
@@ -110,7 +110,7 @@ pub struct InsertableInnerChargeLedger {
 #[diesel(table_name = transaction_ledger)]
 pub struct TransactionLedger {
     pub id: i32,
-    pub transaction_id: Uuid,
+    pub registered_transaction_id: i32,
     pub inner_charge_ledger_id: i32,
     pub outer_charge_ledger_id: i32
 }
@@ -121,7 +121,7 @@ pub struct TransactionLedger {
 #[diesel(belongs_to(OuterChargeLedger))]
 #[diesel(table_name = transaction_ledger)]
 pub struct InsertableTransactionLedger {
-    pub transaction_id: Uuid,
+    pub registered_transaction_id: i32,
     pub inner_charge_ledger_id: i32,
     pub outer_charge_ledger_id: i32
 }
@@ -208,7 +208,7 @@ impl InnerChargeLedger {
         Ok(txn)
     }
 
-    pub async fn get_inner_charges_by_registered_transaction(registered_transaction: Uuid) -> Result<Vec<Self>, DataError> {
+    pub async fn get_inner_charges_by_registered_transaction(registered_transaction: i32) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
         let txns = inner_charge_ledger::table
             .filter(
@@ -218,7 +218,7 @@ impl InnerChargeLedger {
         Ok(txns)
     }
 
-    pub async fn get_successful_inner_charge_by_registered_transaction(registered_transaction: Uuid) -> Result<Self, DataError> {
+    pub async fn get_successful_inner_charge_by_registered_transaction(registered_transaction: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = inner_charge_ledger::table
             .filter(
@@ -280,7 +280,7 @@ impl OuterChargeLedger {
         Ok(txn)
     }
 
-    pub async fn get_outer_charge_by_registered_transaction(registered_transaction: Uuid) -> Result<Self, DataError> {
+    pub async fn get_outer_charge_by_registered_transaction(registered_transaction: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = outer_charge_ledger::table
             .filter(
@@ -338,11 +338,11 @@ impl TransactionLedger {
         Ok(txn)
     }
 
-    pub async fn get_by_registered_transaction_id(id: Uuid) -> Result<Self, DataError> {
+    pub async fn get_by_registered_transaction_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = transaction_ledger::table
             .filter(
-                transaction_ledger::transaction_id.eq(id)
+                transaction_ledger::registered_transaction_id.eq(id)
             )
             .first(&mut conn).await?;
         Ok(txn)
