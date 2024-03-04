@@ -24,9 +24,9 @@ use crate::transaction::engine::{Engine as Ledger, TransactionEngineTrait};
 use crate::user::dao::{UserDao, UserDaoTrait};
 
 pub struct Engine {
-    charge_service: Box<dyn AdyenChargeServiceTrait>,
-    passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
-    user_dao: Box<dyn UserDaoTrait>,
+    charge_service: Arc<dyn AdyenChargeServiceTrait>,
+    passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
+    user_dao: Arc<dyn UserDaoTrait>,
     ledger: Arc<dyn TransactionEngineTrait>
 }
 
@@ -50,18 +50,17 @@ impl Engine {
 
     pub fn new() -> Self {
        Self {
-           charge_service: Box::new(ChargeService::new()),
-           passthrough_card_dao: Box::new(PassthroughCardDao{}),
-           user_dao: Box::new(UserDao{}),
+           charge_service: Arc::new(ChargeService::new()),
+           passthrough_card_dao: Arc::new(PassthroughCardDao{}),
+           user_dao: Arc::new(UserDao{}),
            ledger: Arc::new(Ledger::new())
        }
     }
 
-    #[cfg(test)]
     pub fn new_with_service(
-        charge_service: Box<dyn AdyenChargeServiceTrait>,
-        passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
-        user_dao: Box<dyn UserDaoTrait>,
+        charge_service: Arc<dyn AdyenChargeServiceTrait>,
+        passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
+        user_dao: Arc<dyn UserDaoTrait>,
         ledger: Arc<dyn TransactionEngineTrait>,
     ) -> Self {
         Self {
@@ -73,7 +72,7 @@ impl Engine {
     }
 
     pub async fn charge_from_asa_request(
-        &self,
+        self: Arc<Self>,
         request: &AsaRequest,
         wallet: &Vec<Wallet>
     ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ServiceError> {
@@ -82,8 +81,8 @@ impl Engine {
         let metadata = TransactionMetadata::convert(&request)?;
         let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
         let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
-        let passthrough_card = self.passthrough_card_dao.get_by_token(token).await?;
-        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id).await?;
+        let passthrough_card = self.passthrough_card_dao.clone().get_by_token(token).await?;
+        let user = self.user_dao.clone().find_by_internal_id(passthrough_card.user_id).await?;
         println!("Charge Asa data setup took {:?}", start.elapsed());
         println!("Registering txn");
         start = Instant::now();
@@ -95,7 +94,7 @@ impl Engine {
 
         println!("Charging wallet");
         start = Instant::now();
-        let (charge_result, ledger) = self.charge_wallet(
+        let (charge_result, ledger) = self.clone().charge_wallet(
             &user,
             wallet,
             &metadata,
@@ -144,7 +143,7 @@ impl Engine {
     }
 
     pub async fn charge_wallet(
-        &self,
+        self: Arc<Self>,
         user: &User,
         wallet: &Vec<Wallet>,
         transaction_metadata: &TransactionMetadata,
@@ -160,7 +159,7 @@ impl Engine {
         for card in wallet {
             let mut start = Instant::now();
             if success_charge { break; }
-            if let Ok((charge_attempt, ledger)) = self.charge_card_with_cleanup(
+            if let Ok((charge_attempt, ledger)) = self.clone().charge_card_with_cleanup(
                 idempotency_key,
                 card,
                 user,
@@ -185,7 +184,7 @@ impl Engine {
     }
 
     pub async fn charge_card_with_cleanup(
-        &self,
+        self: Arc<Self>,
         idempotency_key: Uuid,
         card: &Wallet,
         user: &User,
@@ -193,7 +192,7 @@ impl Engine {
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ServiceError> {
         let mut start = Instant::now();
-        let resp = self.charge_service.charge_card_on_file(
+        let resp = self.charge_service.clone().charge_card_on_file(
             &ChargeCardRequest {
                 amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
                 mcc: &transaction_metadata.mcc,
@@ -236,7 +235,7 @@ impl Engine {
                     warn!("Intermediate state needs cleanup for card={} for user={}", card.id, user.id);
                     if let Some(psp) = response.psp_reference {
                         start = Instant::now();
-                        let cancel = self.charge_service.cancel_transaction(
+                        let cancel = self.charge_service.clone().cancel_transaction(
                             &psp
                         ).await;
                         if let Ok(cancel) = cancel {

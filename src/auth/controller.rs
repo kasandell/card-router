@@ -4,12 +4,17 @@ use crate::auth::entity::Role;
 use crate::auth::jwt::create_jwt;
 use crate::auth::request::LoginRequest;
 use crate::auth::response::LoginResponse;
+use crate::middleware::services::Services;
+use crate::user::dao::UserDaoTrait;
 use crate::user::entity::User;
 
 #[post("/login/")]
-async fn login(request: web::Json<LoginRequest>) -> Result<HttpResponse, ApiError>{
+async fn login(
+    request: web::Json<LoginRequest>,
+    services: web::Data<Services>
+) -> Result<HttpResponse, ApiError>{
     let request = request.into_inner();
-    let user = User::find_by_email_password(
+    let user = services.user_dao.clone().find_by_email_password(
         &request.email,
         &request.password
     ).await;

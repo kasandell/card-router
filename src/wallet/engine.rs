@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use uuid::Uuid;
 use crate::adyen_service::checkout::service::{AdyenChargeServiceTrait, ChargeService};
 use crate::api_error::ApiError;
@@ -14,29 +15,28 @@ use crate::constant::constant;
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one
 pub struct Engine {
-    pub credit_card_dao: Box<dyn CreditCardDaoTrait>,
-    pub wallet_card_attempt_dao: Box<dyn WalletCardAttemtDaoTrait>,
-    pub wallet_dao: Box<dyn WalletDaoTrait>,
-    pub adyen_service: Box<dyn AdyenChargeServiceTrait>
+    pub credit_card_dao: Arc<dyn CreditCardDaoTrait>,
+    pub wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
+    pub wallet_dao: Arc<dyn WalletDaoTrait>,
+    pub adyen_service: Arc<dyn AdyenChargeServiceTrait>
 }
 
 
 impl Engine {
     pub fn new() -> Self {
         Self {
-            credit_card_dao: Box::new(CreditCardDao::new()),
-            wallet_card_attempt_dao: Box::new(WalletCardAttemptDao::new()),
-            wallet_dao: Box::new(WalletDao::new()),
-            adyen_service: Box::new(ChargeService::new())
+            credit_card_dao: Arc::new(CreditCardDao::new()),
+            wallet_card_attempt_dao: Arc::new(WalletCardAttemptDao::new()),
+            wallet_dao: Arc::new(WalletDao::new()),
+            adyen_service: Arc::new(ChargeService::new())
         }
     }
 
-    #[cfg(test)]
     pub fn new_with_services(
-        credit_card_dao: Box<dyn CreditCardDaoTrait>,
-        wallet_card_attempt_dao: Box<dyn WalletCardAttemtDaoTrait>,
-        wallet_dao: Box<dyn WalletDaoTrait>,
-        adyen_service: Box<dyn AdyenChargeServiceTrait>,
+        credit_card_dao: Arc<dyn CreditCardDaoTrait>,
+        wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
+        wallet_dao: Arc<dyn WalletDaoTrait>,
+        adyen_service: Arc<dyn AdyenChargeServiceTrait>,
     ) -> Self {
         Self {
             credit_card_dao,
@@ -47,16 +47,16 @@ impl Engine {
     }
 
     pub async fn register_attempt_and_send_card_to_adyen(
-        &self,
+        self: Arc<Self>,
         user: &User,
         request: &AddCardRequest
     ) -> Result<(WalletCardAttempt, PaymentResponse), ServiceError> {
 
         println!("registering new attempt");
         let expected_reference_id = Uuid::new_v4();
-        let credit_card = self.credit_card_dao.find_by_public_id(request.credit_card_type_public_id.clone()).await?;
+        let credit_card = self.credit_card_dao.clone().find_by_public_id(request.credit_card_type_public_id.clone()).await?;
         println!("found credit card id");
-        let wca = self.wallet_card_attempt_dao.insert(
+        let wca = self.wallet_card_attempt_dao.clone().insert(
             InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: credit_card.id,
@@ -64,7 +64,7 @@ impl Engine {
             }
         ).await?;
         println!("CREATED WALLET CARED");
-        let card_resp = self.adyen_service.add_card(
+        let card_resp = self.adyen_service.clone().add_card(
             &Uuid::new_v4().to_string(),
             &user,
             &expected_reference_id.to_string(),
@@ -77,7 +77,7 @@ impl Engine {
     }
 
     pub async fn attempt_match_from_response(
-        &self,
+        self: Arc<Self>,
         payment_response: &PaymentResponse
     ) -> Result<Option<Wallet>, ServiceError> {
         let Some(Some(additional_data)) = payment_response.additional_data.clone() else { return Ok(None); };
@@ -85,7 +85,7 @@ impl Engine {
         let Some(merchant_reference) = payment_response.merchant_reference.clone() else { return Ok(None); };
         let Some(original_reference) = payment_response.psp_reference.clone() else { return Ok(None); };
 
-        let match_attempt = self.attempt_match(
+        let match_attempt = self.clone().attempt_match(
             &MatchAttemptRequest {
                 merchant_reference_id: merchant_reference,
                 original_psp_reference: original_reference,
@@ -101,12 +101,12 @@ impl Engine {
     }
 
     pub async fn attempt_register_new_attempt(
-        &self,
+        self: Arc<Self>,
         user: &User,
         request: &RegisterAttemptRequest
     ) -> Result<WalletCardAttempt, ApiError> {
-        let credit_card = self.credit_card_dao.find_by_public_id(request.credit_card_type_public_id.clone()).await?;
-        let wca = self.wallet_card_attempt_dao.insert(
+        let credit_card = self.credit_card_dao.clone().find_by_public_id(request.credit_card_type_public_id.clone()).await?;
+        let wca = self.wallet_card_attempt_dao.clone().insert(
             InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: credit_card.id,
@@ -117,10 +117,10 @@ impl Engine {
     }
 
     pub async fn attempt_match(
-        &self,
+        self: Arc<Self>,
         request: &MatchAttemptRequest
     ) -> Result<Wallet, ServiceError> {
-        let card_attempt = self.wallet_card_attempt_dao.find_by_reference_id(
+        let card_attempt = self.wallet_card_attempt_dao.clone().find_by_reference_id(
             request.merchant_reference_id.clone()
         ).await?;
         info!("Found wallet card attempt id {}", card_attempt.id);
@@ -129,14 +129,14 @@ impl Engine {
             return Err(ServiceError::new(409, "Card already matched".to_string()));
         }
 
-        let update = self.wallet_card_attempt_dao.update_card(card_attempt.id, UpdateCardAttempt {
+        let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, UpdateCardAttempt {
             recurring_detail_reference: request.psp_reference.clone(),
             psp_id: request.original_psp_reference.clone(),
             status: WalletCardAttemptStatus::MATCHED.as_str()
         }).await?;
         info!("Updated to matched: {}", &update.status);
 
-        let created_card = self.wallet_dao.insert_card(
+        let created_card = self.wallet_dao.clone().insert_card(
             NewCard {
                 user_id: update.user_id,
                 payment_method_id: request.psp_reference.clone(),

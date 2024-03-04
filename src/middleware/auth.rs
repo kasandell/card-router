@@ -32,7 +32,7 @@ impl<S: 'static, B> Transform<S, ServiceRequest> for Auth
         S::Future: 'static,
         B: 'static,
 {
-    type Response = ServiceResponse<EitherBody<B>>;//ServiceResponse<B>;
+    type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
     type InitError = ();
     type Transform = AuthMiddleware<S>;
@@ -66,6 +66,7 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
         let svc = self.service.clone();
 
         Box::pin(async move {
+            // TODO: swap this to a call to auth0
             let mut is_logged_in = false;
             let uid = match_jwt(request.headers(), &Role::User);
             if let Ok(user_public_id) = uid {
@@ -75,8 +76,6 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
                         is_logged_in = true;
                         request.extensions_mut()
                             .insert(user);
-
-                        //return Box::pin(self.service.call(request))
                     }
                 }
             }

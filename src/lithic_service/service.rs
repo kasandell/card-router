@@ -1,4 +1,5 @@
 use std::env;
+use std::sync::Arc;
 use std::time::Duration;
 use lithic_client::apis::card_api::{patch_card_by_token, post_cards};
 use lithic_client::apis::event_api::{create_event_subscription, delete_event_subscription};
@@ -21,40 +22,40 @@ use crate::environment::ENVIRONMENT;
 #[async_trait]
 pub trait LithicServiceTrait {
     async fn create_card<'a>(
-        &self,
+        self: Arc<Self>,
         pin_str: &'a str,
         idempotency_key: &'a Uuid,
     ) -> Result<Card, LithicError>;
 
     async fn close_card(
-        &self,
+        self: Arc<Self>,
         card_token: &str,
     ) -> Result<Card, LithicError>;
 
     async fn activate_card(
-        &self,
+        self: Arc<Self>,
         card_token: &str,
     ) -> Result<Card, LithicError>;
     async fn pause_card(
-        &self,
+        self: Arc<Self>,
         card_token: &str,
     ) -> Result<Card, LithicError>;
 
     async fn patch_card<'a>(
-        &self,
+        self: Arc<Self>,
         card_token: &'a str,
         state: Option<&'a PatchState>,
         pin: Option<&'a str>
     ) -> Result<Card, LithicError>;
 
     // TODO: this is not actually how we enroll. see https://github.com/lithic-com/asa-demo-python/blob/main/scripts/enroll.py
-    async fn register_webhook(&self, idempotency_key: &str) -> Result<EventSubscription, LithicError>;
+    async fn register_webhook(self: Arc<Self>, idempotency_key: &str) -> Result<EventSubscription, LithicError>;
 
-    async fn deregister_webhook(&self, event_subscription_token: &str) -> Result<(), LithicError>;
+    async fn deregister_webhook(self: Arc<Self>, event_subscription_token: &str) -> Result<(), LithicError>;
 }
 
 pub struct LithicService {
-    configuration: Configuration
+    configuration: Arc<Configuration>
 }
 
 impl LithicService {
@@ -80,7 +81,7 @@ impl LithicService {
 
         //cfg.base_path = base_path;
         LithicService {
-            configuration: cfg
+            configuration: Arc::new(cfg)
         }
     }
 }
@@ -88,12 +89,12 @@ impl LithicService {
 #[async_trait]
 impl LithicServiceTrait for LithicService {
     async fn create_card<'a>(
-        &self,
+        self: Arc<Self>,
         pin_str: &'a str,
         idempotency_key: &'a Uuid,
     ) -> Result<Card, LithicError> {
         Ok(
-            post_cards(&self.configuration, PostCardsRequest {
+            post_cards(&self.configuration.clone(), PostCardsRequest {
                 account_token: None, // might need
                 card_program_token: None,
                 exp_month: None,
@@ -114,7 +115,7 @@ impl LithicServiceTrait for LithicService {
     }
 
     async fn close_card(
-        &self,
+        self: Arc<Self>,
         card_token: &str
     ) -> Result<Card, LithicError> {
         self.patch_card(
@@ -126,7 +127,7 @@ impl LithicServiceTrait for LithicService {
     }
 
     async fn pause_card(
-        &self,
+        self: Arc<Self>,
         card_token: &str,
     ) -> Result<Card, LithicError> {
         self.patch_card(
@@ -137,7 +138,7 @@ impl LithicServiceTrait for LithicService {
     }
 
     async fn activate_card(
-        &self,
+        self: Arc<Self>,
         card_token: &str,
     ) -> Result<Card, LithicError> {
         self.patch_card(
@@ -148,14 +149,14 @@ impl LithicServiceTrait for LithicService {
     }
 
     async fn patch_card<'a>(
-        &self,
+        self: Arc<Self>,
         card_token: &'a str,
         state: Option<&'a PatchState>,
         pin: Option<&'a str>
     ) -> Result<Card, LithicError> {
         Ok(
             patch_card_by_token(
-                &self.configuration,
+                &self.configuration.clone(),
                 serde_json::Value::String(card_token.to_string()),
                 PatchCardByTokenRequest {
                     memo: None,
@@ -171,10 +172,10 @@ impl LithicServiceTrait for LithicService {
         )
     }
 
-    async fn register_webhook(&self, idempotency_key: &str) -> Result<EventSubscription, LithicError> {
+    async fn register_webhook(self: Arc<Self>, idempotency_key: &str) -> Result<EventSubscription, LithicError> {
         Ok(
             create_event_subscription(
-                &self.configuration,
+                &self.configuration.clone(), // TODO: Not sure
                 Some(serde_json::to_value(idempotency_key).expect("should work")),
                 Some(
                     CreateEventSubscriptionRequest {
@@ -188,10 +189,10 @@ impl LithicServiceTrait for LithicService {
         )
     }
 
-    async fn deregister_webhook(&self, event_subscription_token: &str) -> Result<(), LithicError> {
+    async fn deregister_webhook(self: Arc<Self>, event_subscription_token: &str) -> Result<(), LithicError> {
         Ok(
             delete_event_subscription(
-                &self.configuration,
+                &self.configuration.clone(),
                 event_subscription_token,
                 None
             ).await?

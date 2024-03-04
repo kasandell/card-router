@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use async_trait::async_trait;
 use base64::Engine as base64Engine;
 use uuid::Uuid;
@@ -14,33 +15,32 @@ use crate::lithic_service::{
 use crate::passthrough_card::crypto::encrypt_pin;
 
 pub struct Engine {
-    pub lithic_service: Box<dyn LithicServiceTrait>
+    pub lithic_service: Arc<dyn LithicServiceTrait>
 }
 
 impl Engine {
     pub fn new() -> Self {
         Engine {
-            lithic_service: Box::new(LithicService::new())
+            lithic_service: Arc::new(LithicService::new())
         }
     }
-    #[cfg(test)]
-    pub fn new_with_service(service: Box<dyn LithicServiceTrait>) -> Self {
+    pub fn new_with_service(service: Arc<dyn LithicServiceTrait>) -> Self {
         Engine {
             lithic_service: service
         }
     }
     pub async fn issue_card_to_user(
-        &self,
+        self: Arc<Self>,
         user: &User,
         pin: String
     ) -> Result<PassthroughCard, ServiceError> {
-        let has_active = self.user_has_active_card(&user).await?;
+        let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
             return Err(ServiceError::new(409, "User has active card already".to_string()))
         }
         let idempotency_key = Uuid::new_v4();
         let pin_encoded = encrypt_pin(pin);
-        let lithic_card = self.lithic_service.create_card(
+        let lithic_card = self.lithic_service.clone().create_card(
             &pin_encoded,
             &idempotency_key
         ).await?;
@@ -54,7 +54,7 @@ impl Engine {
             }
             Err(e) => {
                 println!("{}", e.message);
-                let closed = self.close_lithic_card(&lithic_card.token.to_string()).await;
+                let closed = self.clone().close_lithic_card(&lithic_card.token.to_string()).await;
                 println!("Closed card");
                 match closed {
                     Ok(card) => {
@@ -75,12 +75,12 @@ impl Engine {
 
     // really lets rewrite this to be atomic
     pub async fn update_card_status(
-        &self,
+        self: Arc<Self>,
         user: &User,
         status: PassthroughCardStatus
     ) -> Result<(), ServiceError> {
         info!("Searching for cards for userId={} to go to status={}", user.id, String::from(&status));
-        let card = self.find_card_for_user_in_status(
+        let card = self.clone().find_card_for_user_in_status(
             &user,
             &status
         ).await?;
@@ -112,6 +112,7 @@ impl Engine {
                 // will figure out later. for now logs
                 error!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
                 println!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
+                // TODO: don't call direct
                 let rollback = PassthroughCard::update_status(
                     updated.id,
                     PassthroughCardStatus::from(&*previous_status)
@@ -135,10 +136,11 @@ impl Engine {
     }
 
     pub async fn find_card_for_user_in_status(
-        &self,
+        self: Arc<Self>,
         user: &User,
         status: &PassthroughCardStatus
     ) -> Result<PassthroughCard, ServiceError> {
+        // TODO: don't call db direct
         return match status {
             PassthroughCardStatus::CLOSED => {
                 let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
@@ -172,7 +174,7 @@ impl Engine {
     }
 
     pub async fn get_active_card_for_user(
-        &self,
+        self: Arc<Self>,
         user: &User
     ) -> Result<Option<PassthroughCard>, ServiceError> {
         let cards = PassthroughCard::find_cards_for_user(user.id).await?;
@@ -197,10 +199,10 @@ impl Engine {
     }
 
     pub async fn user_has_active_card(
-        &self,
+        self: Arc<Self>,
         user: &User
     ) -> Result<bool, ServiceError> {
-        if let Some(card) = self.get_active_card_for_user(&user).await? {
+        if let Some(card) = self.clone().get_active_card_for_user(&user).await? {
             return Ok(true)
         }
         Ok(false)
@@ -242,26 +244,26 @@ impl Engine {
     }
 
     async fn close_lithic_card(
-        &self,
+        self: Arc<Self>,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.close_card(token).await?;
+        let closed = self.lithic_service.clone().close_card(token).await?;
         Ok(closed)
     }
 
     async fn pause_lithic_card(
-        &self,
+        self: Arc<Self>,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.pause_card(token).await?;
+        let closed = self.lithic_service.clone().pause_card(token).await?;
         Ok(closed)
     }
 
     async fn activate_lithic_card(
-        &self,
+        self: Arc<Self>,
         token: &str
     ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.activate_card(token).await?;
+        let closed = self.lithic_service.clone().activate_card(token).await?;
         Ok(closed)
     }
 }

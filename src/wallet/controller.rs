@@ -6,6 +6,7 @@ use actix_web::{
 };
 
 use crate::api_error::ApiError;
+use crate::middleware::services::Services;
 use crate::user::entity::User;
 use crate::wallet::engine::Engine;
 use crate::wallet::entity::DisplayableCardInfo;
@@ -22,20 +23,19 @@ use super::{
 #[post("/add-card/")]
 async fn add_card(
     user: web::ReqData<User>,
-    info: web::Json<request::AddCardRequest>
+    info: web::Json<request::AddCardRequest>,
+    services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
     println!("IN REQUEST");
     let user = user.into_inner();
     println!("GOT USER");
     let info = info.into_inner();
-    println!("GOT INFO");
-    let engine = Engine::new();
     println!("GOT ENGINE");
-    let (wca, payment_response) = engine.register_attempt_and_send_card_to_adyen(
+    let (wca, payment_response) = services.wallet_engine.clone().register_attempt_and_send_card_to_adyen(
         &user,
         &info
     ).await?;
-    let match_from_response = engine.attempt_match_from_response(&payment_response).await;
+    let match_from_response = services.wallet_engine.clone().attempt_match_from_response(&payment_response).await;
     println!("done registering");
     Ok(HttpResponse::Ok().json(
         WalletCardAttemptResponse {
@@ -47,12 +47,12 @@ async fn add_card(
 #[post("/register-card-attempt/")]
 async fn register_new_card_attempt(
     user: web::ReqData<User>,
-    info: web::Json<request::RegisterAttemptRequest>
+    info: web::Json<request::RegisterAttemptRequest>,
+    services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
     let info = info.into_inner();
-    let engine = Engine::new();
-    let wca = engine.attempt_register_new_attempt(
+    let wca = services.wallet_engine.clone().attempt_register_new_attempt(
         &user,
         &info
     ).await?;
@@ -65,10 +65,11 @@ async fn register_new_card_attempt(
 
 #[get("/list-cards/")]
 async fn list_cards(
-    user: web::ReqData<User> // should extract from extensions
+    user: web::ReqData<User>, // should extract from extensions
+    services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
-    let cards: Vec<DisplayableCardInfo> = Wallet::find_all_for_user_with_card_info(
+    let cards: Vec<DisplayableCardInfo> = services.wallet_engine.wallet_dao.clone().find_all_for_user_with_card_info(
         &user
     ).await?
         .iter()

@@ -4,9 +4,6 @@ use actix_web::{
     post,
     HttpResponse,
 };
-use actix_web::web::Bytes;
-use chrono::{NaiveDateTime, Utc};
-
 use crate::api_error::ApiError;
 use crate::asa::request::AsaRequest;
 use adyen_webhooks::models::{
@@ -16,12 +13,16 @@ use adyen_webhooks::models::{
 };
 use crate::webhooks::adyen_handler::AdyenHandler;
 use crate::webhooks::lithic_handler::LithicHandler;
+use crate::middleware::services::Services;
 
 
+// TODO: create a special error here that always unwraps to 200
 #[post("/adyen-webhook/")]
-async fn adyen_webhook(notification: web::Json<AuthorisationNotificationRequest>) -> Result<HttpResponse, ApiError> {
-    //let handler = AdyenHandler::new();
-    //handler.handle(notification.into_inner()).await?;
+async fn adyen_webhook(
+    notification: web::Json<AuthorisationNotificationRequest>,
+    services: web::Data<Services>
+) -> Result<HttpResponse, ApiError> {
+    //services.adyen_handler.clone().handle(notification.into_inner()).await?;
     Ok(
         HttpResponse::Ok().json(
             NotificationResponse {
@@ -32,12 +33,12 @@ async fn adyen_webhook(notification: web::Json<AuthorisationNotificationRequest>
 }
 
 #[post("/lithic-asa-webhook/")]
-async fn lithic_asa_webhook(asa: web::Json<AsaRequest>) -> Result<HttpResponse, ApiError> {
+async fn lithic_asa_webhook(
+    asa: web::Json<AsaRequest>,
+    services: web::Data<Services>
+) -> Result<HttpResponse, ApiError> {
     let mut start = Instant::now();
-    let handler = LithicHandler::new();
-    println!("Init Lithic Handler took {:?}", start.elapsed());
-    start = Instant::now();
-    let resp = handler.handle(asa.into_inner()).await?;
+    let resp = services.lithic_handler.clone().handle(asa.into_inner()).await?;
     println!("Lithic handler took {:?}", start.elapsed());
     Ok(
         HttpResponse::Ok().json(

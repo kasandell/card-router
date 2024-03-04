@@ -1,4 +1,5 @@
 use std::collections::{hash_map::Entry, HashMap};
+use std::sync::Arc;
 use async_trait::async_trait;
 
 use chrono::Utc;
@@ -18,14 +19,14 @@ pub struct RuleEngine {
 }
 
 #[mockall::automock]
-#[async_trait]
+#[async_trait(?Send)]
 pub trait RuleEngineTrait {
-    async fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
+    async fn order_user_cards_for_request(self: Arc<Self>, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl RuleEngineTrait for RuleEngine {
-    async fn order_user_cards_for_request(&self, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
+    async fn order_user_cards_for_request(self: Arc<Self>, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
@@ -41,6 +42,7 @@ impl RuleEngineTrait for RuleEngine {
     }
 }
 
+// TODO: create as a self reference?
 impl RuleEngine {
     pub fn new() -> Self {
         Self {}

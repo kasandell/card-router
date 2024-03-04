@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::env;
+use std::sync::Arc;
 use std::time::Instant;
 
 use adyen_checkout::{
@@ -32,23 +33,23 @@ pub struct ChargeService {
 }
 
 #[cfg_attr(test, automock)]
-#[async_trait]
+#[async_trait(?Send)]
 pub trait AdyenChargeServiceTrait {
     //TODO: is making these not async going to make them run slower/block
     async fn charge_card_on_file<'a>(
-        &self,
+        self: Arc<Self>,
         request: &ChargeCardRequest<'a>
     ) -> Result<PaymentResponse, ServiceError>;
 
     async fn cancel_transaction(
-        &self,
+        self: Arc<Self>,
         psp_reference: &str,
     ) -> Result<PaymentCancelResponse, ServiceError>;
 
     // this is going to take a request in from the frontend, preformatted by adyen libraries
     // and pass it along
     async fn add_card(
-        &self,
+        self: Arc<Self>,
         idempotency_key: &str,
         user: &User,
         reference_id: &str,
@@ -73,10 +74,10 @@ impl ChargeService {
 }
 
 
-#[async_trait]
+#[async_trait(?Send)]
 impl AdyenChargeServiceTrait for ChargeService {
     async fn charge_card_on_file<'a>(
-        &self,
+        self: Arc<Self>,
         request: &ChargeCardRequest<'a>
     ) -> Result<PaymentResponse, ServiceError> {
         let mut start = Instant::now();
@@ -181,7 +182,7 @@ impl AdyenChargeServiceTrait for ChargeService {
         println!("Creating body took {:?}", start.elapsed());
         start = Instant::now();
         let resp = post_payments(
-            &self.configuration,
+            &self.configuration.clone(),
             Some(to_value(request.idempotency_key)?),
             body
         ).await?;
@@ -190,12 +191,12 @@ impl AdyenChargeServiceTrait for ChargeService {
     }
 
     async fn cancel_transaction(
-        &self,
+        self: Arc<Self>,
         psp_reference: &str,
     ) -> Result<PaymentCancelResponse, ServiceError> {
         Ok(
             post_payments_payment_psp_reference_cancels(
-                &self.configuration,
+                &self.configuration.clone(),
                 psp_reference,
                 Some(to_value(Uuid::new_v4().to_string())?),
                 Some(
@@ -210,7 +211,7 @@ impl AdyenChargeServiceTrait for ChargeService {
     }
 
     async fn add_card(
-        &self,
+        self: Arc<Self>,
         idempotency_key: &str,
         user: &User,
         reference_id: &str,
@@ -298,7 +299,7 @@ impl AdyenChargeServiceTrait for ChargeService {
         println!("{}", serde_json::to_string_pretty(&obj).unwrap());
         Ok(
             post_payments(
-                &self.configuration,
+                &self.configuration.clone(),
                 None,//Some(to_value(idempotency_key.to_string())?),
                 // TODO: make sure we transform this appropriately to only take in required components from frontend
                 Some(obj)

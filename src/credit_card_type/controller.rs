@@ -1,15 +1,19 @@
 use actix_web::{put, post, get, HttpResponse, web};
 use crate::api_error::ApiError;
+use crate::credit_card_type::dao::CreditCardDaoTrait;
 use crate::credit_card_type::response::CardTypeResponse;
+use crate::middleware::services::Services;
 use crate::passthrough_card::response::HasActiveResponse;
 use crate::user::entity::User;
 use super::entity::CreditCard;
 
 
 #[get("/list/")]
-async fn list_cards() -> Result<HttpResponse, ApiError>{
+async fn list_cards(
+    services: web::Data<Services>
+) -> Result<HttpResponse, ApiError>{
     warn!("Hi Im here");
-    let cards: Vec<CardTypeResponse> = CreditCard::list_all_card_types().await?
+    let cards: Vec<CardTypeResponse> = services.credit_card_dao.clone().list_all_card_types().await?
         .iter()
         .map(|card| CardTypeResponse {
             public_id: card.0.public_id,

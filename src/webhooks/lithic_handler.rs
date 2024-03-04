@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Instant;
 use chrono::Utc;
 use crate::adyen_service::checkout::service::AdyenChargeServiceTrait;
@@ -17,37 +18,47 @@ use crate::transaction::engine::TransactionEngineTrait;
 use crate::user::dao::{UserDao, UserDaoTrait};
 
 pub struct LithicHandler {
-    pub charge_engine: ChargeEngine,
-    pub rule_engine: Box<dyn RuleEngineTrait>,
+    pub charge_engine: Arc<ChargeEngine>,
+    pub rule_engine: Arc<dyn RuleEngineTrait>,
 }
 
 impl LithicHandler {
     pub fn new() -> Self {
         Self {
-            charge_engine: ChargeEngine::new(),
-            rule_engine: Box::new(RuleEngine::new()),
+            charge_engine: Arc::new(ChargeEngine::new()),
+            rule_engine: Arc::new(RuleEngine::new()),
         }
     }
 
     #[cfg(test)]
     pub fn new_with_engines(
-        charge_service: Box<dyn AdyenChargeServiceTrait>,
-        passthrough_card_dao: Box<dyn PassthroughCardDaoTrait>,
-        user_dao: Box<dyn UserDaoTrait>,
-        ledger: Box<dyn TransactionEngineTrait>,
-        rule_engine: Box<dyn RuleEngineTrait>
+        charge_service: Arc<dyn AdyenChargeServiceTrait>,
+        passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
+        user_dao: Arc<dyn UserDaoTrait>,
+        ledger: Arc<dyn TransactionEngineTrait>,
+        rule_engine: Arc<dyn RuleEngineTrait>
     ) -> Self {
         Self {
-            charge_engine: ChargeEngine::new_with_service(
+            charge_engine: Arc::new(ChargeEngine::new_with_service(
                 charge_service,
                 passthrough_card_dao,
                 user_dao,
                 ledger
-            ),
-            rule_engine: rule_engine,
+            )),
+            rule_engine: Arc::new(rule_engine),
         }
     }
-    pub async fn handle(&self, request: AsaRequest) -> Result<AsaResponse, ApiError>{
+
+    pub fn new_with_services(
+        charge_engine: Arc<ChargeEngine>,
+        rule_engine: Arc<RuleEngine>
+    ) -> Self {
+        Self {
+            charge_engine,
+            rule_engine
+        }
+    }
+    pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, ApiError>{
         // TODO: do a reverse lookup based on the card token to get the user
         info!("Identifying user by card");
         println!("Identifying user by card");
@@ -64,7 +75,7 @@ impl LithicHandler {
 
         info!("Getting user cards for userId={}", user.id);
         println!("Getting user cards for userId={}", user.id);
-        let cards = self.rule_engine.order_user_cards_for_request(
+        let cards = self.rule_engine.clone().order_user_cards_for_request(
             request.clone(),
             &user
         ).await?;
@@ -77,7 +88,7 @@ impl LithicHandler {
         println!("Attempting to charge userId={}", user.id);
 
         start = Instant::now();
-        let (result, ledger) = self.charge_engine.charge_from_asa_request(
+        let (result, ledger) = self.charge_engine.clone().charge_from_asa_request(
             &request,
             &cards,
         ).await?;

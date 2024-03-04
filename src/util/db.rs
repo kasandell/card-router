@@ -88,7 +88,6 @@ where
 
 #[derive(Debug, Clone, Copy)]
 pub struct SyncTestConnectionCustomizer;
-
 impl<C, E> SyncCustomizeConnection<C, E> for SyncTestConnectionCustomizer
 where
     C: Connection

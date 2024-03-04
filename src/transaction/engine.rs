@@ -76,7 +76,7 @@ impl TransactionEngineTrait for Engine {
         user: &User,
         metadata: &TransactionMetadata,
     ) -> Result<RegisteredTransaction, ServiceError> {
-        let res = self.dao.insert_registered_transaction(
+        let res = self.dao.clone().insert_registered_transaction(
             InsertableRegisteredTransaction {
                 user_id: user.id,
                 transaction_id: Uuid::new_v4(),
@@ -96,7 +96,7 @@ impl TransactionEngineTrait for Engine {
     ) -> Result<InnerChargeLedger, ServiceError> {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
-            self.dao.insert_inner_charge(
+            self.dao.clone().insert_inner_charge(
                 InsertableInnerChargeLedger {
                     registered_transaction_id: registered_transaction.transaction_id,
                     user_id: registered_transaction.user_id,
@@ -117,7 +117,7 @@ impl TransactionEngineTrait for Engine {
     ) -> Result<InnerChargeLedger, ServiceError> {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
-            self.dao.insert_inner_charge(
+            self.dao.clone().insert_inner_charge(
                 InsertableInnerChargeLedger {
                     registered_transaction_id: registered_transaction.transaction_id,
                     user_id: registered_transaction.user_id,
@@ -138,7 +138,7 @@ impl TransactionEngineTrait for Engine {
     ) -> Result<OuterChargeLedger, ServiceError> {
         // TODO: do some assertions that everything is associated
         Ok(
-            self.dao.insert_outer_charge(
+            self.dao.clone().insert_outer_charge(
                 InsertableOuterChargeLedger {
                     registered_transaction_id: registered_transaction.transaction_id,
                     user_id: registered_transaction.user_id,
@@ -159,7 +159,7 @@ impl TransactionEngineTrait for Engine {
     ) -> Result<OuterChargeLedger, ServiceError> {
         // TODO: do some assertions that everything is associated
         Ok(
-            self.dao.insert_outer_charge(
+            self.dao.clone().insert_outer_charge(
                 InsertableOuterChargeLedger {
                     registered_transaction_id: registered_transaction.transaction_id,
                     user_id: registered_transaction.user_id,
@@ -179,7 +179,7 @@ impl TransactionEngineTrait for Engine {
         successful_outer_charge: &OuterChargeLedger
     ) -> Result<TransactionLedger, ServiceError> {
         Ok(
-            self.dao.insert_transaction_ledger(
+            self.dao.clone().insert_transaction_ledger(
                 InsertableTransactionLedger {
                     transaction_id: registered_transaction.transaction_id,
                     inner_charge_ledger_id: successful_inner_charge.id,

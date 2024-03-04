@@ -1,6 +1,13 @@
 # Rust specific 
 https://github.com/serde-rs/serde/issues/1019
 
+
+# Actix
+
+https://github.com/actix/examples/blob/344bcfce/middleware/middleware/src/read_request_body.rs
+https://github.com/actix/actix-extras/blob/master/actix-redis/src/redis.rs
+
+
 # Authenitication 
 https://auth0.com/blog/build-an-api-in-rust-with-jwt-authentication-using-actix-web/
 https://github.com/actix/examples/blob/master/middleware/various/src/redirect.rs
@@ -31,6 +38,8 @@ https://docs.adyen.com/development-resources/testing/test-card-numbers/
 https://github.com/Adyen/adyen-openapi
 https://docs.adyen.com/api-explorer/Checkout/69/post/payments/_paymentPspReference_/cancels
 going to need to modify wallet architecture -> add card attempt or something similar, then when we see a webhook come in with matching ref number, we tie to that
+https://docs.adyen.com/development-resources/error-codes/
+https://dev.to/adyen/use-adyen-tokenization-to-implement-subscriptions-in-net-4fkl
 
 
 # Testing

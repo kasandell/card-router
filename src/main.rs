@@ -13,11 +13,13 @@ extern crate uuidv7;
 
 use std::io::ErrorKind;
 use std::str::FromStr;
+use std::sync::Arc;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
 use dotenv::dotenv;
 use uuid::Uuid;
+use crate::adyen_service::checkout::service::ChargeService;
 use crate::lithic_service::service::{LithicService, LithicServiceTrait};
 use crate::passthrough_card::crypto::encrypt_pin;
 
@@ -66,12 +68,17 @@ async fn main() -> std::io::Result<()> {
     let id = Uuid::from_str(orig_id.as_str()).expect("should serialize");
     println!("{:?}", id.to_string());
     std::env::set_var("RUST_LOG", "actix_web=info");
-    env_logger::init();
-    util::db::init();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    //env_logger::init();
+    util::db::init().await;
+
+
 
     HttpServer::new(move || {
+        let services = middleware::services::Services::new();
         App::new()
             .wrap(Logger::default())
+            .app_data(web::Data::new(services.clone()))
             .wrap(Logger::new("%a %{User-Agent}i"))
             .service(web::scope("/user").configure(user::config::config))
             .service(web::scope("/wallet").configure(wallet::config::config))
@@ -84,8 +91,5 @@ async fn main() -> std::io::Result<()> {
     .bind(("127.0.0.1", 8080))?
     .run()
     .await?;
-
-    //lithic.deregister_webhook(resp.token).await.map_err(|e| std::io::Error::new(ErrorKind::Other, e.message))?;
-
     Ok(())
 }
