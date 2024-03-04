@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::PaymentResponse;
     use crate::wallet::entity::Wallet;
@@ -22,8 +23,8 @@ mod tests {
     // TODO: how to use the mocks appropriately here / how to share them
     pub async fn test_handle() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1);
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+        let user = User::create_test_user(1).await;
+        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -38,9 +39,9 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 );
+        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 );
+        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
         card_2.payment_method_id = payment_method_2.to_string();
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
@@ -138,13 +139,13 @@ mod tests {
                 Ok(create_registered_transaction())
             );
 
-        let handler = LithicHandler::new_with_engines(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock),
-            Box::new(rule_engine)
-        );
+        let handler = Arc::new(LithicHandler::new_with_engines(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock),
+            Arc::new(rule_engine)
+        ));
 
         let mut asa = create_example_asa(
             amount_cents,
@@ -153,7 +154,7 @@ mod tests {
         asa.token = Some(pc.token.clone());
 
 
-        let res = handler.handle(
+        let res = handler.clone().handle(
             asa.clone()
         ).await.expect("no error");
         assert_eq!(AsaResponseResult::Approved, res.result);

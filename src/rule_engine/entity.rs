@@ -2,7 +2,6 @@ use crate::schema::rule;
 use super::request::CreateRuleRequest;
 use chrono::NaiveDate;
 use diesel::prelude::*;
-#[cfg(not(test))]
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -132,7 +131,7 @@ impl Rule {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        Rule::delete(self.id)
+        Rule::delete(self.id).await
     }
 }
 

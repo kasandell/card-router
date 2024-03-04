@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod entity_tests {
+    use std::sync::Arc;
     use chrono::{Utc, Duration};
     use uuid::Uuid;
     use crate::rule_engine::constant::DayOfMonth;
@@ -19,17 +20,17 @@ mod entity_tests {
     #[actix_web::test]
     async fn test_create_rule_in_db() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let mcc = "7184";
         let category = Category::create(
             InsertableCategory { name: "Random".to_string() }
-        ).expect("should create");
+        ).await.expect("should create");
         let mcc_mapping = MccMapping::create(
             InsertableMccMapping { 
                 mcc_code: mcc.to_string(),
                 category_id: category.id
             }
-        ).expect("should create");
+        ).await.expect("should create");
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let rule_to_create = CreateRuleRequest {
@@ -42,7 +43,7 @@ mod entity_tests {
             start_date: None,
             end_date: None
         };
-        let rule = Rule::create(rule_to_create).expect("Should create");
+        let rule = Rule::create(rule_to_create).await.expect("Should create");
         assert_eq!(credit_card_id, rule.credit_card_id);
         assert!(rule.is_valid());
         assert_eq!(mcc, rule.rule_mcc.expect("expect rule mcc"));
@@ -53,10 +54,10 @@ mod entity_tests {
         assert!(rule.recurring_day_of_month.is_none());
         assert!(rule.start_date.is_none());
         assert!(rule.end_date.is_none());
-        user.delete_self().expect("should delete");
-        Rule::delete(rule.id).expect("should delete");
-        mcc_mapping.delete_self().expect("should delete");
-        category.delete_self().expect("should delete");
+        user.delete_self().await.expect("should delete");
+        Rule::delete(rule.id).await.expect("should delete");
+        mcc_mapping.delete_self().await.expect("should delete");
+        category.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]

@@ -2,6 +2,7 @@
 #[cfg(test)]
 mod tests {
     use actix_web;
+    use std::sync::Arc;
     use mockall::predicate::eq;
     use uuid::Uuid;
     use crate::adyen_service::checkout::service::MockAdyenChargeServiceTrait;
@@ -30,7 +31,7 @@ mod tests {
         let cc = create_credit_card(CREDIT_CARD_ID);
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
 
-        let user = create_user_in_mem(USER_ID);
+        let user = create_user_in_mem(USER_ID).await;
 
         let expected_reference_id = Uuid::new_v4().to_string();
         let expected_reference_id_clone = expected_reference_id.clone();
@@ -53,14 +54,14 @@ mod tests {
                 Ok(cc.clone())
             );
 
-        let wallet_engine = Engine::new_with_services(
-            Box::new(cc_dao),
-            Box::new(wca_dao),
-            Box::new(w_dao),
-            Box::new(adyen_service),
-        );
+        let wallet_engine = Arc::new(Engine::new_with_services(
+            Arc::new(cc_dao),
+            Arc::new(wca_dao),
+            Arc::new(w_dao),
+            Arc::new(adyen_service),
+        ));
 
-        let wca_ret = wallet_engine.attempt_register_new_attempt(
+        let wca_ret = wallet_engine.clone().attempt_register_new_attempt(
             &user,
             &RegisterAttemptRequest {
                 expected_reference_id: expected_reference_id.clone(),
@@ -81,7 +82,7 @@ mod tests {
         let cc = create_credit_card(CREDIT_CARD_ID);
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
 
-        let user = create_user_in_mem(USER_ID);
+        let user = create_user_in_mem(USER_ID).await;
 
         let expected_reference_id: String = Uuid::new_v4().to_string();
         let expected_reference_id_clone = expected_reference_id.clone();
@@ -104,14 +105,14 @@ mod tests {
                 Ok(cc.clone())
             );
 
-        let wallet_engine = Engine::new_with_services(
-            Box::new(cc_dao),
-            Box::new(wca_dao),
-            Box::new(w_dao),
-            Box::new(adyen_service)
-        );
+        let wallet_engine = Arc::new(Engine::new_with_services(
+            Arc::new(cc_dao),
+            Arc::new(wca_dao),
+            Arc::new(w_dao),
+            Arc::new(adyen_service)
+        ));
 
-        let err: ApiError = wallet_engine.attempt_register_new_attempt(
+        let err: ApiError = wallet_engine.clone().attempt_register_new_attempt(
             &user,
             &RegisterAttemptRequest {
                 expected_reference_id: expected_reference_id,
@@ -132,7 +133,7 @@ mod tests {
         let cc = create_credit_card(CREDIT_CARD_ID);
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
 
-        let user = create_user_in_mem(USER_ID);
+        let user = create_user_in_mem(USER_ID).await;
 
         let expected_reference_id = Uuid::new_v4().to_string();
         let expected_reference_id_clone = expected_reference_id.clone();
@@ -155,14 +156,14 @@ mod tests {
                 Ok(cc.clone())
             );
 
-        let wallet_engine = Engine::new_with_services(
-            Box::new(cc_dao),
-            Box::new(wca_dao),
-            Box::new(w_dao),
-            Box::new(adyen_service)
-        );
+        let wallet_engine = Arc::new(Engine::new_with_services(
+            Arc::new(cc_dao),
+            Arc::new(wca_dao),
+            Arc::new(w_dao),
+            Arc::new(adyen_service)
+        ));
 
-        let wca_ret = wallet_engine.attempt_register_new_attempt(
+        let wca_ret = wallet_engine.clone().attempt_register_new_attempt(
             &user,
             &RegisterAttemptRequest {
                 expected_reference_id: expected_reference_id.clone(),
@@ -172,7 +173,7 @@ mod tests {
 
         assert_eq!(wca, wca_ret);
 
-        let wca_ret2 = wallet_engine.attempt_register_new_attempt(
+        let wca_ret2 = wallet_engine.clone().attempt_register_new_attempt(
             &user,
             &RegisterAttemptRequest {
                 expected_reference_id: expected_reference_id.clone(),
@@ -194,7 +195,7 @@ mod tests {
         let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
 
 
-        let user = create_user_in_mem(USER_ID);
+        let user = create_user_in_mem(USER_ID).await;
 
         let expected_reference_id = Uuid::new_v4().to_string();
         let expected_reference_id_clone = expected_reference_id.clone();
@@ -248,14 +249,14 @@ mod tests {
                 Ok(wallet_card.clone())
             );
 
-        let wallet_engine = Engine::new_with_services(
-            Box::new(cc_dao),
-            Box::new(wca_dao),
-            Box::new(w_dao),
-            Box::new(adyen_service)
-        );
+        let wallet_engine = Arc::new(Engine::new_with_services(
+            Arc::new(cc_dao),
+            Arc::new(wca_dao),
+            Arc::new(w_dao),
+            Arc::new(adyen_service)
+        ));
 
-        let created_card = wallet_engine.attempt_match(
+        let created_card = wallet_engine.clone().attempt_match(
             &MatchAttemptRequest {
                 merchant_reference_id: expected_reference_id.clone(),
                 original_psp_reference: psp_id.clone(),
@@ -275,7 +276,7 @@ mod tests {
 
         let cc = create_credit_card(CREDIT_CARD_ID);
 
-        let user = create_user_in_mem(USER_ID);
+        let user = create_user_in_mem(USER_ID).await;
 
         let expected_reference_id = Uuid::new_v4().to_string();
 
@@ -305,14 +306,14 @@ mod tests {
             .times(0);
 
 
-        let wallet_engine = Engine::new_with_services(
-            Box::new(cc_dao),
-            Box::new(wca_dao),
-            Box::new(w_dao),
-            Box::new(adyen_service)
-        );
+        let wallet_engine = Arc::new(Engine::new_with_services(
+            Arc::new(cc_dao),
+            Arc::new(wca_dao),
+            Arc::new(w_dao),
+            Arc::new(adyen_service)
+        ));
 
-        let error = wallet_engine.attempt_match(
+        let error = wallet_engine.clone().attempt_match(
             &MatchAttemptRequest {
                 merchant_reference_id: expected_reference_id.clone(),
                 original_psp_reference: psp_id.clone(),
@@ -330,7 +331,7 @@ mod tests {
         let mut w_dao = MockWalletDaoTrait::new();
         let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
-        let user = create_user_in_mem(USER_ID);
+        let user = create_user_in_mem(USER_ID).await;
 
         let expected_reference_id = Uuid::new_v4().to_string();
         let new_card_id = Uuid::new_v4().to_string();
@@ -353,14 +354,14 @@ mod tests {
             .times(0);
 
 
-        let wallet_engine = Engine::new_with_services(
-            Box::new(cc_dao),
-            Box::new(wca_dao),
-            Box::new(w_dao),
-            Box::new(adyen_service)
-        );
+        let wallet_engine = Arc::new(Engine::new_with_services(
+            Arc::new(cc_dao),
+            Arc::new(wca_dao),
+            Arc::new(w_dao),
+            Arc::new(adyen_service)
+        ));
 
-        let error = wallet_engine.attempt_match(
+        let error = wallet_engine.clone().attempt_match(
             &MatchAttemptRequest {
                 merchant_reference_id: expected_reference_id.clone(),
                 original_psp_reference: psp_id.clone(),

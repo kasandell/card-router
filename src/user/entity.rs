@@ -2,7 +2,6 @@ use crate::util::db;
 use crate::schema::users;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
-#[cfg(not(test))]
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -120,7 +119,7 @@ impl User {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        User::delete(self.id)
+        User::delete(self.id).await
     }
 
     #[cfg(test)]

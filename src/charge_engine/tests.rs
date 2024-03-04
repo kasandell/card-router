@@ -2,6 +2,7 @@
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use std::fs::metadata;
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::{PaymentCancelResponse, PaymentResponse};
@@ -35,9 +36,9 @@ mod tests {
     #[actix_web::test]
     async fn test_single_charge_fails_on_error() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID);
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 );
-        let rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+        let user = User::create_test_user(USER_ID).await;
+        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
+        let rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
@@ -57,13 +58,13 @@ mod tests {
                 )
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_card_with_cleanup(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
             &wallet,
             &user,
@@ -76,9 +77,9 @@ mod tests {
     #[actix_web::test]
     async fn test_single_charge_succeeds() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID);
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 );
-        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata );
+        let user = User::create_test_user(USER_ID).await;
+        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
+        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata ).await;
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
@@ -102,13 +103,13 @@ mod tests {
                 )
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_card_with_cleanup(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
             &wallet,
             &user,
@@ -121,9 +122,9 @@ mod tests {
     #[actix_web::test]
     async fn test_single_charge_needs_cancel_and_succeeds() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID);
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 );
-        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata );
+        let user = User::create_test_user(USER_ID).await;
+        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
+        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata ).await;
 
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
@@ -161,13 +162,13 @@ mod tests {
                 Ok(create_failed_inner_charge(USER_ID))
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_card_with_cleanup(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
             &wallet,
             &user,
@@ -180,9 +181,9 @@ mod tests {
     #[actix_web::test]
     async fn test_single_charge_does_not_go_through() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID);
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 );
-        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata );
+        let user = User::create_test_user(USER_ID).await;
+        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
+        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata ).await;
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
@@ -208,13 +209,13 @@ mod tests {
                 )
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_card_with_cleanup(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
             &wallet,
             &user,
@@ -229,8 +230,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_first_card_success() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1);
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+        let user = User::create_test_user(1).await;
+        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -239,9 +240,9 @@ mod tests {
 
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 );
+        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 );
+        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
         card_2.payment_method_id = payment_method_2.to_string();
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
@@ -278,13 +279,13 @@ mod tests {
                 )
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_wallet(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_wallet(
             &user,
             &vec![card_1.clone(), card_2.clone()],
             &metadata,
@@ -296,8 +297,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_no_cards_fails() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1);
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+        let user = User::create_test_user(1).await;
+        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -307,13 +308,13 @@ mod tests {
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_wallet(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_wallet(
             &user,
             &vec![],
             &metadata,
@@ -326,8 +327,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_second_card() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1);
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+        let user = User::create_test_user(1).await;
+        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -340,9 +341,9 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 );
+        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 );
+        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
         card_2.payment_method_id = payment_method_2.to_string();
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
@@ -407,13 +408,13 @@ mod tests {
                 )
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_wallet(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_wallet(
             &user,
             &vec![card_1.clone(), card_2.clone()],
             &metadata,
@@ -425,8 +426,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_second_card_from_asa() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1);
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+        let user = User::create_test_user(1).await;
+        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -439,9 +440,9 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 );
+        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 );
+        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
         card_2.payment_method_id = payment_method_2.to_string();
 
         let pc = create_passthrough_card(&user);
@@ -531,15 +532,15 @@ mod tests {
                 Ok(create_registered_transaction())
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
         let mut asa = create_example_asa(amount_cents, mcc2.to_string());
         asa.token = Some(pc.token.to_string());
-        let (res, l) = engine.charge_from_asa_request(
+        let (res, l) = engine.clone().charge_from_asa_request(
             &asa,
             &vec![card_1.clone(), card_2.clone()]
         ).await.expect("no error");
@@ -551,8 +552,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_second_card_fails() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1);
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata );
+        let user = User::create_test_user(1).await;
+        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -565,9 +566,9 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 );
+        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 );
+        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
         card_2.payment_method_id = payment_method_2.to_string();
 
         let amount_cents = metadata.amount_cents;
@@ -626,13 +627,13 @@ mod tests {
                 Ok(create_failed_inner_charge(USER_ID))
             );
 
-        let engine = Engine::new_with_service(
-            Box::new(charge_service),
-            Box::new(pc_mock),
-            Box::new(user_mock),
-            Box::new(ledger_mock)
-        );
-        let (res, ledger) = engine.charge_wallet(
+        let engine = Arc::new(Engine::new_with_service(
+            Arc::new(charge_service),
+            Arc::new(pc_mock),
+            Arc::new(user_mock),
+            Arc::new(ledger_mock)
+        ));
+        let (res, ledger) = engine.clone().charge_wallet(
             &user,
             &vec![card_1.clone(), card_2.clone()],
             &metadata,

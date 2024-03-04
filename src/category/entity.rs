@@ -10,7 +10,6 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-#[cfg(not(test))]
 use diesel_async::RunQueryDsl;
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
@@ -75,7 +74,7 @@ impl Category {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        Category::delete(self.id)
+        Category::delete(self.id).await
     }
 }
 
@@ -102,6 +101,6 @@ impl MccMapping {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        MccMapping::delete(self.id)
+        MccMapping::delete(self.id).await
     }
 }

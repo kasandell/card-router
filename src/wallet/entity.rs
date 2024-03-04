@@ -10,7 +10,6 @@ use crate::data_error::DataError;
 use crate::user::entity::User;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
-#[cfg(not(test))]
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

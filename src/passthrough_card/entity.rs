@@ -1,7 +1,6 @@
 use crate::schema::passthrough_card;
 use chrono::{NaiveDateTime, NaiveDate, Utc};
 use diesel::prelude::*;
-#[cfg(not(test))]
 use diesel_async::RunQueryDsl;
 use lithic_client::models::{Card, FundingAccount};
 use serde::{Deserialize, Serialize};
@@ -165,7 +164,7 @@ impl PassthroughCard {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        PassthroughCard::delete(self.id)
+        PassthroughCard::delete(self.id).await
     }
 
 }

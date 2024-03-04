@@ -2,6 +2,7 @@
 mod entity_tests {
     use lithic_client::models::Card;
     use uuid::Uuid;
+    use std::sync::Arc;
     use crate::passthrough_card::entity::{create_test_lithic_card, PassthroughCard};
     use crate::schema::inner_charge_ledger::dsl::inner_charge_ledger;
     use crate::schema::outer_charge_ledger::dsl::outer_charge_ledger;
@@ -18,7 +19,7 @@ mod entity_tests {
     #[actix_web::test]
     async fn test_registered_txn_create() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let txn_res = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -27,7 +28,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        );
+        ).await;
 
         let txn = txn_res.expect("transaction should be ok");
         assert_eq!(txn.user_id, user.id);
@@ -35,15 +36,15 @@ mod entity_tests {
         assert_eq!(txn.amount_cents, TEST_AMOUNT);
         assert_eq!(txn.mcc, TEST_MCC);
         assert_eq!(txn.transaction_id, TEST_TXN_ID);
-        txn.delete_self().expect("transaction should delete");
+        txn.delete_self().await.expect("transaction should delete");
 
-        user.delete_self().expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_registered_txn_create_fails_dupe() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let txn_res = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -52,7 +53,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        );
+        ).await;
 
         let txn = txn_res.expect("transaction should be ok");
         assert_eq!(txn.user_id, user.id);
@@ -68,15 +69,15 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        ).expect_err("Expect api error");
-        txn.delete_self().expect("transaction should delete");
-        user.delete_self().expect("should delete");
+        ).await.expect_err("Expect api error");
+        txn.delete_self().await.expect("transaction should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_inner_charge_creates() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -85,13 +86,13 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        ).expect("transaction should be ok");
+        ).await.expect("transaction should be ok");
 
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
             user.id,
             1
-        ).expect("should create");
+        ).await.expect("should create");
 
         let inner_charge = InnerChargeLedger::insert(
             InsertableInnerChargeLedger {
@@ -103,7 +104,7 @@ mod entity_tests {
                 is_success: None
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, card.id);
@@ -112,17 +113,17 @@ mod entity_tests {
         assert_eq!(inner_charge.is_success, None);
         assert_eq!(inner_charge.registered_transaction_id, rtx.transaction_id);
 
-        inner_charge.delete_self().expect("should delete");
-        card.delete_self().expect("should delete");
-        ca.delete_self().expect("should delete");
-        rtx.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        inner_charge.delete_self().await.expect("should delete");
+        card.delete_self().await.expect("should delete");
+        ca.delete_self().await.expect("should delete");
+        rtx.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_inner_charge_creates_several() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -131,13 +132,13 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        ).expect("transaction should be ok");
+        ).await.expect("transaction should be ok");
 
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
             user.id,
             1
-        ).expect("should create");
+        ).await.expect("should create");
 
         let inner_charge1 = InnerChargeLedger::insert(
             InsertableInnerChargeLedger {
@@ -149,7 +150,7 @@ mod entity_tests {
                 is_success: None
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
@@ -168,7 +169,7 @@ mod entity_tests {
                 is_success: None
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(inner_charge2.user_id, user.id);
         assert_eq!(inner_charge2.wallet_card_id, card.id);
@@ -177,18 +178,18 @@ mod entity_tests {
         assert_eq!(inner_charge2.is_success, None);
         assert_eq!(inner_charge2.registered_transaction_id, rtx.transaction_id);
 
-        inner_charge1.delete_self().expect("should delete");
-        inner_charge2.delete_self().expect("should delete");
-        card.delete_self().expect("should delete");
-        ca.delete_self().expect("should delete");
-        rtx.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        inner_charge1.delete_self().await.expect("should delete");
+        inner_charge2.delete_self().await.expect("should delete");
+        card.delete_self().await.expect("should delete");
+        ca.delete_self().await.expect("should delete");
+        rtx.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_inner_charge_fails_dupe_success() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -197,13 +198,13 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        ).expect("transaction should be ok");
+        ).await.expect("transaction should be ok");
 
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
             user.id,
             1
-        ).expect("should create");
+        ).await.expect("should create");
 
         let inner_charge1 = InnerChargeLedger::insert(
             InsertableInnerChargeLedger {
@@ -215,7 +216,7 @@ mod entity_tests {
                 is_success: Some(true)
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
@@ -234,24 +235,24 @@ mod entity_tests {
                 is_success: Some(true)
 
             }
-        ).expect_err("should create error");
+        ).await.expect_err("should create error");
 
-        inner_charge1.delete_self().expect("should delete");
-        card.delete_self().expect("should delete");
-        ca.delete_self().expect("should delete");
-        rtx.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        inner_charge1.delete_self().await.expect("should delete");
+        card.delete_self().await.expect("should delete");
+        ca.delete_self().await.expect("should delete");
+        rtx.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_inner_charge_fails_no_registered_txn() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
             user.id,
             1
-        ).expect("should create");
+        ).await.expect("should create");
 
         let charge_error = InnerChargeLedger::insert(
             InsertableInnerChargeLedger {
@@ -263,18 +264,18 @@ mod entity_tests {
                 is_success: Some(true)
 
             }
-        ).expect_err("should create error");
+        ).await.expect_err("should create error");
 
 
-        card.delete_self().expect("should delete");
-        ca.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        card.delete_self().await.expect("should delete");
+        ca.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_outer_charge_success() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -283,7 +284,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        ).expect("transaction should be ok");
+        ).await.expect("transaction should be ok");
 
 
         let card = PassthroughCard::create_from_api_card(
@@ -294,7 +295,7 @@ mod entity_tests {
                 Uuid::new_v4()
             ),
             &user
-        ).expect("should create card");
+        ).await.expect("should create card");
 
         let outer_charge = OuterChargeLedger::insert(
             InsertableOuterChargeLedger {
@@ -306,7 +307,7 @@ mod entity_tests {
                 is_success: None
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
@@ -315,16 +316,16 @@ mod entity_tests {
         assert_eq!(outer_charge.is_success, None);
         assert_eq!(outer_charge.registered_transaction_id, rtx.transaction_id);
 
-        outer_charge.delete_self().expect("should delete");
-        card.delete_self().expect("should delete");
-        rtx.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        outer_charge.delete_self().await.expect("should delete");
+        card.delete_self().await.expect("should delete");
+        rtx.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_outer_charge_fails_no_registered_txn() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
 
         let card = PassthroughCard::create_from_api_card(
             &create_test_lithic_card(
@@ -334,7 +335,7 @@ mod entity_tests {
                 Uuid::new_v4()
             ),
             &user
-        ).expect("should create card");
+        ).await.expect("should create card");
 
         let charge_error = OuterChargeLedger::insert(
             InsertableOuterChargeLedger {
@@ -346,16 +347,16 @@ mod entity_tests {
                 is_success: None
 
             }
-        ).expect_err("should be error");
+        ).await.expect_err("should be error");
 
-        card.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        card.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_outer_charge_fails_dupe_registered_txn() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -364,7 +365,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        ).expect("transaction should be ok");
+        ).await.expect("transaction should be ok");
 
 
         let card = PassthroughCard::create_from_api_card(
@@ -375,7 +376,7 @@ mod entity_tests {
                 Uuid::new_v4()
             ),
             &user
-        ).expect("should create card");
+        ).await.expect("should create card");
 
         let outer_charge = OuterChargeLedger::insert(
             InsertableOuterChargeLedger {
@@ -387,7 +388,7 @@ mod entity_tests {
                 is_success: Some(true)
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
@@ -406,18 +407,18 @@ mod entity_tests {
                 is_success: Some(true)
 
             }
-        ).expect_err("Should be err");
+        ).await.expect_err("Should be err");
 
-        outer_charge.delete_self().expect("should delete");
-        card.delete_self().expect("should delete");
-        rtx.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        outer_charge.delete_self().await.expect("should delete");
+        card.delete_self().await.expect("should delete");
+        rtx.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 
     #[actix_web::test]
     async fn test_transaction_ledger_ok() {
         crate::test::init();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
             InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -426,13 +427,13 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC.to_string()
             }
-        ).expect("transaction should be ok");
+        ).await.expect("transaction should be ok");
 
 
         let (wallet_card, ca) = Wallet::create_test_wallet_in_db(
             user.id,
             1
-        ).expect("should create");
+        ).await.expect("should create");
 
         let inner_charge = InnerChargeLedger::insert(
             InsertableInnerChargeLedger {
@@ -444,7 +445,7 @@ mod entity_tests {
                 is_success: Some(true)
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, wallet_card.id);
@@ -461,7 +462,7 @@ mod entity_tests {
                 Uuid::new_v4()
             ),
             &user
-        ).expect("should create card");
+        ).await.expect("should create card");
 
         let outer_charge = OuterChargeLedger::insert(
             InsertableOuterChargeLedger {
@@ -473,7 +474,7 @@ mod entity_tests {
                 is_success: Some(true)
 
             }
-        ).expect("should create");
+        ).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, outer_card.id);
@@ -488,19 +489,19 @@ mod entity_tests {
                 inner_charge_ledger_id: inner_charge.id,
                 outer_charge_ledger_id: outer_charge.id
             }
-        ).expect("should create txn");
+        ).await.expect("should create txn");
 
         assert_eq!(final_tx.transaction_id, rtx.transaction_id);
         assert_eq!(final_tx.inner_charge_ledger_id, inner_charge.id);
         assert_eq!(final_tx.outer_charge_ledger_id, outer_charge.id);
 
-        final_tx.delete_self().expect("should delete");
-        outer_charge.delete_self().expect("should delete");
-        outer_card.delete_self().expect("should delete");
-        inner_charge.delete_self().expect("should delete");
-        wallet_card.delete_self().expect("should delete");
-        ca.delete_self().expect("should delete");
-        rtx.delete_self().expect("should delete");
-        user.delete_self().expect("should delete");
+        final_tx.delete_self().await.expect("should delete");
+        outer_charge.delete_self().await.expect("should delete");
+        outer_card.delete_self().await.expect("should delete");
+        inner_charge.delete_self().await.expect("should delete");
+        wallet_card.delete_self().await.expect("should delete");
+        ca.delete_self().await.expect("should delete");
+        rtx.delete_self().await.expect("should delete");
+        user.delete_self().await.expect("should delete");
     }
 }

@@ -40,12 +40,12 @@ impl LithicHandler {
     ) -> Self {
         Self {
             charge_engine: Arc::new(ChargeEngine::new_with_service(
-                charge_service,
-                passthrough_card_dao,
-                user_dao,
-                ledger
+                charge_service.clone(),
+                passthrough_card_dao.clone(),
+                user_dao.clone(),
+                ledger.clone()
             )),
-            rule_engine: Arc::new(rule_engine),
+            rule_engine: rule_engine.clone(),
         }
     }
 

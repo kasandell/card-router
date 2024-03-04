@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use std::collections::HashSet;
     use chrono::NaiveDate;
     use lithic_client::models::{FundingAccount};
@@ -22,7 +23,7 @@ mod tests {
     async fn test_create_card_for_user() {
         crate::test::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let exp_month = "09";
         let exp_year = "2026";
         let pin = "1234";
@@ -37,23 +38,23 @@ mod tests {
                 Ok(lithic_return)
             );
 
-        let engine = Engine::new_with_service(Box::new(lithic_service));
-        let ret = engine.issue_card_to_user(
+        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let ret = engine.clone().issue_card_to_user(
             &user,
             pin.to_string()
         ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
         assert_eq!(String::from(&PassthroughCardStatus::OPEN), ret.passthrough_card_status);
-        ret.delete_self().expect("Should delete");
-        user.delete_self().expect("Should delete");
+        ret.delete_self().await.expect("Should delete");
+        user.delete_self().await.expect("Should delete");
     }
 
     #[actix_web::test]
     async fn test_create_card_for_user_fails_on_dupe() {
         crate::test::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let exp_month = "09";
         let exp_year = "2026";
         let pin = "1234";
@@ -68,28 +69,28 @@ mod tests {
                 Ok(lithic_return)
             );
 
-        let engine = Engine::new_with_service(Box::new(lithic_service));
-        let ret = engine.issue_card_to_user(
+        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let ret = engine.clone().issue_card_to_user(
             &user,
             pin.to_string()
         ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
         assert_eq!(String::from(&PassthroughCardStatus::OPEN), ret.passthrough_card_status);
-        let error = engine.issue_card_to_user(
+        let error = engine.clone().issue_card_to_user(
             &user,
             pin.to_string()
         ).await.expect_err("This should throw an error");
         assert_eq!(409, error.status_code);
-        ret.delete_self().expect("Should delete");
-        user.delete_self().expect("Should delete");
+        ret.delete_self().await.expect("Should delete");
+        user.delete_self().await.expect("Should delete");
     }
 
     #[actix_web::test]
     async fn test_status_successfully_pauses() {
         crate::test::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let exp_month = "09";
         let exp_year = "2026";
         let mut card = create_test_card();
@@ -105,29 +106,29 @@ mod tests {
         let mut created_card = PassthroughCard::create_from_api_card(
             &card,
             &user
-        ).expect("Card should create");
-        let engine = Engine::new_with_service(Box::new(lithic_service));
-        let res = engine.update_card_status(
+        ).await.expect("Card should create");
+        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let res = engine.clone().update_card_status(
             &user,
             PassthroughCardStatus::PAUSED
         ).await;
 
         assert!(res.is_ok());
-        created_card = PassthroughCard::get(created_card.id).expect("card should be found");
+        created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
             String::from(&PassthroughCardStatus::PAUSED),
             created_card.passthrough_card_status
         );
 
-        created_card.delete_self().expect("card should delete cleanly");
-        user.delete_self().expect("User should delete");
+        created_card.delete_self().await.expect("card should delete cleanly");
+        user.delete_self().await.expect("User should delete");
     }
 
     #[actix_web::test]
     async fn test_status_successfully_closes() {
         crate::test::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let exp_month = "09";
         let exp_year = "2026";
         let mut card = create_test_card();
@@ -143,29 +144,29 @@ mod tests {
         let mut created_card = PassthroughCard::create_from_api_card(
             &card,
             &user
-        ).expect("Card should create");
-        let engine = Engine::new_with_service(Box::new(lithic_service));
-        let res = engine.update_card_status(
+        ).await.expect("Card should create");
+        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let res = engine.clone().update_card_status(
             &user,
             PassthroughCardStatus::CLOSED
         ).await;
 
         assert!(res.is_ok());
-        created_card = PassthroughCard::get(created_card.id).expect("card should be found");
+        created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
             String::from(&PassthroughCardStatus::CLOSED),
             created_card.passthrough_card_status
         );
 
-        created_card.delete_self().expect("card should delete cleanly");
-        user.delete_self().expect("User should delete");
+        created_card.delete_self().await.expect("card should delete cleanly");
+        user.delete_self().await.expect("User should delete");
     }
 
     #[actix_web::test]
     async fn test_status_fails_to_reopen() {
         crate::test::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user();
+        let user = initialize_user().await;
         let exp_month = "09";
         let exp_year = "2026";
         let mut card = create_test_card();
@@ -182,36 +183,36 @@ mod tests {
         let mut created_card = PassthroughCard::create_from_api_card(
             &card,
             &user
-        ).expect("Card should create");
-        let engine = Engine::new_with_service(Box::new(lithic_service));
-        let res = engine.update_card_status(
+        ).await.expect("Card should create");
+        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let res = engine.clone().update_card_status(
             &user,
             PassthroughCardStatus::CLOSED
         ).await;
 
         assert!(res.is_ok());
-        created_card = PassthroughCard::get(created_card.id).expect("card should be found");
+        created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
             String::from(&PassthroughCardStatus::CLOSED),
             created_card.passthrough_card_status
         );
 
-        let res = engine.update_card_status(
+        let res = engine.clone().update_card_status(
             &user,
             PassthroughCardStatus::OPEN
         ).await.expect_err("Should throw api errror");
 
         assert_eq!(404, res.status_code);
 
-        created_card = PassthroughCard::get(created_card.id).expect("card should be found");
+        created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
             String::from(&PassthroughCardStatus::CLOSED),
             created_card.passthrough_card_status
         );
 
 
-        created_card.delete_self().expect("card should delete cleanly");
-        user.delete_self().expect("User should delete");
+        created_card.delete_self().await.expect("card should delete cleanly");
+        user.delete_self().await.expect("User should delete");
     }
 
 

@@ -1,7 +1,6 @@
 use chrono::NaiveDateTime;
 use crate::schema::{registered_transactions, outer_charge_ledger, inner_charge_ledger, transaction_ledger};
 use diesel::{BoolExpressionMethods, Identifiable, Insertable, Queryable, Selectable};
-#[cfg(not(test))]
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -169,7 +168,7 @@ impl RegisteredTransaction {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        RegisteredTransaction::delete(self.id)
+        RegisteredTransaction::delete(self.id).await
     }
 
     #[cfg(test)]
@@ -257,7 +256,7 @@ impl InnerChargeLedger {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        InnerChargeLedger::delete(self.id)
+        InnerChargeLedger::delete(self.id).await
     }
 
     #[cfg(test)]
@@ -315,7 +314,7 @@ impl OuterChargeLedger {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        OuterChargeLedger::delete(self.id)
+        OuterChargeLedger::delete(self.id).await
     }
 
     #[cfg(test)]
@@ -373,7 +372,7 @@ impl TransactionLedger {
 
     #[cfg(test)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
-        TransactionLedger::delete(self.id)
+        TransactionLedger::delete(self.id).await
     }
 
 }

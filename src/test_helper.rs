@@ -9,17 +9,17 @@ use crate::user::entity::{User, UserMessage};
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt};
 
 #[cfg(test)]
-pub fn initialize_user() -> User {
+pub async fn initialize_user() -> User {
     User::create(
         &UserMessage {
             email: "test@example.com",
             password: "1234",
         }
-    ).expect("User should be created")
+    ).await.expect("User should be created")
 }
 
 #[cfg(test)]
-pub fn initialize_wallet(
+pub async fn initialize_wallet(
     user: &User,
     credit_card_id: i32
 ) -> (Wallet, WalletCardAttempt) {
@@ -29,7 +29,7 @@ pub fn initialize_wallet(
             credit_card_id: credit_card_id,
             expected_reference_id: "test".to_string(),
         }
-    ).expect("should create");
+    ).await.expect("should create");
     let wallet = Wallet::insert_card(
         NewCard {
             user_id: user.id,
@@ -38,12 +38,12 @@ pub fn initialize_wallet(
             wallet_card_attempt_id: ca.id,
 
         }
-    ).expect("should create");
+    ).await.expect("should create");
     (wallet, ca)
 }
 
 #[cfg(test)]
-pub fn initialize_wallet_with_payment_method(
+pub async fn initialize_wallet_with_payment_method(
     user: &User,
     credit_card_id: i32,
     payment_method_id: String
@@ -54,7 +54,7 @@ pub fn initialize_wallet_with_payment_method(
             credit_card_id: credit_card_id,
             expected_reference_id: Uuid::new_v4().to_string()
         }
-    ).expect("should create");
+    ).await.expect("should create");
     let wallet = Wallet::insert_card(
         NewCard {
             user_id: user.id,
@@ -63,12 +63,12 @@ pub fn initialize_wallet_with_payment_method(
             wallet_card_attempt_id: ca.id,
 
         }
-    ).expect("should create");
+    ).await.expect("should create");
     (wallet, ca)
 }
 
 #[cfg(test)]
-pub fn initialize_passthrough_card(
+pub async fn initialize_passthrough_card(
     user: &User
 ) -> PassthroughCard {
     PassthroughCard::create_from_api_card(
@@ -79,11 +79,11 @@ pub fn initialize_passthrough_card(
             Uuid::new_v4()
         ),
         &user
-    ).expect("should create card")
+    ).await.expect("should create card")
 }
 
 #[cfg(test)]
-pub fn initialize_registered_transaction_for_user(
+pub async fn initialize_registered_transaction_for_user(
     user: &User,
     metadata: &TransactionMetadata
 
@@ -96,7 +96,7 @@ pub fn initialize_registered_transaction_for_user(
             amount_cents: metadata.amount_cents,
             mcc: metadata.mcc.clone()
         }
-    ).expect("should create")
+    ).await.expect("should create")
 }
 
 pub fn default_transaction_metadata() -> TransactionMetadata {
@@ -109,8 +109,8 @@ pub fn default_transaction_metadata() -> TransactionMetadata {
 
 
 #[cfg(test)]
-pub fn create_user_in_mem(id: i32) -> User {
-    User::create_test_user(id)
+pub async fn create_user_in_mem(id: i32) -> User {
+    User::create_test_user(id).await
 }
 
 #[cfg(test)]

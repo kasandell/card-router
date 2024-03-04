@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::data_error::DataError;
 use crate::util::db;
-#[cfg(not(test))]
 use diesel_async::RunQueryDsl;
 
 
