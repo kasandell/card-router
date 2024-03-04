@@ -1,7 +1,8 @@
 use chrono::NaiveDate;
 pub struct CreateRuleRequest {
     pub credit_card_id: i32,
-    pub rule_mcc: Option<String>,
+    //pub rule_mcc: Option<String>,
+    pub rule_category_id: Option<i32>,
     pub merchant_name: Option<String>,
     pub points_multiplier: Option<i32>,
     pub cashback_percentage_bips: Option<i32>,

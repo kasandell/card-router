@@ -5,11 +5,13 @@ use crate::lithic_service::service::LithicService as LithicService;
 use crate::charge_engine::engine::Engine as ChargeEngine;
 use crate::user::dao::UserDao;
 use crate::adyen_service::checkout::service::ChargeService as AdyenChargeService;
+use crate::category::dao::MccMappingDao;
 use crate::credit_card_type::dao::{
     CreditCardDao,
 };
 use crate::passthrough_card::dao::PassthroughCardDao;
 use crate::rule_engine::engine::RuleEngine;
+use crate::schema::registered_transactions::mcc;
 use crate::transaction::engine::Engine as LedgerEngine;
 use crate::wallet::{
     dao::{WalletDao, WalletCardAttemptDao},
@@ -29,6 +31,7 @@ pub struct Services {
     pub lithic_handler: Arc<LithicHandler>,
     pub user_dao: Arc<UserDao>,
     pub credit_card_dao: Arc<CreditCardDao>,
+    pub rule_engine: Arc<RuleEngine>,
 }
 
 impl Services {
@@ -54,7 +57,10 @@ impl Services {
             user_dao.clone(),
             ledger.clone()
         ));
-        let rule_engine = Arc::new(RuleEngine::new());
+        let mcc_mapping_dao = Arc::new(MccMappingDao::new());
+        let rule_engine = Arc::new(RuleEngine::new_with_services(
+            mcc_mapping_dao.clone()
+        ));
         Self {
             passthrough_card_engine: Arc::new(PassthroughCardEngine::new_with_service(lithic_service.clone())),
             charge_engine: Arc::new(ChargeEngine::new_with_service(
@@ -77,7 +83,8 @@ impl Services {
                 rule_engine.clone()
             )),
             user_dao: user_dao.clone(),
-            credit_card_dao: credit_card_dao.clone()
+            credit_card_dao: credit_card_dao.clone(),
+            rule_engine: rule_engine.clone()
         }
     }
 }

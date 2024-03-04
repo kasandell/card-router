@@ -60,6 +60,7 @@ impl LithicHandler {
     }
     pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, ApiError>{
         // TODO: do a reverse lookup based on the card token to get the user
+        println!("{:?}", &request);
         info!("Identifying user by card");
         println!("Identifying user by card");
         let mut start = Instant::now();

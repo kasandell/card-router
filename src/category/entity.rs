@@ -87,6 +87,14 @@ impl MccMapping {
         Ok(map)
     }
 
+    pub async fn get_by_mcc(mcc: &str) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
+        let mapping = mcc_mapping::table.filter(
+            mcc_mapping::mcc_code.eq(mcc)
+        ).first(&mut conn).await?;
+        Ok(mapping)
+    }
+
     #[cfg(test)]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;

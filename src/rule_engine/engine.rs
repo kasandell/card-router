@@ -6,6 +6,7 @@ use chrono::Utc;
 
 use crate::service_error::ServiceError;
 use crate::asa::request::AsaRequest;
+use crate::category::dao::{MccMappingDao, MccMappingDaoTrait};
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
 use crate::user::entity::User;
 use crate::util::date::adjust_recurring_to_date;
@@ -16,13 +17,29 @@ use super::entity::Rule;
 
 pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
 pub struct RuleEngine {
+    mcc_mapping_dao: Arc<dyn MccMappingDaoTrait>,
 }
 
 #[mockall::automock]
 #[async_trait(?Send)]
 pub trait RuleEngineTrait {
     async fn order_user_cards_for_request(self: Arc<Self>, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
+    /*
+    async fn get_card_order_from_rules(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError>;
+
+    async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError>;
+
+    async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool;
+
+    async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool;
+
+    async fn filter_rule_by_date(self: Arc<Self>, rule: &Rule) -> bool;
+     */
+
 }
+
+
+
 
 #[async_trait(?Send)]
 impl RuleEngineTrait for RuleEngine {
@@ -32,22 +49,38 @@ impl RuleEngineTrait for RuleEngine {
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
         let amount = request.amount.ok_or(ServiceError::new(400, "expect amount".to_string()))?;
+        // TODO: not from dao
         let cards = Wallet::find_all_for_user_with_card_info(user).await?;
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
-        let rules = RuleEngine::find_and_filter_rules(&request, &card_type_ids).await?;
+        let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
         info!("Using {} rules", rules.len());
         println!("Using {} rules", rules.len());
-        let ordered_cards = RuleEngine::get_card_order_from_rules(&cards, &rules, amount).await?;
+        let ordered_cards = self.clone().get_card_order_from_rules(&cards, &rules, amount).await?;
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
+
 }
 
 // TODO: create as a self reference?
+
 impl RuleEngine {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            mcc_mapping_dao: Arc::new(MccMappingDao::new())
+        }
     }
-    pub async fn get_card_order_from_rules<'a>(cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
+
+    pub fn new_with_services(
+        mcc_mapping_dao: Arc<dyn MccMappingDaoTrait>
+    ) -> Self {
+        Self {
+            mcc_mapping_dao
+        }
+    }
+
+
+    // TODO: this lifteime needs to be at class level
+    async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
@@ -80,34 +113,38 @@ impl RuleEngine {
         Ok(cards_only)
     }
 
-    async fn find_and_filter_rules(request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
-        Ok(
-            Rule::get_rules_for_card_ids(card_type_ids).await?
-                .into_iter()
-                .filter(|rule| rule.is_valid() && RuleEngine::filter_rule_for_request(&rule, &request))
-                .collect()
-        )
+    async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
+        let rules = Rule::get_rules_for_card_ids(card_type_ids).await?;
+        let mut filtered_rules: Vec<Rule> = Vec::new();
+        for rule in rules.into_iter() {
+            if rule.is_valid() && self.clone().filter_rule_for_request(&rule, &request).await {
+                filtered_rules.push(rule)
+            }
+        }
+        Ok( filtered_rules )
     }
 
     // TODO: async?
-    fn filter_rule_for_request(rule: &Rule, asa_request: &AsaRequest) -> bool {
-        RuleEngine::filter_rule_by_merchant(rule, asa_request) && RuleEngine::filter_rule_by_date(rule)
+    async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
+        self.clone().filter_rule_by_merchant(rule, asa_request).await && self.clone().filter_rule_by_date(rule).await
     }
 
-    fn filter_rule_by_merchant(rule: &Rule, asa_request: &AsaRequest) -> bool {
+    async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
         let Some(merchant) = asa_request.merchant.clone() else { return false; };
         if rule.merchant_name.is_some() {
             let Some(rule_merchant) = rule.merchant_name.as_ref() else { return false; };
             let Some(descriptor) = merchant.descriptor.clone() else { return false; };
             descriptor.to_lowercase() == *rule_merchant.to_lowercase()
         } else {
-            let Some(mcc) = rule.rule_mcc.as_ref() else { return false; };
+            //let Some(mcc) = rule.rule_category_id.as_ref() else { return false; };
+            let Some(category_id) = rule.rule_category_id else { return false; };
             let Some(request_mcc) = merchant.mcc.clone() else { return false; };
-            request_mcc == *mcc
+            let Ok(mapping) = self.mcc_mapping_dao.clone().get_by_mcc(&request_mcc).await else { return false; };
+            category_id == mapping.category_id
         }
     }
 
-    fn filter_rule_by_date(rule: &Rule) -> bool{
+    async fn filter_rule_by_date(self: Arc<Self>, rule: &Rule) -> bool{
         let today = Utc::now().naive_utc().date();
         if rule.recurring_day_of_month.is_some() {
             info!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());
@@ -128,7 +165,8 @@ impl RuleEngine {
             let start_date = rule.start_date.unwrap();
             let end_date = rule.end_date.unwrap();
             start_date <= today
-            && today <= end_date
+                && today <= end_date
         }
     }
+
 }

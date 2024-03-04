@@ -15,6 +15,7 @@ pub trait CategoryDaoTrait {
 #[async_trait(?Send)]
 pub trait MccMappingDaoTrait {
     async fn create(self: Arc<Self>, mapping: InsertableMccMapping) -> Result<MccMapping, DataError>;
+    async fn get_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, DataError>;
 }
 
 pub struct CategoryDao{}
@@ -37,7 +38,7 @@ impl CategoryDaoTrait for CategoryDao {
 }
 
 impl MccMappingDao {
-    pub async fn new() -> Self {
+    pub fn new() -> Self {
         Self{}
     }
 }
@@ -46,5 +47,9 @@ impl MccMappingDao {
 impl MccMappingDaoTrait for MccMappingDao {
     async fn create(self: Arc<Self>, mapping: InsertableMccMapping) -> Result<MccMapping, DataError> {
         MccMapping::create(mapping).await
+    }
+
+    async fn get_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, DataError> {
+        MccMapping::get_by_mcc(mcc).await
     }
 }

@@ -35,6 +35,7 @@ async fn add_card(
         &user,
         &info
     ).await?;
+    println!("registered attempt");
     let match_from_response = services.wallet_engine.clone().attempt_match_from_response(&payment_response).await;
     println!("done registering");
     Ok(HttpResponse::Ok().json(

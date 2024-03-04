@@ -18,7 +18,8 @@ use super::constant::RuleStatus;
 #[diesel(belongs_to(CreditCard))]
 struct InsertableRule {
     pub credit_card_id: i32,
-    pub rule_mcc: Option<String>,
+    // pub rule_mcc: Option<String>,
+    pub rule_category_id: Option<i32>,
     pub merchant_name: Option<String>,
     pub points_multiplier: Option<i32>,
     pub cashback_percentage_bips: Option<i32>,
@@ -35,7 +36,8 @@ pub struct Rule {
     pub id: i32,
     pub public_id: Uuid,
     pub credit_card_id: i32,
-    pub rule_mcc: Option<String>,
+    pub rule_category_id: Option<i32>,
+    //pub rule_mcc: Option<String>,
     pub merchant_name: Option<String>,
     pub points_multiplier: Option<i32>,
     pub cashback_percentage_bips: Option<i32>,
@@ -87,7 +89,7 @@ impl Rule {
     }
 
     fn is_valid_mcc_merchant_name(&self) -> bool {
-        self.merchant_name.is_some() != self.rule_mcc.is_some()
+        self.merchant_name.is_some() != self.rule_category_id.is_some()
     }
 
     fn is_valid_cashback_points(&self) -> bool {
@@ -139,7 +141,8 @@ impl From<CreateRuleRequest> for InsertableRule {
     fn from(request: CreateRuleRequest) -> Self {
         InsertableRule { 
             credit_card_id: request.credit_card_id,
-            rule_mcc: request.rule_mcc,
+            //rule_mcc: request.rule_mcc,
+            rule_category_id: request.rule_category_id,
             merchant_name: request.merchant_name,
             points_multiplier: request.points_multiplier,
             cashback_percentage_bips: request.cashback_percentage_bips,

@@ -128,8 +128,7 @@ diesel::table! {
         id -> Int4,
         public_id -> Uuid,
         credit_card_id -> Int4,
-        #[max_length = 4]
-        rule_mcc -> Nullable<Varchar>,
+        rule_category_id -> Nullable<Int4>,
         #[max_length = 255]
         merchant_name -> Nullable<Varchar>,
         points_multiplier -> Nullable<Int4>,
@@ -205,6 +204,7 @@ diesel::joinable!(outer_charge_ledger -> passthrough_card (passthrough_card_id))
 diesel::joinable!(outer_charge_ledger -> users (user_id));
 diesel::joinable!(passthrough_card -> users (user_id));
 diesel::joinable!(registered_transactions -> users (user_id));
+diesel::joinable!(rule -> category (rule_category_id));
 diesel::joinable!(rule -> credit_card (credit_card_id));
 diesel::joinable!(transaction_ledger -> inner_charge_ledger (inner_charge_ledger_id));
 diesel::joinable!(transaction_ledger -> outer_charge_ledger (outer_charge_ledger_id));

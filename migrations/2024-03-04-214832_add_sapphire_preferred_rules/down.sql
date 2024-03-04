@@ -1,0 +1,1 @@
+DELETE FROM rule WHERE id IN(7, 8, 9, 10, 11, 12);
