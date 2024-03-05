@@ -22,7 +22,7 @@ pub struct TransactionMetadata {
 #[diesel(table_name = registered_transactions)]
 pub struct InsertableRegisteredTransaction {
     pub user_id: i32,
-    pub transaction_id: Uuid,
+    //pub transaction_id: Uuid,
     pub memo: String,
     pub amount_cents: i32,
     pub mcc: String

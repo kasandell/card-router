@@ -159,14 +159,13 @@ impl Rule {
     pub fn create_test_rule_dateless_mcc_points(
         id: i32, 
         credit_card_id: i32,
-        mcc: String,
         points_multiplier: i32
     ) -> Self {
         Rule {
             id: id,
             public_id: Uuid::new_v4(),
             credit_card_id: credit_card_id,
-            rule_mcc: Some(mcc),
+            rule_category_id: Some(1),
             merchant_name: None,
             points_multiplier: Some(points_multiplier),
             cashback_percentage_bips: None,
@@ -180,14 +179,13 @@ impl Rule {
     pub fn create_test_rule_dateless_mcc_cashback(
         id: i32, 
         credit_card_id: i32,
-        mcc: String,
         cashback_percentage_bips: i32
     ) -> Self {
         Rule {
             id: id,
             public_id: Uuid::new_v4(),
             credit_card_id: credit_card_id,
-            rule_mcc: Some(mcc),
+            rule_category_id: Some(1),
             merchant_name: None,
             points_multiplier: None,
             cashback_percentage_bips: Some(cashback_percentage_bips),

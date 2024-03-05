@@ -114,7 +114,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
-    pub async fn get_by_token(token: String) -> Result<Self, DataError> {
+    pub async fn get_by_token(token: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let card = passthrough_card::table

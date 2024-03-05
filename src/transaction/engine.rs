@@ -80,7 +80,7 @@ impl TransactionEngineTrait for Engine {
         let res = self.dao.clone().insert_registered_transaction(
             InsertableRegisteredTransaction {
                 user_id: user.id,
-                transaction_id: Uuid::new_v4(),
+                //transaction_id: Uuid::new_v4(),
                 memo: metadata.memo.to_string(),
                 amount_cents: metadata.amount_cents,
                 mcc: metadata.mcc.to_string()

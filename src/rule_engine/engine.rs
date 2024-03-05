@@ -24,19 +24,7 @@ pub struct RuleEngine {
 #[mockall::automock]
 #[async_trait(?Send)]
 pub trait RuleEngineTrait {
-    async fn order_user_cards_for_request(self: Arc<Self>, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
-    /*
-    async fn get_card_order_from_rules(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError>;
-
-    async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError>;
-
-    async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool;
-
-    async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool;
-
-    async fn filter_rule_by_date(self: Arc<Self>, rule: &Rule) -> bool;
-     */
-
+    async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
 }
 
 
@@ -44,7 +32,7 @@ pub trait RuleEngineTrait {
 
 #[async_trait(?Send)]
 impl RuleEngineTrait for RuleEngine {
-    async fn order_user_cards_for_request(self: Arc<Self>, request: AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
+    async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
@@ -89,7 +77,7 @@ impl RuleEngine {
 
 
     // TODO: this lifteime needs to be at class level
-    async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
+    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
@@ -122,7 +110,7 @@ impl RuleEngine {
         Ok(cards_only)
     }
 
-    async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
+    pub async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
         let rules = Rule::get_rules_for_card_ids(card_type_ids).await?;
         let mut filtered_rules: Vec<Rule> = Vec::new();
         for rule in rules.into_iter() {
@@ -134,11 +122,11 @@ impl RuleEngine {
     }
 
     // TODO: async?
-    async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
+    pub async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
         self.clone().filter_rule_by_merchant(rule, asa_request).await && self.clone().filter_rule_by_date(rule).await
     }
 
-    async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
+    pub async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
         let Some(merchant) = asa_request.merchant.clone() else { return false; };
         if rule.merchant_name.is_some() {
             let Some(rule_merchant) = rule.merchant_name.as_ref() else { return false; };
@@ -153,7 +141,7 @@ impl RuleEngine {
         }
     }
 
-    async fn filter_rule_by_date(self: Arc<Self>, rule: &Rule) -> bool{
+    pub async fn filter_rule_by_date(self: Arc<Self>, rule: &Rule) -> bool{
         let today = Utc::now().naive_utc().date();
         if rule.recurring_day_of_month.is_some() {
             info!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());

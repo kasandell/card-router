@@ -12,13 +12,13 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use diesel_async::RunQueryDsl;
 
-#[derive(Insertable, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Clone)]
 #[diesel(table_name = category)]
 pub struct InsertableCategory {
     pub name: String
 }
 
-#[derive(Insertable, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Clone)]
 #[diesel(belongs_to(Category))]
 #[diesel(table_name = mcc_mapping)]
 pub struct InsertableMccMapping {

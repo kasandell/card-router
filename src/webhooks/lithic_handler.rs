@@ -65,16 +65,22 @@ impl LithicHandler {
         println!("Identifying user by card");
         let mut start = Instant::now();
         let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
+        println!("card from request took {:?}", start.elapsed());
+        start = Instant::now();
         let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
-        let passthrough_card = PassthroughCard::get_by_token(token.clone()).await?;
+        println!("token from request took {:?}", start.elapsed());
+        start = Instant::now();
+        let passthrough_card = PassthroughCard::get_by_token(&token).await?;
+        println!("Find card took {:?}", start.elapsed());
+        start = Instant::now();
         let user = User::find_by_internal_id(passthrough_card.user_id).await?;
-        println!("Find user, card, token took {:?}", start.elapsed());
+        println!("Find user took {:?}", start.elapsed());
         start = Instant::now();
 
         info!("Getting user cards for userId={}", user.id);
         println!("Getting user cards for userId={}", user.id);
         let cards = self.rule_engine.clone().order_user_cards_for_request(
-            request.clone(),
+            &request,
             &user
         ).await?;
         println!("Rule engine order cards took {:?}", start.elapsed());

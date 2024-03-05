@@ -91,7 +91,6 @@ pub async fn initialize_registered_transaction_for_user(
     RegisteredTransaction::insert(
         InsertableRegisteredTransaction {
             user_id: user.id,
-            transaction_id: Default::default(),
             memo: metadata.memo.clone(),
             amount_cents: metadata.amount_cents,
             mcc: metadata.mcc.clone()
@@ -117,7 +116,7 @@ pub async fn create_user_in_mem(id: i32) -> User {
 pub fn create_failed_inner_charge(user_id: i32) -> InnerChargeLedger {
     InnerChargeLedger {
         id: 1,
-        registered_transaction_id: Uuid::new_v4(),
+        registered_transaction_id: 1,
         user_id: user_id,
         wallet_card_id: 1,
         amount_cents: 0,
@@ -132,7 +131,7 @@ pub fn create_failed_inner_charge(user_id: i32) -> InnerChargeLedger {
 pub fn create_success_inner_charge(user_id: i32) -> InnerChargeLedger {
     InnerChargeLedger {
         id: 1,
-        registered_transaction_id: Uuid::new_v4(),
+        registered_transaction_id: 1,
         user_id: user_id,
         wallet_card_id: 1,
         amount_cents: 0,
@@ -147,7 +146,7 @@ pub fn create_success_inner_charge(user_id: i32) -> InnerChargeLedger {
 pub fn create_failed_outer_charge(user_id: i32) -> OuterChargeLedger {
     OuterChargeLedger {
         id: 1,
-        registered_transaction_id: Uuid::new_v4(),
+        registered_transaction_id: 1,
         user_id: user_id,
         passthrough_card_id: 1,
         amount_cents: 0,
@@ -162,7 +161,7 @@ pub fn create_failed_outer_charge(user_id: i32) -> OuterChargeLedger {
 pub fn create_success_outer_charge(user_id: i32) -> OuterChargeLedger {
     OuterChargeLedger {
         id: 1,
-        registered_transaction_id: Uuid::new_v4(),
+        registered_transaction_id: 1,
         user_id: user_id,
         passthrough_card_id: 1,
         amount_cents: 0,
@@ -177,7 +176,7 @@ pub fn create_success_outer_charge(user_id: i32) -> OuterChargeLedger {
 pub fn create_full_transaction() -> TransactionLedger {
     TransactionLedger {
         id: 1,
-        transaction_id: Default::default(),
+        registered_transaction_id: 1,
         inner_charge_ledger_id: 1,
         outer_charge_ledger_id: 1,
     }

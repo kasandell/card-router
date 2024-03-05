@@ -15,7 +15,7 @@ pub trait PassthroughCardDaoTrait {
     async fn create(self: Arc<Self>, card: LithicCard, user: &User) -> Result<PassthroughCard, DataError>;
     async fn create_from_api_card(self: Arc<Self>, card: &Card, user: &User) -> Result<PassthroughCard, DataError>;
     async fn get(self: Arc<Self>, id: i32) -> Result<PassthroughCard, DataError>;
-    async fn get_by_token(self: Arc<Self>, token: String) -> Result<PassthroughCard, DataError>;
+    async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCard, DataError>;
     async fn find_cards_for_user(self: Arc<Self>, user_id: i32) -> Result<Vec<PassthroughCard>, DataError>;
     async fn find_card_for_user_in_status(
         self: Arc<Self>,
@@ -47,7 +47,7 @@ impl PassthroughCardDaoTrait for PassthroughCardDao {
         PassthroughCard::get(id).await
     }
 
-    async fn get_by_token(self: Arc<Self>, token: String) -> Result<PassthroughCard, DataError> {
+    async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCard, DataError> {
         PassthroughCard::get_by_token(token).await
     }
 

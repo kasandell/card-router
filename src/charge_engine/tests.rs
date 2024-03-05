@@ -495,16 +495,10 @@ mod tests {
             );
 
         pc_mock.expect_get_by_token()
-            .times(1)
-            .return_const(
-                Ok(pc.clone())
-            );
+            .times(0);
 
         user_mock.expect_find_by_internal_id()
-            .times(1)
-            .return_const(
-                Ok(user)
-            );
+            .times(0);
 
         ledger_mock.expect_register_successful_inner_charge()
             .times(1)
@@ -542,7 +536,9 @@ mod tests {
         asa.token = Some(pc.token.to_string());
         let (res, l) = engine.clone().charge_from_asa_request(
             &asa,
-            &vec![card_1.clone(), card_2.clone()]
+            &vec![card_1.clone(), card_2.clone()],
+            &pc,
+            &user
         ).await.expect("no error");
         assert_eq!(res, ChargeEngineResult::Approved);
         let ledger = l.expect("Should exist");
