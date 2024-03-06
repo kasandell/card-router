@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS rule_card_id_index;

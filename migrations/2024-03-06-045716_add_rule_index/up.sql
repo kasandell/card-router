@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS rule_card_id_index ON rule(credit_card_id);

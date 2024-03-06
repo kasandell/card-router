@@ -8,6 +8,7 @@ use chrono::Utc;
 use crate::service_error::ServiceError;
 use crate::asa::request::AsaRequest;
 use crate::category::dao::{MccMappingDao, MccMappingDaoTrait};
+use crate::category::entity::MccMapping;
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
 use crate::user::entity::User;
 use crate::util::date::adjust_recurring_to_date;
@@ -112,9 +113,12 @@ impl RuleEngine {
 
     pub async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
         let rules = Rule::get_rules_for_card_ids(card_type_ids).await?;
+        let Some(merchant) = request.merchant.clone() else { return Ok(Vec::new()); };
+        let Some(request_mcc) = merchant.mcc.clone() else { return Ok(Vec::new()); };
+        let mcc_mapping = self.mcc_mapping_dao.clone().get_by_mcc(&request_mcc).await?;
         let mut filtered_rules: Vec<Rule> = Vec::new();
         for rule in rules.into_iter() {
-            if rule.is_valid() && self.clone().filter_rule_for_request(&rule, &request).await {
+            if rule.is_valid() && self.clone().filter_rule_for_request(&rule, &request, &mcc_mapping).await {
                 filtered_rules.push(rule)
             }
         }
@@ -122,12 +126,13 @@ impl RuleEngine {
     }
 
     // TODO: async?
-    pub async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
-        self.clone().filter_rule_by_merchant(rule, asa_request).await && self.clone().filter_rule_by_date(rule).await
+    pub async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest, mapping: &MccMapping) -> bool {
+        self.clone().filter_rule_by_merchant(rule, asa_request, mapping).await && self.clone().filter_rule_by_date(rule).await
     }
 
-    pub async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest) -> bool {
+    pub async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest, mapping: &MccMapping) -> bool {
         let Some(merchant) = asa_request.merchant.clone() else { return false; };
+        // TODO: this might need to be coupled with mcc
         if rule.merchant_name.is_some() {
             let Some(rule_merchant) = rule.merchant_name.as_ref() else { return false; };
             let Some(descriptor) = merchant.descriptor.clone() else { return false; };
@@ -135,8 +140,7 @@ impl RuleEngine {
         } else {
             //let Some(mcc) = rule.rule_category_id.as_ref() else { return false; };
             let Some(category_id) = rule.rule_category_id else { return false; };
-            let Some(request_mcc) = merchant.mcc.clone() else { return false; };
-            let Ok(mapping) = self.mcc_mapping_dao.clone().get_by_mcc(&request_mcc).await else { return false; };
+            // TODO: we need to join this earlier
             category_id == mapping.category_id
         }
     }
