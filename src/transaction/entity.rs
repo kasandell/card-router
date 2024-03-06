@@ -20,12 +20,12 @@ pub struct TransactionMetadata {
 #[derive(Clone, Debug, Insertable, Serialize, Deserialize)]
 #[diesel(belongs_to(User))]
 #[diesel(table_name = registered_transactions)]
-pub struct InsertableRegisteredTransaction {
+pub struct InsertableRegisteredTransaction<'a> {
     pub user_id: i32,
     //pub transaction_id: Uuid,
-    pub memo: String,
+    pub memo: &'a str,
     pub amount_cents: i32,
-    pub mcc: String
+    pub mcc: &'a str
 }
 
 #[derive(Clone, Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
@@ -63,12 +63,12 @@ pub struct OuterChargeLedger {
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(PassthroughCard))]
 #[diesel(table_name = outer_charge_ledger)]
-pub struct InsertableOuterChargeLedger {
+pub struct InsertableOuterChargeLedger<'a> {
     pub registered_transaction_id: i32,
     pub user_id: i32,
     pub passthrough_card_id: i32,
     pub amount_cents: i32,
-    pub status: String,
+    pub status: &'a str,
     pub is_success: Option<bool>,
 }
 
@@ -94,12 +94,12 @@ pub struct InnerChargeLedger {
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Wallet))]
 #[diesel(table_name = inner_charge_ledger)]
-pub struct InsertableInnerChargeLedger {
+pub struct InsertableInnerChargeLedger<'a> {
     pub registered_transaction_id: i32,
     pub user_id: i32,
     pub wallet_card_id: i32,
     pub amount_cents: i32,
-    pub status: String,
+    pub status: &'a str,
     pub is_success: Option<bool>,
 }
 
@@ -130,7 +130,7 @@ pub struct InsertableTransactionLedger {
 
 
 impl RegisteredTransaction {
-    pub async fn insert(transaction: InsertableRegisteredTransaction) -> Result<Self, DataError> {
+    pub async fn insert<'a>(transaction: &InsertableRegisteredTransaction<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = diesel::insert_into(registered_transactions::table)
             .values(transaction)
@@ -138,7 +138,7 @@ impl RegisteredTransaction {
         Ok(txn)
     }
 
-    pub async fn get_by_transaction_id(id: Uuid) -> Result<Self, DataError> {
+    pub async fn get_by_transaction_id(id: &Uuid) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = registered_transactions::table.filter(
             registered_transactions::transaction_id.eq(id)
@@ -200,7 +200,7 @@ impl RegisteredTransaction {
 
 
 impl InnerChargeLedger {
-    pub async fn insert(transaction: InsertableInnerChargeLedger) -> Result<Self, DataError> {
+    pub async fn insert<'a>(transaction: &InsertableInnerChargeLedger<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = diesel::insert_into(inner_charge_ledger::table)
             .values(transaction)
@@ -272,7 +272,7 @@ impl InnerChargeLedger {
 }
 
 impl OuterChargeLedger {
-    pub async fn insert(transaction: InsertableOuterChargeLedger) -> Result<Self, DataError> {
+    pub async fn insert<'a>(transaction: &InsertableOuterChargeLedger<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = diesel::insert_into(outer_charge_ledger::table)
             .values(transaction)
@@ -330,7 +330,7 @@ impl OuterChargeLedger {
 }
 
 impl TransactionLedger {
-    pub async fn insert(transaction: InsertableTransactionLedger) -> Result<Self, DataError> {
+    pub async fn insert(transaction: &InsertableTransactionLedger) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = diesel::insert_into(transaction_ledger::table)
             .values(transaction)

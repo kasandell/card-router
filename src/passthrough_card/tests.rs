@@ -41,7 +41,7 @@ mod tests {
         let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
         let ret = engine.clone().issue_card_to_user(
             &user,
-            pin.to_string()
+            pin
         ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
@@ -72,14 +72,14 @@ mod tests {
         let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
         let ret = engine.clone().issue_card_to_user(
             &user,
-            pin.to_string()
+            pin
         ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
         assert_eq!(String::from(&PassthroughCardStatus::OPEN), ret.passthrough_card_status);
         let error = engine.clone().issue_card_to_user(
             &user,
-            pin.to_string()
+            pin
         ).await.expect_err("This should throw an error");
         assert_eq!(409, error.status_code);
         ret.delete_self().await.expect("Should delete");

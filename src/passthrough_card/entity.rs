@@ -40,7 +40,7 @@ pub struct PassthroughCard {
     pub updated_at: NaiveDateTime
 }
 
-#[derive(Serialize, Deserialize, Insertable)]
+#[derive(Insertable)]
 #[diesel(table_name = passthrough_card)]
 #[diesel(belongs_to(PassthroughCardType))]
 #[diesel(belongs_to(PassThroughCardStatus))]
@@ -59,9 +59,9 @@ pub struct InsertablePassthroughCard {
 #[diesel(table_name = passthrough_card)]
 #[diesel(belongs_to(PassThroughCardStatus))]
 #[diesel(treat_none_as_null = true)]
-pub struct PassthroughCardStatusUpdate {
+pub struct PassthroughCardStatusUpdate<'a> {
     pub id: i32,
-    pub passthrough_card_status: String,
+    pub passthrough_card_status: &'a str,
     pub is_active: Option<bool>
 }
 
@@ -95,7 +95,7 @@ impl PassthroughCard {
         let mut conn = db::connection().await?;
         let update = PassthroughCardStatusUpdate {
             id: id,
-            passthrough_card_status: String::from(&status),
+            passthrough_card_status: &String::from(&status),
             is_active: status.is_active_for_status()
         };
         let update = diesel::update(passthrough_card::table)

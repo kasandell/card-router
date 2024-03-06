@@ -10,7 +10,7 @@ use mockall::{automock, predicate::*};
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait RuleDaoTrait {
-    async fn create(self: Arc<Self>, new_rule: CreateRuleRequest) -> Result<Rule, DataError>;
+    async fn create(self: Arc<Self>, new_rule: &CreateRuleRequest) -> Result<Rule, DataError>;
     async fn get_rules_for_card_ids(self: Arc<Self>, ids: &Vec<i32>) -> Result<Vec<Rule>, DataError>;
 
 }
@@ -25,7 +25,7 @@ impl RuleDao {
 
 #[async_trait(?Send)]
 impl RuleDaoTrait for RuleDao {
-    async fn create(self: Arc<Self>, new_rule: CreateRuleRequest) -> Result<Rule, DataError> {
+    async fn create(self: Arc<Self>, new_rule: &CreateRuleRequest) -> Result<Rule, DataError> {
         Rule::create(new_rule).await
     }
 

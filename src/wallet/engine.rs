@@ -54,13 +54,13 @@ impl Engine {
 
         println!("registering new attempt");
         let expected_reference_id = Uuid::new_v4();
-        let credit_card = self.credit_card_dao.clone().find_by_public_id(request.credit_card_type_public_id.clone()).await?;
+        let credit_card = self.credit_card_dao.clone().find_by_public_id(&request.credit_card_type_public_id).await?;
         println!("found credit card id");
         let wca = self.wallet_card_attempt_dao.clone().insert(
-            InsertableCardAttempt {
+            &InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: credit_card.id,
-                expected_reference_id: expected_reference_id.to_string()
+                expected_reference_id: &expected_reference_id.to_string()
             }
         ).await?;
         println!("CREATED WALLET CARED");
@@ -105,12 +105,12 @@ impl Engine {
         user: &User,
         request: &RegisterAttemptRequest
     ) -> Result<WalletCardAttempt, ApiError> {
-        let credit_card = self.credit_card_dao.clone().find_by_public_id(request.credit_card_type_public_id.clone()).await?;
+        let credit_card = self.credit_card_dao.clone().find_by_public_id(&request.credit_card_type_public_id).await?;
         let wca = self.wallet_card_attempt_dao.clone().insert(
-            InsertableCardAttempt {
+            &InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: credit_card.id,
-                expected_reference_id: request.expected_reference_id.clone()
+                expected_reference_id: &request.expected_reference_id
             }
         ).await?;
         Ok(wca)
@@ -121,7 +121,7 @@ impl Engine {
         request: &MatchAttemptRequest
     ) -> Result<Wallet, ServiceError> {
         let card_attempt = self.wallet_card_attempt_dao.clone().find_by_reference_id(
-            request.merchant_reference_id.clone()
+            &request.merchant_reference_id
         ).await?;
         info!("Found wallet card attempt id {}", card_attempt.id);
 
@@ -129,17 +129,17 @@ impl Engine {
             return Err(ServiceError::new(409, "Card already matched".to_string()));
         }
 
-        let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, UpdateCardAttempt {
-            recurring_detail_reference: request.psp_reference.clone(),
-            psp_id: request.original_psp_reference.clone(),
-            status: WalletCardAttemptStatus::MATCHED.as_str()
+        let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {
+            recurring_detail_reference: &request.psp_reference,
+            psp_id: &request.original_psp_reference,
+            status: &WalletCardAttemptStatus::MATCHED.as_str()
         }).await?;
         info!("Updated to matched: {}", &update.status);
 
         let created_card = self.wallet_dao.clone().insert_card(
-            NewCard {
+            &NewCard {
                 user_id: update.user_id,
-                payment_method_id: request.psp_reference.clone(),
+                payment_method_id: &request.psp_reference,
                 credit_card_id: update.credit_card_id,
                 wallet_card_attempt_id: update.id,
             }

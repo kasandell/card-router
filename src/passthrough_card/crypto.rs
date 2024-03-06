@@ -13,7 +13,7 @@ struct PinBlock {
     nonce: u128,
 }
 
-pub fn encrypt_pin(pin: String) -> String {
+pub fn encrypt_pin(pin: &str) -> String {
     let mut rng = rand::thread_rng();
 
     let base: u128 = 10;

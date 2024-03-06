@@ -21,11 +21,11 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let txn_res = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await;
 
@@ -45,11 +45,11 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let txn_res = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await;
 
@@ -59,11 +59,11 @@ mod entity_tests {
         assert_eq!(txn.amount_cents, TEST_AMOUNT);
         assert_eq!(txn.mcc, TEST_MCC);
         let err = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await.expect_err("Expect api error");
         txn.delete_self().await.expect("transaction should delete");
@@ -75,11 +75,11 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await.expect("transaction should be ok");
 
@@ -90,12 +90,12 @@ mod entity_tests {
         ).await.expect("should create");
 
         let inner_charge = InnerChargeLedger::insert(
-            InsertableInnerChargeLedger {
+            &InsertableInnerChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Fail.as_str(),
+                status: &ChargeStatus::Fail.as_str(),
                 is_success: None
 
             }
@@ -120,11 +120,11 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await.expect("transaction should be ok");
 
@@ -135,12 +135,12 @@ mod entity_tests {
         ).await.expect("should create");
 
         let inner_charge1 = InnerChargeLedger::insert(
-            InsertableInnerChargeLedger {
+            &InsertableInnerChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Fail.as_str(),
+                status: &ChargeStatus::Fail.as_str(),
                 is_success: None
 
             }
@@ -154,12 +154,12 @@ mod entity_tests {
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
         let inner_charge2 = InnerChargeLedger::insert(
-            InsertableInnerChargeLedger {
+            &InsertableInnerChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Fail.as_str(),
+                status: &ChargeStatus::Fail.as_str(),
                 is_success: None
 
             }
@@ -185,11 +185,11 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC,
             }
         ).await.expect("transaction should be ok");
 
@@ -200,12 +200,12 @@ mod entity_tests {
         ).await.expect("should create");
 
         let inner_charge1 = InnerChargeLedger::insert(
-            InsertableInnerChargeLedger {
+            &InsertableInnerChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Success.as_str(),
+                status: &ChargeStatus::Success.as_str(),
                 is_success: Some(true)
 
             }
@@ -219,12 +219,12 @@ mod entity_tests {
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
         let charge_error = InnerChargeLedger::insert(
-            InsertableInnerChargeLedger {
+            &InsertableInnerChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Success.as_str(),
+                status: &ChargeStatus::Success.as_str(),
                 is_success: Some(true)
 
             }
@@ -248,12 +248,12 @@ mod entity_tests {
         ).await.expect("should create");
 
         let charge_error = InnerChargeLedger::insert(
-            InsertableInnerChargeLedger {
+            &InsertableInnerChargeLedger {
                 registered_transaction_id: 1,
                 user_id: user.id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Success.as_str(),
+                status: &ChargeStatus::Success.as_str(),
                 is_success: Some(true)
 
             }
@@ -270,17 +270,17 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await.expect("transaction should be ok");
 
 
         let card = PassthroughCard::create_from_api_card(
-        &create_test_lithic_card(
+            &create_test_lithic_card(
                 "09".to_string(),
                 "2026".to_string(),
                 "1234".to_string(),
@@ -290,12 +290,12 @@ mod entity_tests {
         ).await.expect("should create card");
 
         let outer_charge = OuterChargeLedger::insert(
-            InsertableOuterChargeLedger {
+            &InsertableOuterChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Fail.as_str(),
+                status: &ChargeStatus::Fail.as_str(),
                 is_success: None
 
             }
@@ -330,12 +330,12 @@ mod entity_tests {
         ).await.expect("should create card");
 
         let charge_error = OuterChargeLedger::insert(
-            InsertableOuterChargeLedger {
+            &InsertableOuterChargeLedger {
                 registered_transaction_id: 1,
                 user_id: user.id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Fail.as_str(),
+                status: &ChargeStatus::Fail.as_str(),
                 is_success: None
 
             }
@@ -350,11 +350,11 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await.expect("transaction should be ok");
 
@@ -370,12 +370,12 @@ mod entity_tests {
         ).await.expect("should create card");
 
         let outer_charge = OuterChargeLedger::insert(
-            InsertableOuterChargeLedger {
+            &InsertableOuterChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Success.as_str(),
+                status: &ChargeStatus::Success.as_str(),
                 is_success: Some(true)
 
             }
@@ -389,12 +389,12 @@ mod entity_tests {
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
         let dupe_error = OuterChargeLedger::insert(
-            InsertableOuterChargeLedger {
+            &InsertableOuterChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Success.as_str(),
+                status: &ChargeStatus::Success.as_str(),
                 is_success: Some(true)
 
             }
@@ -411,11 +411,11 @@ mod entity_tests {
         crate::test::init();
         let user = initialize_user().await;
         let rtx = RegisteredTransaction::insert(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
-                memo: TEST_MEMO.to_string(),
+                memo: TEST_MEMO,
                 amount_cents: TEST_AMOUNT,
-                mcc: TEST_MCC.to_string()
+                mcc: TEST_MCC
             }
         ).await.expect("transaction should be ok");
 
@@ -426,12 +426,12 @@ mod entity_tests {
         ).await.expect("should create");
 
         let inner_charge = InnerChargeLedger::insert(
-            InsertableInnerChargeLedger {
+            &InsertableInnerChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 wallet_card_id: wallet_card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Success.as_str(),
+                status: &ChargeStatus::Success.as_str(),
                 is_success: Some(true)
 
             }
@@ -455,12 +455,12 @@ mod entity_tests {
         ).await.expect("should create card");
 
         let outer_charge = OuterChargeLedger::insert(
-            InsertableOuterChargeLedger {
+            &InsertableOuterChargeLedger {
                 registered_transaction_id: rtx.id,
                 user_id: rtx.user_id,
                 passthrough_card_id: outer_card.id,
                 amount_cents: TEST_AMOUNT,
-                status: ChargeStatus::Success.as_str(),
+                status: &ChargeStatus::Success.as_str(),
                 is_success: Some(true)
 
             }
@@ -474,7 +474,7 @@ mod entity_tests {
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
         let final_tx = TransactionLedger::insert(
-            InsertableTransactionLedger {
+            &InsertableTransactionLedger {
                 registered_transaction_id: rtx.id,
                 inner_charge_ledger_id: inner_charge.id,
                 outer_charge_ledger_id: outer_charge.id

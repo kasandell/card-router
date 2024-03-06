@@ -32,7 +32,6 @@ async fn login(
             return Err(ApiError::new(401, "Invalid user".to_string()));
         }
     }
-    Err(ApiError::new(500, "Not implemented".to_string()))
 }
 
 #[post("/logout/")]

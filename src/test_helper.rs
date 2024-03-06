@@ -24,16 +24,16 @@ pub async fn initialize_wallet(
     credit_card_id: i32
 ) -> (Wallet, WalletCardAttempt) {
     let ca = WalletCardAttempt::insert(
-        InsertableCardAttempt {
+        &InsertableCardAttempt {
             user_id: user.id,
             credit_card_id: credit_card_id,
-            expected_reference_id: "test".to_string(),
+            expected_reference_id: "test"
         }
     ).await.expect("should create");
     let wallet = Wallet::insert_card(
-        NewCard {
+        &NewCard {
             user_id: user.id,
-            payment_method_id: "test".to_string(),
+            payment_method_id: "test",
             credit_card_id: credit_card_id,
             wallet_card_attempt_id: ca.id,
 
@@ -49,16 +49,16 @@ pub async fn initialize_wallet_with_payment_method(
     payment_method_id: String
 ) -> (Wallet, WalletCardAttempt) {
     let ca = WalletCardAttempt::insert(
-        InsertableCardAttempt {
+        &InsertableCardAttempt {
             user_id: user.id,
             credit_card_id: credit_card_id,
-            expected_reference_id: Uuid::new_v4().to_string()
+            expected_reference_id: &Uuid::new_v4().to_string()
         }
     ).await.expect("should create");
     let wallet = Wallet::insert_card(
-        NewCard {
+        &NewCard {
             user_id: user.id,
-            payment_method_id: payment_method_id,
+            payment_method_id: &payment_method_id,
             credit_card_id: credit_card_id,
             wallet_card_attempt_id: ca.id,
 
@@ -89,11 +89,11 @@ pub async fn initialize_registered_transaction_for_user(
 
 ) -> RegisteredTransaction {
     RegisteredTransaction::insert(
-        InsertableRegisteredTransaction {
+        &InsertableRegisteredTransaction {
             user_id: user.id,
-            memo: metadata.memo.clone(),
+            memo: &metadata.memo,
             amount_cents: metadata.amount_cents,
-            mcc: metadata.mcc.clone()
+            mcc: &metadata.mcc
         }
     ).await.expect("should create")
 }

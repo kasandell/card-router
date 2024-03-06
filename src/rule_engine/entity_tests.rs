@@ -24,11 +24,11 @@ mod entity_tests {
         let user = initialize_user().await;
         let mcc = "7184";
         let category = Category::create(
-            InsertableCategory { name: "Random".to_string() }
+            &InsertableCategory { name: "Random" }
         ).await.expect("should create");
         let mcc_mapping = MccMapping::create(
-            InsertableMccMapping { 
-                mcc_code: mcc.to_string(),
+            &InsertableMccMapping {
+                mcc_code: mcc,
                 category_id: category.id
             }
         ).await.expect("should create");
@@ -44,7 +44,7 @@ mod entity_tests {
             start_date: None,
             end_date: None
         };
-        let rule = Rule::create(rule_to_create).await.expect("Should create");
+        let rule = Rule::create(&rule_to_create).await.expect("Should create");
         assert_eq!(credit_card_id, rule.credit_card_id);
         assert!(rule.is_valid());
         assert_eq!(category.id, rule.rule_category_id.expect("expect rule id"));

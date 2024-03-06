@@ -106,51 +106,51 @@ mod tests {
         let rule_mcc = "0000";
 
         let att1 = WalletCardAttempt::insert(
-            InsertableCardAttempt {
+            &InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: 1,
-                expected_reference_id: "a".to_string()
+                expected_reference_id: "a"
             }
         ).await.expect("expect attempt to create");
 
         let att2 = WalletCardAttempt::insert(
-            InsertableCardAttempt {
+            &InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: 2,
-                expected_reference_id: "b".to_string()
+                expected_reference_id: "b"
             }
         ).await.expect("expect attempt to create");
 
         let category = Category::create(
-            InsertableCategory {
-                name: "Test".to_string()
+            &InsertableCategory {
+                name: "Test"
             }
         ).await.expect("should create category");
         let mcc_mapping = MccMapping::create(
-            InsertableMccMapping {
-                mcc_code: rule_mcc.to_string(),
+            &InsertableMccMapping {
+                mcc_code: rule_mcc,
                 category_id: 1,//category.id
             }
         ).await.expect("Should create mcc mapping");
 
         let card_1 = Wallet::insert_card(
-            NewCard {
+            &NewCard {
                 user_id: user.id,
-                payment_method_id: payment_method_id_1.to_string(),
+                payment_method_id: payment_method_id_1,
                 credit_card_id: 1,
                 wallet_card_attempt_id: att1.id
             }
         ).await.expect("Should insert card");
         let card_2 = Wallet::insert_card(
-            NewCard {
+            &NewCard {
                 user_id: user.id,
-                payment_method_id: payment_method_id_2.to_string(),
+                payment_method_id: payment_method_id_2,
                 credit_card_id: 2,
                 wallet_card_attempt_id: att2.id
             }
         ).await.expect("Should insert card");
         let should_be_filtered_rule = Rule::create(
-            CreateRuleRequest {
+            &CreateRuleRequest {
                 credit_card_id: 1,
                 rule_category_id: Some(RULE_CATEGORY),
                 merchant_name: None,
@@ -163,7 +163,7 @@ mod tests {
         ).await.expect("rule should be created");
 
         let card_1_rule = Rule::create(
-            CreateRuleRequest {
+            &CreateRuleRequest {
                 credit_card_id: 1,
                 rule_category_id: Some(RULE_CATEGORY),
                 merchant_name: None,
@@ -176,7 +176,7 @@ mod tests {
         ).await.expect("rule should be created");
 
         let card_2_rule = Rule::create(
-            CreateRuleRequest {
+            &CreateRuleRequest {
                 credit_card_id: 2,
                 rule_category_id: Some(RULE_CATEGORY),
                 merchant_name: None,

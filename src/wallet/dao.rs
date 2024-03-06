@@ -12,16 +12,16 @@ use mockall::{automock, predicate::*};
 pub trait WalletDaoTrait {
     async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<Wallet>, DataError>;
     async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<(Wallet, CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
-    async fn insert_card(self: Arc<Self>, card: NewCard) -> Result<Wallet, DataError>;
+    async fn insert_card<'a>(self: Arc<Self>, card: &NewCard<'a>) -> Result<Wallet, DataError>;
 }
 
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait WalletCardAttemtDaoTrait {
-    async fn insert(self: Arc<Self>, card_attempt: InsertableCardAttempt) -> Result<WalletCardAttempt, DataError>;
-    async fn find_by_reference_id(self: Arc<Self>, reference: String) -> Result<WalletCardAttempt, DataError>;
-    async fn update_card(self: Arc<Self>, id: i32, card: UpdateCardAttempt) -> Result<WalletCardAttempt, DataError>;
+    async fn insert<'a>(self: Arc<Self>, card_attempt: &InsertableCardAttempt<'a>) -> Result<WalletCardAttempt, DataError>;
+    async fn find_by_reference_id(self: Arc<Self>, reference: &str) -> Result<WalletCardAttempt, DataError>;
+    async fn update_card<'a>(self: Arc<Self>, id: i32, card: &UpdateCardAttempt<'a>) -> Result<WalletCardAttempt, DataError>;
 
 
 }
@@ -45,7 +45,7 @@ impl WalletDaoTrait for WalletDao {
         Wallet::find_all_for_user_with_card_info(user).await
     }
 
-    async fn insert_card(self: Arc<Self>, card: NewCard) -> Result<Wallet, DataError> {
+    async fn insert_card<'a>(self: Arc<Self>, card: &NewCard<'a>) -> Result<Wallet, DataError> {
         Wallet::insert_card(card).await
     }
 }
@@ -58,15 +58,15 @@ impl WalletCardAttemptDao {
 
 #[async_trait(?Send)]
 impl WalletCardAttemtDaoTrait for WalletCardAttemptDao {
-    async fn insert(self: Arc<Self>, card_attempt: InsertableCardAttempt) -> Result<WalletCardAttempt, DataError> {
+    async fn insert<'a>(self: Arc<Self>, card_attempt: &InsertableCardAttempt<'a>) -> Result<WalletCardAttempt, DataError> {
         WalletCardAttempt::insert(card_attempt).await
     }
 
-    async fn find_by_reference_id(self: Arc<Self>, reference: String) -> Result<WalletCardAttempt, DataError> {
+    async fn find_by_reference_id(self: Arc<Self>, reference: &str) -> Result<WalletCardAttempt, DataError> {
         WalletCardAttempt::find_by_reference_id(reference).await
     }
 
-    async fn update_card(self: Arc<Self>, id: i32, card: UpdateCardAttempt) -> Result<WalletCardAttempt, DataError> {
+    async fn update_card<'a>(self: Arc<Self>, id: i32, card: &UpdateCardAttempt<'a>) -> Result<WalletCardAttempt, DataError> {
         WalletCardAttempt::update_card(id, card).await
     }
 }

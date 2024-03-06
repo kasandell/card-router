@@ -13,7 +13,7 @@ use crate::util::math::{
 };
 use super::constant::RuleStatus;
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug)]
+#[derive(Insertable, Debug)]
 #[diesel(table_name = rule)]
 #[diesel(belongs_to(CreditCard))]
 struct InsertableRule {
@@ -37,7 +37,6 @@ pub struct Rule {
     pub public_id: Uuid,
     pub credit_card_id: i32,
     pub rule_category_id: Option<i32>,
-    //pub rule_mcc: Option<String>,
     pub merchant_name: Option<String>,
     pub points_multiplier: Option<i32>,
     pub cashback_percentage_bips: Option<i32>,
@@ -48,7 +47,7 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub async fn create(new_rule: CreateRuleRequest) -> Result<Self, DataError> {
+    pub async fn create(new_rule: &CreateRuleRequest) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let rule = diesel::insert_into(rule::table)
             .values(InsertableRule::from(new_rule))
@@ -137,18 +136,30 @@ impl Rule {
     }
 }
 
-impl From<CreateRuleRequest> for InsertableRule {
-    fn from(request: CreateRuleRequest) -> Self {
+impl From<&CreateRuleRequest> for InsertableRule {
+    fn from(request: &CreateRuleRequest) -> Self {
         InsertableRule { 
             credit_card_id: request.credit_card_id,
             //rule_mcc: request.rule_mcc,
             rule_category_id: request.rule_category_id,
-            merchant_name: request.merchant_name,
+            merchant_name: match &request.merchant_name {
+                Some(merchant_name) => Some(merchant_name.clone()),
+                None => None
+            },
             points_multiplier: request.points_multiplier,
             cashback_percentage_bips: request.cashback_percentage_bips,
-            recurring_day_of_month: request.recurring_day_of_month,
-            start_date: request.start_date,
-            end_date: request.end_date,
+            recurring_day_of_month: match &request.recurring_day_of_month {
+                Some(dom) => Some(dom.clone()),
+                None => None
+            },
+            start_date: match request.start_date {
+                Some(start_date) => Some(start_date.clone()),
+                None => None
+            },
+            end_date: match request.end_date {
+                Some(end_date) => Some(end_date.clone()),
+                None => None
+            },
             rule_status: RuleStatus::ACTIVE.as_str()
         }
     }

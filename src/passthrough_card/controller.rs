@@ -14,9 +14,10 @@ async fn create_card(
     user: web::ReqData<User>,
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
+    // TODO: need to pass in pin
     let user = user.into_inner();
     // TODO: pin needs to be from frontend
-    let card = services.passthrough_card_engine.clone().issue_card_to_user(&user, "1234".to_string()).await?;
+    let card = services.passthrough_card_engine.clone().issue_card_to_user(&user, "1234").await?;
     Ok(
         HttpResponse::Ok().json(
             PassthroughCardResposnse {

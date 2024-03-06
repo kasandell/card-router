@@ -37,18 +37,18 @@ pub struct WalletCardAttempt {
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet_card_attempt)]
-pub struct InsertableCardAttempt {
+pub struct InsertableCardAttempt<'a> {
     pub user_id: i32,
     pub credit_card_id: i32,
-    pub expected_reference_id: String,
+    pub expected_reference_id: &'a str,
 }
 
 #[derive(Serialize, Deserialize, AsChangeset, Clone)]
 #[diesel(table_name = wallet_card_attempt)]
-pub struct UpdateCardAttempt {
-    pub recurring_detail_reference: String,
-    pub psp_id: String,
-    pub status: String
+pub struct UpdateCardAttempt<'a> {
+    pub recurring_detail_reference: &'a str,
+    pub psp_id: &'a str,
+    pub status: &'a str
 }
 
 
@@ -67,7 +67,7 @@ pub struct Wallet {
     pub wallet_card_attempt_id: i32,
 }
 
-#[derive(Serialize, Deserialize, Insertable, Debug)]
+#[derive(Insertable, Debug)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
@@ -75,8 +75,6 @@ pub struct InsertableCard {
     pub public_id: Uuid,
     pub user_id: i32,
     pub payment_method_id: String,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
     pub credit_card_id: i32,
     pub wallet_card_attempt_id: i32,
 }
@@ -85,9 +83,9 @@ pub struct InsertableCard {
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
-pub struct NewCard {
+pub struct NewCard<'a> {
     pub user_id: i32,
-    pub payment_method_id: String,
+    pub payment_method_id: &'a str,
     pub credit_card_id: i32,
     pub wallet_card_attempt_id: i32,
 }
@@ -129,7 +127,8 @@ impl Wallet {
         Ok(cards)
     }
 
-    pub async fn insert_card(card: NewCard) -> Result<Self, DataError> {
+    // TODO: from consumes
+    pub async fn insert_card<'a>(card: &NewCard<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let insertable_card = InsertableCard::from(card);
         let inserted_card = diesel::insert_into(wallet::table)
@@ -157,14 +156,12 @@ impl Wallet {
     }
 }
 
-impl From<NewCard> for InsertableCard {
-    fn from(card: NewCard) -> Self {
+impl From<&NewCard<'_>> for InsertableCard {
+    fn from(card: &NewCard) -> Self {
         InsertableCard {
             public_id: Uuid::new_v4(),
             user_id: card.user_id,
-            payment_method_id: card.payment_method_id,
-            created_at: Utc::now().naive_utc(),
-            updated_at: Utc::now().naive_utc(),
+            payment_method_id: card.payment_method_id.to_string(),
             credit_card_id: card.credit_card_id,
             wallet_card_attempt_id: card.wallet_card_attempt_id
         }
@@ -195,16 +192,16 @@ impl Wallet {
         credit_card_id: i32
     ) -> Result<(Self, WalletCardAttempt), DataError> {
         let ca = WalletCardAttempt::insert(
-            InsertableCardAttempt {
+            &InsertableCardAttempt {
                 user_id: user_id,
                 credit_card_id: credit_card_id,
-                expected_reference_id: "test".to_string(),
+                expected_reference_id: "test",
             }
         ).await?;
         let wallet = Wallet::insert_card(
-            NewCard {
+            &NewCard {
                 user_id: user_id,
-                payment_method_id: "test".to_string(),
+                payment_method_id: "test",
                 credit_card_id: credit_card_id,
                 wallet_card_attempt_id: ca.id,
 
@@ -215,7 +212,7 @@ impl Wallet {
 }
 
 impl WalletCardAttempt {
-    pub async fn insert(card_attempt: InsertableCardAttempt) -> Result<Self, DataError> {
+    pub async fn insert<'a>(card_attempt: &InsertableCardAttempt<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let wallet = diesel::insert_into(wallet_card_attempt::table)
@@ -224,7 +221,7 @@ impl WalletCardAttempt {
         Ok(wallet)
     }
 
-    pub async fn find_by_reference_id(reference: String) -> Result<Self, DataError> {
+    pub async fn find_by_reference_id(reference: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let card_attempt = wallet_card_attempt::table
@@ -234,7 +231,7 @@ impl WalletCardAttempt {
         Ok(card_attempt)
     }
 
-    pub async fn update_card(id: i32, card: UpdateCardAttempt) -> Result<Self, DataError> {
+    pub async fn update_card<'a>(id: i32, card: &UpdateCardAttempt<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let wallet = diesel::update(wallet_card_attempt::table)

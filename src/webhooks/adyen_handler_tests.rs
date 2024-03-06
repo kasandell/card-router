@@ -16,10 +16,10 @@ mod tests {
         let original_psp = "xywz";
         let payment_method_id = "1234";
         let att1 = WalletCardAttempt::insert(
-            InsertableCardAttempt {
+            &InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: 1,
-                expected_reference_id: attempt_reference_id.to_string()
+                expected_reference_id: attempt_reference_id
             }
         ).await.expect("should create");
         assert_eq!(att1.status, WalletCardAttemptStatus::PENDING.as_str());
@@ -51,7 +51,7 @@ mod tests {
                 )
             }
         ).await.expect("should be fine");
-        let att_returned = WalletCardAttempt::find_by_reference_id(attempt_reference_id.to_string()).await.expect("should create");
+        let att_returned = WalletCardAttempt::find_by_reference_id(attempt_reference_id).await.expect("should create");
         assert_eq!(att_returned.id, att1.id);
         assert_eq!(att_returned.status, WalletCardAttemptStatus::MATCHED.as_str());
         let wallet_returned = Wallet::find_all_for_user(&user).await.expect("should get wallet");

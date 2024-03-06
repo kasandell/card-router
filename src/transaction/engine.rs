@@ -78,12 +78,12 @@ impl TransactionEngineTrait for Engine {
     ) -> Result<RegisteredTransaction, ServiceError> {
         // TODO: this call takes a long time
         let res = self.dao.clone().insert_registered_transaction(
-            InsertableRegisteredTransaction {
+            &InsertableRegisteredTransaction {
                 user_id: user.id,
                 //transaction_id: Uuid::new_v4(),
-                memo: metadata.memo.to_string(),
+                memo: &metadata.memo,
                 amount_cents: metadata.amount_cents,
-                mcc: metadata.mcc.to_string()
+                mcc: &metadata.mcc
             }
         ).await?;
         Ok(res)
@@ -98,12 +98,12 @@ impl TransactionEngineTrait for Engine {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
-                InsertableInnerChargeLedger {
+                &InsertableInnerChargeLedger {
                     registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     wallet_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: ChargeStatus::Fail.as_str(),
+                    status: &ChargeStatus::Fail.as_str(),
                     is_success: None,
                 }
             ).await?
@@ -119,12 +119,12 @@ impl TransactionEngineTrait for Engine {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
-                InsertableInnerChargeLedger {
+                &InsertableInnerChargeLedger {
                     registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     wallet_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: ChargeStatus::Success.as_str(),
+                    status: &ChargeStatus::Success.as_str(),
                     is_success: Some(true),
                 }
             ).await?
@@ -140,12 +140,12 @@ impl TransactionEngineTrait for Engine {
         // TODO: do some assertions that everything is associated
         Ok(
             self.dao.clone().insert_outer_charge(
-                InsertableOuterChargeLedger {
+                &InsertableOuterChargeLedger {
                     registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     passthrough_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: ChargeStatus::Fail.as_str(),
+                    status: &ChargeStatus::Fail.as_str(),
                     is_success: None,
                 }
             ).await?
@@ -161,12 +161,12 @@ impl TransactionEngineTrait for Engine {
         // TODO: do some assertions that everything is associated
         Ok(
             self.dao.clone().insert_outer_charge(
-                InsertableOuterChargeLedger {
+                &InsertableOuterChargeLedger {
                     registered_transaction_id: registered_transaction.id,
                     user_id: registered_transaction.user_id,
                     passthrough_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: ChargeStatus::Success.as_str(),
+                    status: &ChargeStatus::Success.as_str(),
                     is_success: Some(true),
                 }
             ).await?
@@ -181,7 +181,7 @@ impl TransactionEngineTrait for Engine {
     ) -> Result<TransactionLedger, ServiceError> {
         Ok(
             self.dao.clone().insert_transaction_ledger(
-                InsertableTransactionLedger {
+                &InsertableTransactionLedger {
                     registered_transaction_id: registered_transaction.id,
                     inner_charge_ledger_id: successful_inner_charge.id,
                     outer_charge_ledger_id: successful_outer_charge.id

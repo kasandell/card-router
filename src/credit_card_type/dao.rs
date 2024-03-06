@@ -11,8 +11,8 @@ use uuid::Uuid;
 #[async_trait(?Send)]
 pub trait CreditCardDaoTrait {
     async fn list_all_card_types(self: Arc<Self>) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
-    async fn search_all_card_types(self: Arc<Self>, query: String) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
-    async fn find_by_public_id(self: Arc<Self>, public_id: Uuid) -> Result<CreditCard, DataError>;
+    async fn search_all_card_types(self: Arc<Self>, query: &str) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;
+    async fn find_by_public_id(self: Arc<Self>, public_id: &Uuid) -> Result<CreditCard, DataError>;
 }
 
 pub struct CreditCardDao {}
@@ -30,10 +30,10 @@ impl CreditCardDaoTrait for CreditCardDao {
         CreditCard::list_all_card_types().await
     }
 
-    async fn search_all_card_types(self: Arc<Self>,query: String) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
+    async fn search_all_card_types(self: Arc<Self>, query: &str) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
         CreditCard::search_all_card_types(query).await
     }
-    async fn find_by_public_id(self: Arc<Self>, public_id: Uuid) -> Result<CreditCard, DataError> {
+    async fn find_by_public_id(self: Arc<Self>, public_id: &Uuid) -> Result<CreditCard, DataError> {
         CreditCard::find_by_public_id(public_id).await
     }
 }

@@ -10,18 +10,18 @@ mod entity_tests {
         let stripe_pmt_id = "s_1234";
 
         let attempt = WalletCardAttempt::insert(
-            InsertableCardAttempt {
+            &InsertableCardAttempt {
                 user_id: user.id,
                 credit_card_id: 1,
-                expected_reference_id: "".to_string()
+                expected_reference_id: ""
             }
         ).await;
         let attempt = attempt.expect("attempt should exist");
 
         let card = Wallet::insert_card(
-            NewCard {
+            &NewCard {
                 user_id: user.id,
-                payment_method_id: stripe_pmt_id.to_string(),
+                payment_method_id: stripe_pmt_id,
                 credit_card_id: 1, // should be populated already,
                 wallet_card_attempt_id: attempt.id
             }

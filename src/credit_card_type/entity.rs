@@ -57,7 +57,7 @@ impl CreditCard {
     }
 
     pub async fn search_all_card_types(
-        query: String
+        query: &str
     ) -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
         let mut conn = db::connection().await?;
         let cards = credit_card::table
@@ -75,7 +75,7 @@ impl CreditCard {
     }
 
     pub async fn find_by_public_id(
-        public_id: Uuid
+        public_id: &Uuid
     ) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 

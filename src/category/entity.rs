@@ -14,15 +14,15 @@ use diesel_async::RunQueryDsl;
 
 #[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Clone)]
 #[diesel(table_name = category)]
-pub struct InsertableCategory {
-    pub name: String
+pub struct InsertableCategory<'a> {
+    pub name: &'a str
 }
 
 #[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Clone)]
 #[diesel(belongs_to(Category))]
 #[diesel(table_name = mcc_mapping)]
-pub struct InsertableMccMapping {
-    pub mcc_code: String,
+pub struct InsertableMccMapping<'a> {
+    pub mcc_code: &'a str,
     pub category_id: i32
 }
 
@@ -52,7 +52,7 @@ pub struct MccMapping {
 }
 
 impl Category {
-    pub async fn create(category: InsertableCategory) -> Result<Self, DataError>{
+    pub async fn create<'a>(category: &InsertableCategory<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let cat = diesel::insert_into(category::table)
         .values(category)
@@ -79,7 +79,7 @@ impl Category {
 }
 
 impl MccMapping {
-    pub async fn create(mapping: InsertableMccMapping) -> Result<Self, DataError> {
+    pub async fn create<'a>(mapping: &InsertableMccMapping<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let map = diesel::insert_into(mcc_mapping::table)
         .values(mapping)

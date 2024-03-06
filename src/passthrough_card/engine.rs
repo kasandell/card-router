@@ -32,7 +32,7 @@ impl Engine {
     pub async fn issue_card_to_user(
         self: Arc<Self>,
         user: &User,
-        pin: String
+        pin: &str
     ) -> Result<PassthroughCard, ServiceError> {
         let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
