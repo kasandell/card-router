@@ -37,7 +37,7 @@ async fn create(
     let user = services.user_dao.clone().create(
         &UserMessage {
             email: &request.email,
-            password: &request.password
+            auth0_user_id: &request.password
         }
     ).await?;
     Ok(HttpResponse::Ok().json(user))

@@ -21,6 +21,7 @@ use dotenv::dotenv;
 use uuid::Uuid;
 use crate::adyen_service::checkout::service::ChargeService;
 use crate::lithic_service::service::{LithicService, LithicServiceTrait};
+use crate::middleware::claims::Claims;
 use crate::passthrough_card::crypto::encrypt_pin;
 
 
@@ -53,7 +54,8 @@ mod service_error;
 mod environment;
 
 
-async fn manual_hello() -> impl Responder {
+async fn manual_hello(claims: Claims) -> impl Responder {
+    println!("{:?}", &claims);
     HttpResponse::Ok().body("Hey there!")
 }
 
@@ -76,9 +78,11 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let services = middleware::services::Services::new();
+        let auth0_config = middleware::claims::Auth0Config::default();
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(services.clone()))
+            .app_data(auth0_config.clone())
             .wrap(Logger::new("%a %{User-Agent}i"))
             .service(web::scope("/user").configure(user::config::config))
             .service(web::scope("/wallet").configure(wallet::config::config))
@@ -86,6 +90,9 @@ async fn main() -> std::io::Result<()> {
             .service(web::scope("/auth").configure(auth::config::config))
             .service(web::scope("/passthrough").configure(passthrough_card::config::config))
             .service(web::scope("/credit-card-type").configure(credit_card_type::config::config))
+            .service(
+                web::scope("/")
+            )
             .route("/hey/", web::get().to(manual_hello))
     })
     .bind(("127.0.0.1", 8080))?

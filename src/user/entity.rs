@@ -11,7 +11,7 @@ use crate::data_error::DataError;
 #[diesel(table_name = users)]
 pub struct UserMessage<'a> {
     pub email: &'a str,
-    pub password: &'a str,
+    pub auth0_user_id: &'a str,
 }
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
@@ -30,7 +30,7 @@ pub struct User {
 pub struct InsertableUser<'a> {
     pub public_id: &'a Uuid,
     pub email: &'a str,
-    pub password: &'a str,
+    pub auth0_user_id: &'a str
 }
 
 impl User {
@@ -62,7 +62,7 @@ impl User {
         let user = users::table
             .filter(
                 users::email.eq(email)
-                    .and(users::password.eq(password))
+                    //.and(users::password.eq(password))
             )
             .first(&mut conn).await?;
 
@@ -84,7 +84,7 @@ impl User {
         let user =  InsertableUser {
             public_id: &Uuid::new_v4(),
             email: user.email,
-            password: user.password,
+            auth0_user_id: user.auth0_user_id,
         };
         let user = diesel::insert_into(users::table)
             .values(user)
@@ -130,7 +130,7 @@ impl User {
             id: id,
             public_id: Uuid::new_v4(),
             email: "test@test.com".to_string(),
-            password: "TestPassword".to_string(),
+            auth0_user_id: "TestPassword".to_string(),
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
         }

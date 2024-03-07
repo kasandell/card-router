@@ -156,7 +156,7 @@ diesel::table! {
         id -> Int4,
         public_id -> Uuid,
         email -> Text,
-        password -> Text,
+        auth0_user_id -> Text,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }

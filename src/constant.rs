@@ -8,6 +8,9 @@ pub mod env_key {
     pub const LITHIC_WEBHOOK_URL_KEY: &str = "LITHIC_WEBHOOK_URL";
 
     pub const DATABASE_URL: &str = "DATABASE_URL";
+    pub const AUTH0_AUDIENCE: &str = "DATABASE_URL";
+    pub const AUTH0_DOMAIN: &str = "DATABASE_URL";
+    pub const CLIENT_ORIGIN_URL: &str = "DATABASE_URL";
 }
 
 pub mod constant {
