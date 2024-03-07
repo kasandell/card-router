@@ -20,7 +20,7 @@ pub struct User {
     pub id: i32,
     pub public_id: Uuid,
     pub email: String,
-    pub password: String,
+    pub auth0_user_id: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }

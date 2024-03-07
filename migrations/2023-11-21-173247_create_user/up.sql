@@ -2,7 +2,7 @@ CREATE TABLE "users" (
     id SERIAL PRIMARY KEY,
     public_id UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
     email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
+    auth0_user_id TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
