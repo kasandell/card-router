@@ -37,7 +37,7 @@ mod tests {
         let user = User::create(
             &UserMessage {
                 email: "test@example.com",
-                password: "password",
+                auth0_user_id: "1234",
             }
         ).await.expect("User should exist");
         let public_id = user.public_id;

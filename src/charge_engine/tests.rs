@@ -29,6 +29,7 @@ mod tests {
     use crate::transaction::entity::{InnerChargeLedger, OuterChargeLedger, RegisteredTransaction, TransactionMetadata};
     use crate::user::dao::{MockUserDaoTrait, UserDaoTrait};
     use chrono::Utc;
+    use crate::error_type::ErrorType;
     use crate::schema::wallet::payment_method_id;
 
     const USER_ID: i32 = 1;
@@ -47,7 +48,7 @@ mod tests {
         charge_service.expect_charge_card_on_file()
             .times(1)
             .return_const(
-                Err(ServiceError::new(500, "test_error".to_string()))
+                Err(ServiceError::new(ErrorType::InternalServerError, "test_error".to_string()))
             );
 
         ledger_mock.expect_register_failed_inner_charge()

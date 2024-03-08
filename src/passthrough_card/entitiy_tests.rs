@@ -2,6 +2,7 @@
 mod tests {
     use std::collections::HashSet;
     use chrono::NaiveDate;
+    use crate::error_type::ErrorType;
     use crate::passthrough_card::constant::PassthroughCardStatus;
     use crate::test_helper::initialize_user;
     use crate::passthrough_card::entity::{
@@ -139,7 +140,7 @@ mod tests {
             &user
         ).await.expect_err("error expected to be thrown here");
 
-        assert_eq!(409, created_error.status_code);
+        assert_eq!(ErrorType::Conflict, created_error.error_type);
 
         created_card.delete_self().await.expect("card should delete");
         user.delete_self().await.expect("User should delete");
@@ -184,7 +185,7 @@ mod tests {
             &user
         ).await.expect_err("error expected to be thrown here");
 
-        assert_eq!(409, created_error.status_code);
+        assert_eq!(ErrorType::Conflict, created_error.error_type);
 
         created_card.delete_self().await.expect("card should delete");
         user.delete_self().await.expect("User should delete");
@@ -197,7 +198,7 @@ mod tests {
         let user2 = User::create(
             &UserMessage {
                 email: "kyle2@gmail.com",
-                password: "1234"
+                auth0_user_id: "1234"
             }
         ).await.expect("User should be created");
         let token = "12345";

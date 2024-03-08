@@ -11,18 +11,13 @@ extern crate env_logger;
 extern crate console_subscriber;
 extern crate uuidv7;
 
-use std::io::ErrorKind;
 use std::str::FromStr;
-use std::sync::Arc;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 
 use dotenv::dotenv;
 use uuid::Uuid;
-use crate::adyen_service::checkout::service::ChargeService;
-use crate::lithic_service::service::{LithicService, LithicServiceTrait};
-use crate::middleware::claims::Claims;
-use crate::passthrough_card::crypto::encrypt_pin;
+use crate::auth::entity::{Claims, Auth0Config};
 
 
 mod adyen_service;
@@ -52,6 +47,7 @@ mod test_helper;
 mod data_error;
 mod service_error;
 mod environment;
+mod error_type;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {
@@ -71,14 +67,13 @@ async fn main() -> std::io::Result<()> {
     println!("{:?}", id.to_string());
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-    //env_logger::init();
     util::db::init().await;
 
 
 
     HttpServer::new(move || {
         let services = middleware::services::Services::new();
-        let auth0_config = middleware::claims::Auth0Config::default();
+        let auth0_config = Auth0Config::default();
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(services.clone()))
@@ -87,7 +82,6 @@ async fn main() -> std::io::Result<()> {
             .service(web::scope("/user").configure(user::config::config))
             .service(web::scope("/wallet").configure(wallet::config::config))
             .service(web::scope("/webhook").configure(webhooks::config::config))
-            .service(web::scope("/auth").configure(auth::config::config))
             .service(web::scope("/passthrough").configure(passthrough_card::config::config))
             .service(web::scope("/credit-card-type").configure(credit_card_type::config::config))
             .service(

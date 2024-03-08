@@ -7,6 +7,7 @@ mod tests {
     use lithic_client::models::card::{SpendLimitDuration, State, Type, Card};
     use lithic_client::models::funding_account::{State as FundingState, Type as FundingType};
     use uuid::Uuid;
+    use crate::error_type::ErrorType;
     use crate::passthrough_card::constant::PassthroughCardStatus;
     use crate::test_helper::initialize_user;
     use crate::passthrough_card::entity::{
@@ -81,7 +82,7 @@ mod tests {
             &user,
             pin
         ).await.expect_err("This should throw an error");
-        assert_eq!(409, error.status_code);
+        assert_eq!(ErrorType::Conflict, error.error_type);
         ret.delete_self().await.expect("Should delete");
         user.delete_self().await.expect("Should delete");
     }
@@ -202,7 +203,7 @@ mod tests {
             PassthroughCardStatus::OPEN
         ).await.expect_err("Should throw api errror");
 
-        assert_eq!(404, res.status_code);
+        assert_eq!(ErrorType::NotFound, res.error_type);
 
         created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(

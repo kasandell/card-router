@@ -9,6 +9,7 @@ mod tests {
     use crate::api_error::ApiError;
     use crate::credit_card_type::dao::MockCreditCardDaoTrait;
     use crate::data_error::DataError;
+    use crate::error_type::ErrorType;
     use crate::schema::wallet::payment_method_id;
     use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
     use crate::test_helper::{create_credit_card, create_user_in_mem, create_wallet_card, create_wallet_card_attempt, initialize_user};
@@ -95,7 +96,7 @@ mod tests {
                     && insert_request.expected_reference_id == expected_reference_id_clone
             })
             .return_const(
-                Err(DataError::new(500, "test error".to_string()))
+                Err(DataError::new(ErrorType::InternalServerError, "test error".to_string()))
             );
 
         cc_dao.expect_find_by_public_id()
@@ -120,7 +121,7 @@ mod tests {
             }
         ).await.expect_err("should return error");
 
-        assert_eq!(500, err.status_code);
+        assert_eq!(ErrorType::InternalServerError, err.error_type);
     }
 
     #[actix_web::test]
@@ -321,7 +322,7 @@ mod tests {
             }
         ).await.expect_err("should throw error on match");
 
-        assert_eq!(409, error.status_code);
+        assert_eq!(ErrorType::Conflict, error.error_type);
     }
 
     #[actix_web::test]
@@ -343,7 +344,7 @@ mod tests {
             .times(1)
             .with(eq(expected_reference_id.clone()))
             .return_const(
-                Err(DataError::new(404, "record not found".to_string()))
+                Err(DataError::new(ErrorType::NotFound, "record not found".to_string()))
             );
 
         wca_dao.expect_update_card()
@@ -369,6 +370,6 @@ mod tests {
             }
         ).await.expect_err("should throw error on match");
 
-        assert_eq!(404, error.status_code);
+        assert_eq!(ErrorType::NotFound, error.error_type);
     }
 }

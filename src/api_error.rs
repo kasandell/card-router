@@ -13,17 +13,18 @@ use std::fmt;
 use std::num::ParseIntError;
 use crate::adyen_service;
 use crate::data_error::DataError;
+use crate::error_type::ErrorType;
 use crate::service_error::ServiceError;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct ApiError {
-    pub status_code: u16,
+    pub error_type: ErrorType,
     pub message: String,
 }
 
 impl ApiError {
-    pub fn new(status_code: u16, message: String) -> ApiError {
-        ApiError { status_code, message }
+    pub fn new(error_type: ErrorType, message: String) -> ApiError {
+        ApiError { error_type, message }
     }
 }
 
@@ -38,7 +39,7 @@ impl From<SerdeError> for ApiError {
         info!("Converting from serde error");
         println!("SERDE ERROR");
         match error {
-            err => ApiError::new(500, format!("Serde Error error: {}", err)),
+            err => ApiError::new(ErrorType::InternalServerError, format!("Serde Error error: {}", err)),
         }
     }
 }
@@ -48,7 +49,7 @@ impl From<SerdeError> for ApiError {
 impl From<ChargeEngineError> for ApiError {
     fn from(_: ChargeEngineError) -> Self {
         info!("Converting from charge engine error");
-        ApiError::new(500, "Service error".to_string())
+        ApiError::new(ErrorType::InternalServerError, "Service error".to_string())
 
     }
 }
@@ -56,7 +57,7 @@ impl From<ChargeEngineError> for ApiError {
 impl From<LedgerError> for ApiError {
     fn from(_: LedgerError) -> Self {
         info!("Converting from ledger error");
-        ApiError::new(500, "Service error".to_string())
+        ApiError::new(ErrorType::InternalServerError, "Service error".to_string())
 
     }
 }
@@ -64,18 +65,18 @@ impl From<LedgerError> for ApiError {
 
 impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
-        let status_code = match StatusCode::from_u16(self.status_code) {
-            Ok(status_code) => status_code,
-            Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        let status_code = match self.error_type {
+
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         let message = match status_code.as_u16() < 500 {
             true => {
-                warn!("{}: {}", self.status_code, self.message);
+                warn!("{}: {}", self.error_type, self.message);
                 self.message.clone()
             },
             false => {
-                error!("{}: {}", self.status_code, self.message);
+                error!("{}: {}", self.error_type, self.message);
                 "Internal server error".to_string()
             },
         };
@@ -87,18 +88,18 @@ impl ResponseError for ApiError {
 
 impl From<R2D2Error> for ApiError {
     fn from(_: R2D2Error) -> ApiError {
-        ApiError::new(500, "R2D2 error".to_string())
+        ApiError::new(ErrorType::InternalServerError, "R2D2 error".to_string())
     }
 }
 
 impl From<DataError> for ApiError {
     fn from(error: DataError) -> ApiError {
-        ApiError::new(error.status_code, error.message)
+        ApiError::new(error.error_type, error.message)
     }
 }
 
 impl From<ServiceError> for ApiError {
     fn from(error: ServiceError) -> ApiError {
-        ApiError::new(error.status_code, error.message)
+        ApiError::new(error.error_type, error.message)
     }
 }

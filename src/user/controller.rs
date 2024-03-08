@@ -1,7 +1,8 @@
 use actix_web::{web, get, post, HttpResponse, services};
 use uuid::Uuid;
 use crate::api_error::ApiError;
-use crate::middleware::claims::Claims;
+use crate::error_type::ErrorType;
+use crate::auth::entity::Claims;
 use crate::middleware::services::Services;
 use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::request::CreateUserRequest;
@@ -36,7 +37,7 @@ async fn create(
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
     info!("Get or Creating user");
-    let Some(auth0) = claims.sub else {return Err(ApiError::new(401, "unauthorized".to_string()));};
+    let Some(auth0) = claims.sub else {return Err(ApiError::new(ErrorType::Unauthorized, "unauthorized".to_string()));};
     let request = request.into_inner();
     let user = services.user_service.get_or_create(
         &auth0,

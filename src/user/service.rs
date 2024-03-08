@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use async_trait::async_trait;
+use crate::error_type::ErrorType;
 use crate::service_error::ServiceError;
 use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::entity::{User, UserMessage};
@@ -34,9 +35,9 @@ impl UserServiceTrait for UserService {
         match res {
             Ok(user) => Ok(user),
             Err(error) => {
-                match &error.status_code {
+                match &error.error_type {
                     // not found, can create user
-                    404 => {
+                    ErrorType::NotFound => {
                         return self.user_dao.clone().create(
                             &UserMessage {
                                 email,

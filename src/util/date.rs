@@ -2,6 +2,7 @@ use crate::rule_engine::constant::DayOfMonth;
 use chrono::{NaiveDate, Duration, Datelike};
 use crate::api_error::ApiError;
 use crate::data_error::DataError;
+use crate::error_type::ErrorType;
 
 pub fn first_of_month(date: NaiveDate) -> NaiveDate {
     NaiveDate::from_ymd_opt(date.year(), date.month(), 1).expect("should create date")
@@ -27,7 +28,7 @@ pub fn expiration_date_from_str_parts(year: &str, month: &str) -> Result<NaiveDa
     let year_val = year.parse::<i32>()?;
     Ok(
         NaiveDate::from_ymd_opt(year_val, month_val, 1).ok_or(
-            DataError::new(500, "Parse error".to_string())
+            DataError::new(ErrorType::InternalServerError, "Parse error".to_string())
         )?
     )
 

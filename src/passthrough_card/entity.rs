@@ -6,6 +6,7 @@ use lithic_client::models::{Card, FundingAccount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::data_error::DataError;
+use crate::error_type::ErrorType;
 use crate::user::entity::User;
 use crate::util::date::expiration_date_from_str_parts;
 use crate::util::db;
@@ -188,10 +189,10 @@ impl From<LithicCard> for InsertablePassthroughCard {
 impl InsertablePassthroughCard {
     pub fn convert_from(card: &Card) -> Result<Self, DataError> {
         let exp_year = card.exp_year.clone().ok_or(
-            DataError::new(500, "Cannot find expiration year".to_string())
+            DataError::new(ErrorType::InternalServerError, "Cannot find expiration year".to_string())
         )?;
         let exp_month = card.exp_month.clone().ok_or(
-            DataError::new(500, "Cannot find expiration month".to_string())
+            DataError::new(ErrorType::InternalServerError, "Cannot find expiration month".to_string())
         )?;
         let expiration = expiration_date_from_str_parts(&exp_year, &exp_month)?;
         Ok(InsertablePassthroughCard {

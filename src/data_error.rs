@@ -6,16 +6,17 @@ use diesel_async::pooled_connection::bb8::RunError;
 use r2d2::Error as R2D2Error;
 use serde_json::{json, Error as SerdeError};
 use crate::api_error::ApiError;
+use crate::error_type::ErrorType;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct DataError {
-    pub status_code: u16,
+    pub error_type: ErrorType,
     pub message: String
 }
 
 impl DataError {
-    pub fn new(status_code: u16, message: String) -> DataError {
-        DataError { status_code, message }
+    pub fn new(error_type: ErrorType, message: String) -> DataError {
+        DataError { error_type, message }
     }
 }
 
@@ -27,14 +28,14 @@ impl fmt::Display for DataError {
 
 impl From<R2D2Error> for DataError {
     fn from(_: R2D2Error) -> DataError {
-        DataError::new(500, "R2D2 error".to_string())
+        DataError::new(ErrorType::InternalServerError, "R2D2 error".to_string())
     }
 
 }
 
 impl From<RunError> for DataError {
     fn from(_: RunError) -> DataError {
-        DataError::new(500, "BB8 error".to_string())
+        DataError::new(ErrorType::InternalServerError, "BB8 error".to_string())
     }
 
 }
@@ -54,13 +55,13 @@ impl From<DieselError> for DataError {
                     ClosedConnection,
                  */
                 match kind {
-                    _UniqueViolation => DataError::new(409, err.message().to_string()),
-                    _ => DataError::new(500, err.message().to_string())
+                    _UniqueViolation => DataError::new(ErrorType::Conflict, err.message().to_string()),
+                    _ => DataError::new(ErrorType::InternalServerError, err.message().to_string())
                 }
 
             },
-            DieselError::NotFound => DataError::new(404, "Record not found".to_string()),
-            err => DataError::new(500, format!("Diesel error: {}", err)),
+            DieselError::NotFound => DataError::new(ErrorType::NotFound, "Record not found".to_string()),
+            err => DataError::new(ErrorType::InternalServerError, format!("Diesel error: {}", err)),
         }
     }
 }
@@ -69,14 +70,14 @@ impl From<SerdeError> for DataError {
     fn from(error: SerdeError) -> DataError {
         info!("Converting from serde error");
         match error {
-            err => DataError::new(500, format!("Serde Error error: {}", err)),
+            err => DataError::new(ErrorType::InternalServerError, format!("Serde Error error: {}", err)),
         }
     }
 }
 
 impl From<ParseIntError> for DataError {
     fn from(_: ParseIntError) -> Self {
-        DataError::new(500, "Parse error".to_string())
+        DataError::new(ErrorType::InternalServerError, "Parse error".to_string())
     }
 }
 

@@ -11,6 +11,7 @@ use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, W
 use crate::wallet::request::{AddCardRequest, MatchAttemptRequest, RegisterAttemptRequest};
 use adyen_checkout::models::{PaymentRequestPaymentMethod as AdyenPaymentMethod, PaymentResponse};
 use crate::constant::constant;
+use crate::error_type::ErrorType;
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one
@@ -126,7 +127,7 @@ impl Engine {
         info!("Found wallet card attempt id {}", card_attempt.id);
 
         if card_attempt.status.eq(&WalletCardAttemptStatus::MATCHED.as_str()) {
-            return Err(ServiceError::new(409, "Card already matched".to_string()));
+            return Err(ServiceError::new(ErrorType::Conflict, "Card already matched".to_string()));
         }
 
         let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {

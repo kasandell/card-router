@@ -6,16 +6,17 @@ use crate::adyen_service::checkout::error::Error as AdyenCheckoutServiceError;
 use crate::lithic_service::error::Error as LithicServiceError;
 use serde_json::{json, Error as SerdeError};
 use crate::charge_engine::error::Error as ChargeEngineError;
+use crate::error_type::ErrorType;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct ServiceError {
-    pub status_code: u16,
+    pub error_type: ErrorType,
     pub message: String
 }
 
 impl ServiceError {
-    pub fn new(status_code: u16, message: String) -> ServiceError {
-        ServiceError { status_code, message }
+    pub fn new(error_type: ErrorType, message: String) -> ServiceError {
+        ServiceError { error_type, message }
     }
 }
 
@@ -27,7 +28,7 @@ impl fmt::Display for ServiceError {
 
 impl From<DataError> for ServiceError {
     fn from(error: DataError) -> ServiceError {
-        ServiceError::new(error.status_code, error.message)
+        ServiceError::new(error.error_type, error.message)
     }
 }
 
@@ -37,7 +38,7 @@ impl <T> From<AdyenCheckoutError<T>> for ServiceError {
         println!("Converting from adyen checkout error");
         println!("{}", error);
         match error {
-            err => ServiceError::new(500, format!("Adyen error")),
+            err => ServiceError::new(ErrorType::InternalServerError, format!("Adyen error")),
         }
     }
 }
@@ -46,7 +47,7 @@ impl From<AdyenCheckoutServiceError> for ServiceError {
     fn from(_: AdyenCheckoutServiceError) -> Self {
         info!("Converting from adyen service error");
         println!("Converting from adyen service error");
-        ServiceError::new(500, "Service error".to_string())
+        ServiceError::new(ErrorType::InternalServerError, "Service error".to_string())
 
     }
 }
@@ -55,7 +56,7 @@ impl From<AdyenCheckoutServiceError> for ServiceError {
 impl From<LithicServiceError> for ServiceError {
     fn from(_: LithicServiceError) -> Self {
         info!("converting from lithic service error");
-        ServiceError::new(500, "Lithic service error".to_string())
+        ServiceError::new(ErrorType::InternalServerError, "Lithic service error".to_string())
     }
 }
 
@@ -63,7 +64,7 @@ impl From<SerdeError> for ServiceError {
     fn from(error: SerdeError) -> ServiceError {
         info!("Converting from serde error");
         match error {
-            err => ServiceError::new(500, format!("Serde Error error: {}", err)),
+            err => ServiceError::new(ErrorType::InternalServerError, format!("Serde Error error: {}", err)),
         }
     }
 }

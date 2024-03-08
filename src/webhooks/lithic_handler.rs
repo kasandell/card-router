@@ -11,6 +11,7 @@ use crate::user::entity::User;
 use crate::rule_engine::engine::RuleEngineTrait;
 
 use crate::asa::response::{AsaResponse, AsaResponseResult};
+use crate::error_type::ErrorType;
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
 use crate::service_error::ServiceError;
@@ -64,10 +65,10 @@ impl LithicHandler {
         info!("Identifying user by card");
         println!("Identifying user by card");
         let mut start = Instant::now();
-        let card = request.card.clone().ok_or(ServiceError::new(400, "expect card".to_string()))?;
+        let card = request.card.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect card".to_string()))?;
         println!("card from request took {:?}", start.elapsed());
         start = Instant::now();
-        let token = card.token.clone().ok_or(ServiceError::new(400, "expect token".to_string()))?;
+        let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token".to_string()))?;
         println!("token from request took {:?}", start.elapsed());
         start = Instant::now();
         let passthrough_card = PassthroughCard::get_by_token(&token).await?;

@@ -13,7 +13,7 @@ pub async fn initialize_user() -> User {
     User::create(
         &UserMessage {
             email: "test@example.com",
-            password: "1234",
+            auth0_user_id: "1234",
         }
     ).await.expect("User should be created")
 }

@@ -8,6 +8,7 @@ use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::PassthroughCard;
 use base64::engine::general_purpose;
 use lithic_client::models::card::Card;
+use crate::error_type::ErrorType;
 use crate::lithic_service::{
     service::LithicService,
     service::LithicServiceTrait,
@@ -36,7 +37,7 @@ impl Engine {
     ) -> Result<PassthroughCard, ServiceError> {
         let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
-            return Err(ServiceError::new(409, "User has active card already".to_string()))
+            return Err(ServiceError::new(ErrorType::Conflict, "User has active card already".to_string()))
         }
         let idempotency_key = Uuid::new_v4();
         let pin_encoded = encrypt_pin(pin);
@@ -68,7 +69,7 @@ impl Engine {
                         return Err(err);
                     }
                 }
-                return Err(ServiceError::new(500, "unable to issue card".to_string()));
+                return Err(ServiceError::new(ErrorType::InternalServerError, "unable to issue card".to_string()));
             }
         }
     }
@@ -98,7 +99,7 @@ impl Engine {
             PassthroughCardStatus::CLOSED => self.close_lithic_card(&updated.token).await,
             PassthroughCardStatus::OPEN => self.activate_lithic_card(&updated.token).await,
             PassthroughCardStatus::PAUSED =>  self.pause_lithic_card(&updated.token).await,
-            _ => Err(ServiceError::new(500, "Invalid state transition from engine".to_string()))
+            _ => Err(ServiceError::new(ErrorType::InternalServerError, "Invalid state transition from engine".to_string()))
         };
 
         return match lithic_result {
@@ -169,7 +170,7 @@ impl Engine {
                     }
                 ).cloned()
             },
-            _ => return Err(ServiceError::new(404, "Invalid state transition from engine".to_string()))
+            _ => return Err(ServiceError::new(ErrorType::NotFound, "Invalid state transition from engine".to_string()))
         }
     }
 
@@ -239,7 +240,7 @@ impl Engine {
             .collect();
         // TODO: this scares me
         Ok(v.get(0).ok_or(
-            ServiceError::new(404, "card to transition not found".to_string())
+            ServiceError::new(ErrorType::NotFound, "card to transition not found".to_string())
         )?)
     }
 
