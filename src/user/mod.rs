@@ -3,4 +3,5 @@ pub mod controller;
 pub mod entity;
 pub mod tests;
 pub mod dao;
-mod request;
+pub mod request;
+pub mod service;

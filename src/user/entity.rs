@@ -79,6 +79,16 @@ impl User {
         Ok(user)
     }
 
+    pub async fn find_by_auth0_id(id: &str) -> Result<Self, DataError> {
+        let mut conn = db::connection().await?;
+
+        let user = users::table
+            .filter(users::auth0_user_id.eq(id))
+            .first(&mut conn).await?;
+
+        Ok(user)
+    }
+
     pub async fn create<'a>(user: &UserMessage<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let user =  InsertableUser {

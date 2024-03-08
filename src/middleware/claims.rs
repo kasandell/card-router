@@ -96,7 +96,11 @@ impl ResponseError for ClientError {
 
 #[derive(Debug, Deserialize)]
 pub struct Claims {
-    permissions: Option<HashSet<String>>,
+    pub permissions: Option<HashSet<String>>,
+    pub sub: Option<String>,
+    pub role: Option<String>,
+    pub exp: Option<usize>,
+    pub scope: Option<String>,
 }
 
 impl Claims {
@@ -126,6 +130,7 @@ impl FromRequest for Claims {
                 ClientError::NotFound("kid not found in token header".to_string())
             })?;
             let domain = config.domain.as_str();
+            println!("{:?}", &config.domain);
             let jwks: JwkSet = Client::new()
                 .get(
                     Uri::builder()
@@ -136,7 +141,10 @@ impl FromRequest for Claims {
                         .unwrap(),
                 )
                 .send()
-                .await.map_err(|_| ClientError::NotFound("Send Request error".to_string()))?
+                .await.map_err(|e| {
+                println!("{:?}", e.to_string());
+                return ClientError::NotFound("Send Request error".to_string())
+            })?
                 .json()
                 .await.map_err(|_| ClientError::NotFound("JSON Error".to_string()))?;
             let jwk = jwks
@@ -156,6 +164,8 @@ impl FromRequest for Claims {
                         .map_err(ClientError::Decode)?;
                     let token =
                         decode::<Claims>(token, &key, &validation).map_err(ClientError::Decode)?;
+                    println!("{:?}", &token.claims);
+                    println!("{:?}", &token);
                     Ok(token.claims)
                 }
                 algorithm => Err(ClientError::UnsupportedAlgortithm(algorithm).into()),

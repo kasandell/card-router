@@ -1,11 +1,9 @@
 use crate::api_error::ApiError;
 use reqwest;
 use std::future::{Ready, ready};
-use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::task::{Context, Poll};
-use actix_web::{dev::ServiceRequest, Error, HttpMessage, HttpResponse};
+use actix_web::{dev::ServiceRequest, Error, FromRequest, HttpMessage, HttpResponse};
 use actix_web::dev::{Service, ServiceResponse, Transform};
 use actix_web::http::header::HeaderMap;
 use jsonwebtoken::{Algorithm, decode, DecodingKey, Validation};
@@ -69,14 +67,14 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
             // TODO: swap this to a call to auth0
             let mut is_logged_in = false;
             let uid = match_jwt(request.headers(), &Role::User);
-            if let Ok(user_public_id) = uid {
-                if let Ok(id) = Uuid::from_str(&user_public_id) {
-                    if let Ok(user) = User::find(&id).await {
-                        // insert data into extensions if enabled
-                        is_logged_in = true;
-                        request.extensions_mut()
-                            .insert(user);
-                    }
+            let (req, payload)= request.parts_mut();
+            let claims = crate::middleware::claims::Claims::from_request(req, payload).await?;
+            if let Some(auth0_id) = claims.sub {
+                if let Ok(user) = User::find_by_auth0_id(&auth0_id).await {
+                    // insert data into extensions if enabled
+                    is_logged_in = true;
+                    request.extensions_mut()
+                        .insert(user);
                 }
             }
 

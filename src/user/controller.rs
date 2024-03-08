@@ -1,9 +1,11 @@
 use actix_web::{web, get, post, HttpResponse, services};
 use uuid::Uuid;
 use crate::api_error::ApiError;
+use crate::middleware::claims::Claims;
 use crate::middleware::services::Services;
 use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::request::CreateUserRequest;
+use crate::user::service::UserServiceTrait;
 use super::entity::{User, UserMessage};
 
 
@@ -30,15 +32,23 @@ async fn list(
 #[post("/")]
 async fn create(
     request: web::Json<CreateUserRequest>,
+    claims: Claims,
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
-    info!("Creating user");
+    info!("Get or Creating user");
+    let Some(auth0) = claims.sub else {return Err(ApiError::new(401, "unauthorized".to_string()));};
     let request = request.into_inner();
+    let user = services.user_service.get_or_create(
+        &auth0,
+        &request.email
+    ).await?;
+    /*
     let user = services.user_dao.clone().create(
         &UserMessage {
             email: &request.email,
-            auth0_user_id: &request.password
+            auth0_user_id: &auth0
         }
     ).await?;
+     */
     Ok(HttpResponse::Ok().json(user))
 }
