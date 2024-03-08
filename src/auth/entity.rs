@@ -58,17 +58,17 @@ impl FromRequest for Claims {
     ) -> Self::Future {
         let Some(config) = req.app_data::<Auth0Config>().cloned() else {
             return Box::pin(async move {
-                return Err(ApiError::new(ErrorType::InternalServerError, "Can't get config".to_string()).into());
+                return Err(ApiError::new(ErrorType::InternalServerError, "Can't get config").into());
             })
         };
         let extractor = BearerAuth::extract(req);
         Box::pin(async move {
             let credentials = extractor.await.map_err(
-                |_| ApiError::new(ErrorType::Unauthorized, "Can't get credentials".to_string())
+                |_| ApiError::new(ErrorType::Unauthorized, "Can't get credentials")
             )?;
             let token = credentials.token();
-            let header = decode_header(token).map_err(|_| ApiError::new(ErrorType::Unauthorized, "Can't decode".to_string()))?;
-            let kid = header.kid.ok_or_else(|| ApiError::new(ErrorType::NotFound, "KID not found".to_string()))?;
+            let header = decode_header(token).map_err(|_| ApiError::new(ErrorType::Unauthorized, "Can't decode"))?;
+            let kid = header.kid.ok_or_else(|| ApiError::new(ErrorType::NotFound, "KID not found"))?;
             let domain = config.domain.as_str();
             let jwks: JwkSet = Client::new()
                 .get(
@@ -77,17 +77,17 @@ impl FromRequest for Claims {
                         .authority(domain)
                         .path_and_query("/.well-known/jwks.json")
                         .build()
-                        .map_err(|_|ApiError::new(ErrorType::InternalServerError, "Unable to find well known".to_string()))?
+                        .map_err(|_|ApiError::new(ErrorType::InternalServerError, "Unable to find well known"))?
                 )
                 .send()
-                .await.map_err(|e| ApiError::new(ErrorType::NotFound, "JWKS Not Found".to_string())
+                .await.map_err(|e| ApiError::new(ErrorType::NotFound, "JWKS Not Found")
             )?
                 .json()
-                .await.map_err(|_| ApiError::new(ErrorType::NotFound, "Can't deserialize".to_string()))?;
+                .await.map_err(|_| ApiError::new(ErrorType::NotFound, "Can't deserialize"))?;
 
             let jwk = jwks
                 .find(&kid)
-                .ok_or_else(|| ApiError::new(ErrorType::NotFound, "No JWK".to_string()))?;
+                .ok_or_else(|| ApiError::new(ErrorType::NotFound, "No JWK"))?;
 
             match jwk.clone().algorithm {
                 AlgorithmParameters::RSA(ref rsa) => {
@@ -100,12 +100,12 @@ impl FromRequest for Claims {
                         .build()
                         .unwrap()]);
                     let key = DecodingKey::from_rsa_components(&rsa.n, &rsa.e)
-                        .map_err(|_| ApiError::new(ErrorType::NotFound, "No Key".to_string()))?;
+                        .map_err(|_| ApiError::new(ErrorType::NotFound, "No Key"))?;
                     let token =
-                        decode::<Claims>(token, &key, &validation).map_err(|_| ApiError::new(ErrorType::NotFound, "Can't deserialize".to_string()))?;
+                        decode::<Claims>(token, &key, &validation).map_err(|_| ApiError::new(ErrorType::NotFound, "Can't deserialize"))?;
                     Ok(token.claims)
                 }
-                algorithm => Err(ApiError::new(ErrorType::NotFound, "Can't deserialize".to_string()).into()),
+                algorithm => Err(ApiError::new(ErrorType::NotFound, "Can't deserialize").into()),
             }
         })
     }

@@ -28,7 +28,7 @@ pub fn expiration_date_from_str_parts(year: &str, month: &str) -> Result<NaiveDa
     let year_val = year.parse::<i32>()?;
     Ok(
         NaiveDate::from_ymd_opt(year_val, month_val, 1).ok_or(
-            DataError::new(ErrorType::InternalServerError, "Parse error".to_string())
+            DataError::new(ErrorType::InternalServerError, "Parse error")
         )?
     )
 

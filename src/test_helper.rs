@@ -14,6 +14,7 @@ pub async fn initialize_user() -> User {
         &UserMessage {
             email: "test@example.com",
             auth0_user_id: "1234",
+            footprint_vault_id: "test_vault"
         }
     ).await.expect("User should be created")
 }

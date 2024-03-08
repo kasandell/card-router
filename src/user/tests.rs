@@ -30,24 +30,4 @@ mod tests {
         user.delete_self().await.expect("user should delete");
         assert!(User::find(&user.public_id).await.is_err())
     }
-
-    //#[actix_web::test]
-    async fn test_list() {
-        crate::test::init(); 
-        let user = User::create(
-            &UserMessage {
-                email: "test@example.com",
-                auth0_user_id: "1234",
-            }
-        ).await.expect("User should exist");
-        let public_id = user.public_id;
-        let mut app = test::init_service(App::new().configure(config)).await;
-        let resp = TestRequest::get().uri("/list/").send_request(&mut app).await;
-        let body = to_bytes(resp.into_body()).await.unwrap();
-        let body_json = body.as_json();
-        assert!(body_json.is_array());
-        // assert_eq!(body_json.as_array().unwrap().len(), 1);
-        user.delete_self().await.expect("Should delete");
-        assert!(User::find(&public_id).await.is_err())
-    }
 }

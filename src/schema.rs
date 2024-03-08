@@ -159,6 +159,8 @@ diesel::table! {
         auth0_user_id -> Text,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+        #[max_length = 255]
+        footprint_vault_id -> Varchar,
     }
 }
 

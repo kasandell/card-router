@@ -48,7 +48,7 @@ mod tests {
         charge_service.expect_charge_card_on_file()
             .times(1)
             .return_const(
-                Err(ServiceError::new(ErrorType::InternalServerError, "test_error".to_string()))
+                Err(ServiceError::new(ErrorType::InternalServerError, "test_error"))
             );
 
         ledger_mock.expect_register_failed_inner_charge()

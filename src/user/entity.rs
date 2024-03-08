@@ -12,6 +12,7 @@ use crate::data_error::DataError;
 pub struct UserMessage<'a> {
     pub email: &'a str,
     pub auth0_user_id: &'a str,
+    pub footprint_vault_id: &'a str,
 }
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
@@ -23,6 +24,7 @@ pub struct User {
     pub auth0_user_id: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub footprint_vault_id: String
 }
 
 #[derive(Insertable)]
@@ -30,7 +32,8 @@ pub struct User {
 pub struct InsertableUser<'a> {
     pub public_id: &'a Uuid,
     pub email: &'a str,
-    pub auth0_user_id: &'a str
+    pub auth0_user_id: &'a str,
+    pub footprint_vault_id: &'a str,
 }
 
 impl User {
@@ -95,6 +98,7 @@ impl User {
             public_id: &Uuid::new_v4(),
             email: user.email,
             auth0_user_id: user.auth0_user_id,
+            footprint_vault_id: user.footprint_vault_id
         };
         let user = diesel::insert_into(users::table)
             .values(user)
@@ -143,6 +147,7 @@ impl User {
             auth0_user_id: "TestPassword".to_string(),
             created_at: Utc::now().naive_utc(),
             updated_at: Utc::now().naive_utc(),
+            footprint_vault_id: "test".to_string()
         }
     }
 
@@ -158,15 +163,3 @@ impl User {
         Ok(res)
     }
 }
-
-/*
-impl From<&UserMessage> for InsertableUser {
-    async fn from(user: &UserMessage) -> Self {
-        InsertableUser {
-            public_id: &Uuid::new_v4(),
-            email: user.email,
-            password: user.password,
-        }
-    }
-}
- */

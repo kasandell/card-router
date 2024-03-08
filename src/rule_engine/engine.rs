@@ -39,7 +39,7 @@ impl RuleEngineTrait for RuleEngine {
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
-        let amount = request.amount.ok_or(ServiceError::new(ErrorType::BadRequest, "expect amount".to_string()))?;
+        let amount = request.amount.ok_or(ServiceError::new(ErrorType::BadRequest, "expect amount"))?;
         // TODO: not from dao
         let mut start = Instant::now();
         let cards = Wallet::find_all_for_user_with_card_info(user).await?;

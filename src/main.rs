@@ -48,6 +48,7 @@ mod data_error;
 mod service_error;
 mod environment;
 mod error_type;
+mod footprint_service;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {

@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN footprint_vault_id VARCHAR(255) UNIQUE NOT NULL;

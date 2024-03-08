@@ -83,8 +83,8 @@ impl Engine {
         println!("Starting charge");
         let mut start = Instant::now();
         let metadata = TransactionMetadata::convert(&request)?;
-        let card = request.card.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect card".to_string()))?;
-        let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token".to_string()))?;
+        let card = request.card.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect card"))?;
+        let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token"))?;
         //let passthrough_card = self.passthrough_card_dao.clone().get_by_token(token).await?;
         //let user = self.user_dao.clone().find_by_internal_id(passthrough_card.user_id).await?;
         println!("Charge Asa data setup took {:?}", start.elapsed());
@@ -131,7 +131,7 @@ impl Engine {
                         &passthrough_card
                     ).await?;
                     println!("match result and add ledger took {:?}", start.elapsed());
-                    Err(ServiceError::new(ErrorType::InternalServerError, "Approved inner charge with no ledger entry, should not be possible".to_string()))
+                    Err(ServiceError::new(ErrorType::InternalServerError, "Approved inner charge with no ledger entry, should not be possible"))
                 }
             },
             _ => {

@@ -1,0 +1,1 @@
+ALTER TABLE users DROP COLUMN footprint_vault_id;

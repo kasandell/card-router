@@ -15,8 +15,8 @@ pub struct DataError {
 }
 
 impl DataError {
-    pub fn new(error_type: ErrorType, message: String) -> DataError {
-        DataError { error_type, message }
+    pub fn new(error_type: ErrorType, message: &str) -> DataError {
+        DataError { error_type, message: message.to_string() }
     }
 }
 
@@ -28,14 +28,14 @@ impl fmt::Display for DataError {
 
 impl From<R2D2Error> for DataError {
     fn from(_: R2D2Error) -> DataError {
-        DataError::new(ErrorType::InternalServerError, "R2D2 error".to_string())
+        DataError::new(ErrorType::InternalServerError, "R2D2 error")
     }
 
 }
 
 impl From<RunError> for DataError {
     fn from(_: RunError) -> DataError {
-        DataError::new(ErrorType::InternalServerError, "BB8 error".to_string())
+        DataError::new(ErrorType::InternalServerError, "BB8 error")
     }
 
 }
@@ -55,13 +55,13 @@ impl From<DieselError> for DataError {
                     ClosedConnection,
                  */
                 match kind {
-                    _UniqueViolation => DataError::new(ErrorType::Conflict, err.message().to_string()),
-                    _ => DataError::new(ErrorType::InternalServerError, err.message().to_string())
+                    _UniqueViolation => DataError::new(ErrorType::Conflict, err.message()),
+                    _ => DataError::new(ErrorType::InternalServerError, err.message())
                 }
 
             },
-            DieselError::NotFound => DataError::new(ErrorType::NotFound, "Record not found".to_string()),
-            err => DataError::new(ErrorType::InternalServerError, format!("Diesel error: {}", err)),
+            DieselError::NotFound => DataError::new(ErrorType::NotFound, "Record not found"),
+            err => DataError::new(ErrorType::InternalServerError, &format!("Diesel error: {}", err)),
         }
     }
 }
@@ -70,14 +70,14 @@ impl From<SerdeError> for DataError {
     fn from(error: SerdeError) -> DataError {
         info!("Converting from serde error");
         match error {
-            err => DataError::new(ErrorType::InternalServerError, format!("Serde Error error: {}", err)),
+            err => DataError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
         }
     }
 }
 
 impl From<ParseIntError> for DataError {
     fn from(_: ParseIntError) -> Self {
-        DataError::new(ErrorType::InternalServerError, "Parse error".to_string())
+        DataError::new(ErrorType::InternalServerError, "Parse error")
     }
 }
 

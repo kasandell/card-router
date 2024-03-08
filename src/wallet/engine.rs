@@ -74,7 +74,6 @@ impl Engine {
         println!("GOT CARD RESPONSE");
         println!("{:?}", card_resp);
         Ok((wca, card_resp))
-        // Err(ServiceError::new(500, "not implemented".to_string()))
     }
 
     pub async fn attempt_match_from_response(
@@ -127,7 +126,7 @@ impl Engine {
         info!("Found wallet card attempt id {}", card_attempt.id);
 
         if card_attempt.status.eq(&WalletCardAttemptStatus::MATCHED.as_str()) {
-            return Err(ServiceError::new(ErrorType::Conflict, "Card already matched".to_string()));
+            return Err(ServiceError::new(ErrorType::Conflict, "Card already matched"));
         }
 
         let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {

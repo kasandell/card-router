@@ -23,8 +23,8 @@ pub struct ApiError {
 }
 
 impl ApiError {
-    pub fn new(error_type: ErrorType, message: String) -> ApiError {
-        ApiError { error_type, message }
+    pub fn new(error_type: ErrorType, message: &str) -> ApiError {
+        ApiError { error_type, message: message.to_string() }
     }
 }
 
@@ -39,7 +39,7 @@ impl From<SerdeError> for ApiError {
         info!("Converting from serde error");
         println!("SERDE ERROR");
         match error {
-            err => ApiError::new(ErrorType::InternalServerError, format!("Serde Error error: {}", err)),
+            err => ApiError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
         }
     }
 }
@@ -49,7 +49,7 @@ impl From<SerdeError> for ApiError {
 impl From<ChargeEngineError> for ApiError {
     fn from(_: ChargeEngineError) -> Self {
         info!("Converting from charge engine error");
-        ApiError::new(ErrorType::InternalServerError, "Service error".to_string())
+        ApiError::new(ErrorType::InternalServerError, "Service error")
 
     }
 }
@@ -57,7 +57,7 @@ impl From<ChargeEngineError> for ApiError {
 impl From<LedgerError> for ApiError {
     fn from(_: LedgerError) -> Self {
         info!("Converting from ledger error");
-        ApiError::new(ErrorType::InternalServerError, "Service error".to_string())
+        ApiError::new(ErrorType::InternalServerError, "Service error")
 
     }
 }
@@ -88,18 +88,18 @@ impl ResponseError for ApiError {
 
 impl From<R2D2Error> for ApiError {
     fn from(_: R2D2Error) -> ApiError {
-        ApiError::new(ErrorType::InternalServerError, "R2D2 error".to_string())
+        ApiError::new(ErrorType::InternalServerError, "R2D2 error")
     }
 }
 
 impl From<DataError> for ApiError {
     fn from(error: DataError) -> ApiError {
-        ApiError::new(error.error_type, error.message)
+        ApiError::new(error.error_type, &error.message)
     }
 }
 
 impl From<ServiceError> for ApiError {
     fn from(error: ServiceError) -> ApiError {
-        ApiError::new(error.error_type, error.message)
+        ApiError::new(error.error_type, &error.message)
     }
 }

@@ -65,10 +65,10 @@ impl LithicHandler {
         info!("Identifying user by card");
         println!("Identifying user by card");
         let mut start = Instant::now();
-        let card = request.card.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect card".to_string()))?;
+        let card = request.card.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect card"))?;
         println!("card from request took {:?}", start.elapsed());
         start = Instant::now();
-        let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token".to_string()))?;
+        let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token"))?;
         println!("token from request took {:?}", start.elapsed());
         start = Instant::now();
         let passthrough_card = PassthroughCard::get_by_token(&token).await?;

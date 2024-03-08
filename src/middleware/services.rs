@@ -9,6 +9,7 @@ use crate::category::dao::MccMappingDao;
 use crate::credit_card_type::dao::{
     CreditCardDao,
 };
+use crate::footprint_service::service::FootprintService;
 use crate::passthrough_card::dao::PassthroughCardDao;
 use crate::rule_engine::engine::RuleEngine;
 use crate::schema::registered_transactions::mcc;
@@ -33,7 +34,8 @@ pub struct Services {
     pub user_dao: Arc<UserDao>,
     pub credit_card_dao: Arc<CreditCardDao>,
     pub rule_engine: Arc<RuleEngine>,
-    pub user_service: Arc<UserService>
+    pub user_service: Arc<UserService>,
+    pub footprint_service: Arc<FootprintService>
 }
 
 impl Services {
@@ -63,7 +65,11 @@ impl Services {
         let rule_engine = Arc::new(RuleEngine::new_with_services(
             mcc_mapping_dao.clone()
         ));
-        let user_service = Arc::new(UserService::new_with_services(user_dao.clone()));
+        let footprint_service = Arc::new(FootprintService::new());
+        let user_service = Arc::new(UserService::new_with_services(
+            user_dao.clone(),
+            footprint_service.clone()
+        ));
         Self {
             passthrough_card_engine: Arc::new(PassthroughCardEngine::new_with_service(lithic_service.clone())),
             charge_engine: Arc::new(ChargeEngine::new_with_service(
@@ -88,7 +94,8 @@ impl Services {
             user_dao: user_dao.clone(),
             credit_card_dao: credit_card_dao.clone(),
             rule_engine: rule_engine.clone(),
-            user_service: user_service.clone()
+            user_service: user_service.clone(),
+            footprint_service: footprint_service.clone()
         }
     }
 }

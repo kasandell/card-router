@@ -381,7 +381,7 @@ impl TransactionLedger {
 
 impl TransactionMetadata {
     pub fn convert(request: &AsaRequest) -> Result<Self, DataError> {
-        let error = DataError::new(ErrorType::BadRequest, "missing field".to_string());
+        let error = DataError::new(ErrorType::BadRequest, "missing field");
         let merchant = request.merchant.clone().ok_or(error.clone())?;
         let descriptor = merchant.descriptor.clone().ok_or(error.clone())?;
         let mcc = merchant.mcc.clone().ok_or(error.clone())?;

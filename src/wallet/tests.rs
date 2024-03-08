@@ -96,7 +96,7 @@ mod tests {
                     && insert_request.expected_reference_id == expected_reference_id_clone
             })
             .return_const(
-                Err(DataError::new(ErrorType::InternalServerError, "test error".to_string()))
+                Err(DataError::new(ErrorType::InternalServerError, "test error"))
             );
 
         cc_dao.expect_find_by_public_id()
@@ -344,7 +344,7 @@ mod tests {
             .times(1)
             .with(eq(expected_reference_id.clone()))
             .return_const(
-                Err(DataError::new(ErrorType::NotFound, "record not found".to_string()))
+                Err(DataError::new(ErrorType::NotFound, "record not found"))
             );
 
         wca_dao.expect_update_card()
