@@ -12,6 +12,7 @@ use crate::rule_engine::engine::RuleEngineTrait;
 
 use crate::asa::response::{AsaResponse, AsaResponseResult};
 use crate::error_type::ErrorType;
+use crate::footprint_service::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
 use crate::service_error::ServiceError;
@@ -37,14 +38,16 @@ impl LithicHandler {
         passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
         user_dao: Arc<dyn UserDaoTrait>,
         ledger: Arc<dyn TransactionEngineTrait>,
-        rule_engine: Arc<dyn RuleEngineTrait>
+        rule_engine: Arc<dyn RuleEngineTrait>,
+        footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
         Self {
             charge_engine: Arc::new(ChargeEngine::new_with_service(
                 charge_service.clone(),
                 passthrough_card_dao.clone(),
                 user_dao.clone(),
-                ledger.clone()
+                ledger.clone(),
+                footprint_service.clone()
             )),
             rule_engine: rule_engine.clone(),
         }

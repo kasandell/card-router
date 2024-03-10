@@ -11,6 +11,8 @@ pub mod env_key {
     pub const AUTH0_AUDIENCE: &str = "AUTH0_AUDIENCE";
     pub const AUTH0_DOMAIN: &str = "AUTH0_DOMAIN";
     pub const CLIENT_ORIGIN_URL: &str = "CLIENT_ORIGIN_URL";
+    pub const FOOTPRINT_SECRET_KEY: &str = "FOOTPRINT_SECRET_KEY";
+    pub const FOOTPRINT_VAULT_PROXY_ID: &str = "FOOTPRINT_VAULT_PROXY_ID";
 }
 
 pub mod constant {

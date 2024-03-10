@@ -46,6 +46,7 @@ impl Services {
         let credit_card_dao = Arc::new(CreditCardDao::new());
         let wallet_dao = Arc::new(WalletDao::new());
         let wallet_card_attempt_dao = Arc::new(WalletCardAttemptDao::new());
+        let footprint_service = Arc::new(FootprintService::new());
         let wallet_engine = Arc::new(WalletEngine::new_with_services(
             credit_card_dao.clone(),
             wallet_card_attempt_dao.clone(),
@@ -59,13 +60,13 @@ impl Services {
             adyen_service.clone(),
             passthrough_card_dao.clone(),
             user_dao.clone(),
-            ledger.clone()
+            ledger.clone(),
+            footprint_service.clone()
         ));
         let mcc_mapping_dao = Arc::new(MccMappingDao::new());
         let rule_engine = Arc::new(RuleEngine::new_with_services(
             mcc_mapping_dao.clone()
         ));
-        let footprint_service = Arc::new(FootprintService::new());
         let user_service = Arc::new(UserService::new_with_services(
             user_dao.clone(),
             footprint_service.clone()
@@ -76,7 +77,8 @@ impl Services {
                 adyen_service.clone(),
                 passthrough_card_dao.clone(),
                 user_dao.clone(),
-                ledger.clone()
+                ledger.clone(),
+                footprint_service.clone()
             )),
             wallet_engine: Arc::new(WalletEngine::new_with_services(
                 credit_card_dao.clone(),

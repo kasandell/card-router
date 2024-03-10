@@ -20,5 +20,8 @@ pub fn card_request_parts_for_card_id(card_id: &str) -> Result<Vec<String>, Serv
 
 pub fn individual_request_part(card_id: &str, part: &CardPart) -> String {
     return "card.".to_string().add(card_id).add(".").add(part.as_str());
+}
 
+pub fn individual_request_part_for_customer(customer_id: &str, card_id: &str, part: &CardPart) -> String {
+    return customer_id.to_string().add("card.").add(card_id).add(".").add(part.as_str());
 }

@@ -5,6 +5,8 @@ use crate::adyen_service::checkout::error::Error as AdyenCheckoutServiceError;
 use crate::lithic_service::error::Error as LithicServiceError;
 use serde_json::{json, Error as SerdeError};
 use crate::error_type::ErrorType;
+use footprint::apis::Error as FootprintError;
+use crate::footprint_service::service::FootprintService;
 
 #[derive(Debug, Clone)]
 pub struct ServiceError {
@@ -46,7 +48,14 @@ impl From<AdyenCheckoutServiceError> for ServiceError {
         info!("Converting from adyen service error");
         println!("Converting from adyen service error");
         ServiceError::new(ErrorType::InternalServerError, "Service error")
+    }
+}
 
+impl <T> From<FootprintError<T>> for ServiceError {
+    fn from(_: FootprintError<T>) -> Self {
+        info!("Converting from footprint error");
+        println!("Converting from footprint error");
+        ServiceError::new(ErrorType::InternalServerError, "Service error")
     }
 }
 

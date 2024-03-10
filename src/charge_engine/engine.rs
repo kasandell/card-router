@@ -16,8 +16,11 @@ use crate::charge_engine::entity::{
     ChargeCardAttemptResult
 };
 use crate::error_type::ErrorType;
+use crate::footprint_service::request::ChargeThroughProxyRequest;
+use crate::footprint_service::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
+use crate::schema::registered_transactions::transaction_id;
 use crate::service_error::ServiceError;
 use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
@@ -29,7 +32,8 @@ pub struct Engine {
     charge_service: Arc<dyn AdyenChargeServiceTrait>,
     passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
     user_dao: Arc<dyn UserDaoTrait>,
-    ledger: Arc<dyn TransactionEngineTrait>
+    ledger: Arc<dyn TransactionEngineTrait>,
+    footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
 lazy_static! {
@@ -55,7 +59,8 @@ impl Engine {
            charge_service: Arc::new(ChargeService::new()),
            passthrough_card_dao: Arc::new(PassthroughCardDao{}),
            user_dao: Arc::new(UserDao{}),
-           ledger: Arc::new(Ledger::new())
+           ledger: Arc::new(Ledger::new()),
+           footprint_service: Arc::new(FootprintService::new())
        }
     }
 
@@ -64,12 +69,14 @@ impl Engine {
         passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
         user_dao: Arc<dyn UserDaoTrait>,
         ledger: Arc<dyn TransactionEngineTrait>,
+        footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
         Self {
             charge_service,
             passthrough_card_dao,
             user_dao,
-            ledger
+            ledger,
+            footprint_service
         }
     }
 
@@ -196,6 +203,18 @@ impl Engine {
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ServiceError> {
         let mut start = Instant::now();
+        let resp = self.footprint_service.clone().proxy_adyen_payment_request(
+            &ChargeThroughProxyRequest {
+                amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
+                mcc: &transaction_metadata.mcc,
+                payment_method_id: &card.payment_method_id,
+                customer_public_id: &user.public_id.to_string(),
+                idempotency_key: &idempotency_key,
+                reference: &Uuid::new_v4().to_string(),
+                statement: &transaction_metadata.memo
+            }
+        ).await;
+        /*
         let resp = self.charge_service.clone().charge_card_on_file(
             &ChargeCardRequest {
                 amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
@@ -206,7 +225,7 @@ impl Engine {
                 reference: &Uuid::new_v4().to_string(), // TODO: this will later be done with what we put in ledger for attempts
                 statement: &transaction_metadata.memo,
             }
-        ).await;
+        ).await; */
         println!("network request took {:?}", start.elapsed());
 
         start = Instant::now();
@@ -239,6 +258,7 @@ impl Engine {
                     warn!("Intermediate state needs cleanup for card={} for user={}", card.id, user.id);
                     if let Some(psp) = response.psp_reference {
                         start = Instant::now();
+                        // TODO: move this call to proxy
                         let cancel = self.charge_service.clone().cancel_transaction(
                             &psp
                         ).await;
