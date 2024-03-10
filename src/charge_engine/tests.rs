@@ -31,6 +31,7 @@ mod tests {
     use chrono::Utc;
     use crate::error_type::ErrorType;
     use crate::schema::wallet::payment_method_id;
+    use crate::footprint_service::service::MockFootprintServiceTrait;
 
     const USER_ID: i32 = 1;
 
@@ -45,6 +46,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
         charge_service.expect_charge_card_on_file()
             .times(1)
             .return_const(
@@ -63,7 +65,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
@@ -86,6 +89,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::Authorised);
         charge_service.expect_charge_card_on_file()
@@ -108,7 +112,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
@@ -132,6 +137,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
         let psp_ref = "abc123".to_string();
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::PartiallyAuthorised);
@@ -167,7 +173,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
@@ -190,6 +197,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
         let psp_ref = "abc123".to_string();
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::Refused);
@@ -214,7 +222,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_card_with_cleanup(
             Uuid::new_v4(),
@@ -249,6 +258,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
 
 
 
@@ -284,7 +294,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_wallet(
             &user,
@@ -308,12 +319,14 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let engine = Arc::new(Engine::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_wallet(
             &user,
@@ -351,6 +364,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();
         let psp_ref_2  = "abc125".to_string();
@@ -413,7 +427,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_wallet(
             &user,
@@ -453,6 +468,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();
         let psp_ref_2  = "abc125".to_string();
@@ -531,7 +547,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let mut asa = create_example_asa(amount_cents, mcc2.to_string());
         asa.token = Some(pc.token.to_string());
@@ -576,6 +593,7 @@ mod tests {
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();
         let psp_ref_2  = "abc125".to_string();
@@ -628,7 +646,8 @@ mod tests {
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
-            Arc::new(ledger_mock)
+            Arc::new(ledger_mock),
+            Arc::new(footprint_mock)
         ));
         let (res, ledger) = engine.clone().charge_wallet(
             &user,

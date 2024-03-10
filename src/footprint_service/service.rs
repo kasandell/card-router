@@ -16,6 +16,7 @@ use footprint::models::{
     CreateClientTokenRequest,
     CreateUserVaultResponse
 };
+use mockall::automock;
 use serde_json::to_value;
 use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_VAULT_PROXY_ID};
 use crate::environment::ENVIRONMENT;
@@ -23,6 +24,7 @@ use crate::footprint_service::helper::individual_request_part_for_customer;
 use crate::footprint_service::r#enum::CardPart;
 use crate::footprint_service::request::ChargeThroughProxyRequest;
 
+#[automock]
 #[async_trait(?Send)]
 pub trait FootprintServiceTrait {
     async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, ServiceError>;

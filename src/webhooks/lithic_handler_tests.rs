@@ -11,6 +11,7 @@ mod tests {
     use crate::user::entity::User;
     use crate::webhooks::lithic_handler::LithicHandler;
     use std::default::Default;
+    use crate::footprint_service::service::MockFootprintServiceTrait;
     use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
     use crate::schema::passthrough_card::dsl::passthrough_card;
     use crate::schema::wallet::payment_method_id;
@@ -49,6 +50,7 @@ mod tests {
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
         let mut rule_engine = MockRuleEngineTrait::new();
+        let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();
         let psp_ref_2  = "abc125".to_string();
@@ -144,7 +146,8 @@ mod tests {
             Arc::new(pc_mock),
             Arc::new(user_mock),
             Arc::new(ledger_mock),
-            Arc::new(rule_engine)
+            Arc::new(rule_engine),
+            Arc::new(footprint_mock)
         ));
 
         let mut asa = create_example_asa(
