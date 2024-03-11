@@ -20,8 +20,8 @@ mod tests {
     use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction};
     use crate::user::dao::MockUserDaoTrait;
 
-    // #[actix_web::test]
     // TODO: how to use the mocks appropriately here / how to share them
+    #[actix_web::test]
     pub async fn test_handle() {
         let mut metadata = default_transaction_metadata();
         let user = User::create_test_user(1).await;
@@ -35,7 +35,9 @@ mod tests {
         let mcc1 = metadata.mcc.clone();
         let mcc2 = metadata.mcc.clone();
 
-        let pc = create_passthrough_card(&user);
+        let passthrough_card_token = "pc_token_123";
+        let mut pc = create_passthrough_card(&user);
+        pc.token = passthrough_card_token.to_string();
 
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
@@ -71,13 +73,13 @@ mod tests {
                 )
             );
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
                     charge_request.amount_cents == amount_cents
                         && charge_request.mcc == mcc1
                         && charge_request.payment_method_id == payment_method_1.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -87,13 +89,13 @@ mod tests {
                 )
             );
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
                     charge_request.amount_cents == amount_cents
                         && charge_request.mcc == mcc2
                         && charge_request.payment_method_id == payment_method_2.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -154,14 +156,16 @@ mod tests {
             amount_cents,
             mcc.to_string()
         );
-        asa.token = Some(pc.token.clone());
+        asa.token = Some("test_token_123".to_string());
+        asa.card.as_mut().unwrap().token = Some(pc.token.clone());
 
 
         let res = handler.clone().handle(
             asa.clone()
         ).await.expect("no error");
         assert_eq!(AsaResponseResult::Approved, res.result);
-        assert_eq!(asa.token, Some(res.token));
+        // TODO: is this token correct
+        assert_eq!(passthrough_card_token, res.token);
     }
 
 

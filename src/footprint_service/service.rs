@@ -1,9 +1,8 @@
 use std::env;
 use std::sync::Arc;
-use adyen_checkout::models::{Amount, PaymentRequest, PaymentRequestPaymentMethod, PaymentResponse};
+use adyen_checkout::models::{Amount, PaymentCancelResponse, PaymentRequest, PaymentRequestPaymentMethod, PaymentResponse};
 use async_trait::async_trait;
 use crate::error_type::ErrorType;
-use crate::footprint_service::response::AddVaultResponse;
 use crate::service_error::ServiceError;
 use footprint::apis::configuration::Configuration;
 use footprint::apis::default_api::{
@@ -13,16 +12,16 @@ use footprint::apis::default_api::{
 };
 use footprint::models::{
     CreateClientTokenResponse,
-    CreateClientTokenRequest,
     CreateUserVaultResponse
 };
 use mockall::automock;
 use serde_json::to_value;
 use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_VAULT_PROXY_ID};
 use crate::environment::ENVIRONMENT;
-use crate::footprint_service::helper::individual_request_part_for_customer;
+use crate::footprint_service::helper::{individual_request_part_for_customer_template, individual_request_part_for_customer_with_prefix_template, individual_request_part_for_customer_with_suffix_template};
 use crate::footprint_service::r#enum::CardPart;
 use crate::footprint_service::request::ChargeThroughProxyRequest;
+use crate::constant::financial_constant;
 
 #[automock]
 #[async_trait(?Send)]
@@ -30,6 +29,7 @@ pub trait FootprintServiceTrait {
     async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, ServiceError>;
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError>;
     async fn create_client_token(self: Arc<Self>, card_token: &str) -> Result<CreateClientTokenResponse, ServiceError>;
+    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError>;
 }
 
 pub struct FootprintService {
@@ -59,16 +59,19 @@ impl FootprintServiceTrait for FootprintService {
 
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError> {
         let number = Some(
-            to_value(individual_request_part_for_customer(request.customer_public_id, request.payment_method_id, &CardPart::CardNumber))?
+            to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::CardNumber))?
         );
         let cvc = Some(
-            to_value(individual_request_part_for_customer(request.customer_public_id, request.payment_method_id, &CardPart::Cvc))?
+            to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::Cvc))?
         );
-        let expiry = Some(
-            to_value(individual_request_part_for_customer(request.customer_public_id, request.payment_method_id, &CardPart::Expiration))?
+        let expiry_month = Some(
+            to_value(individual_request_part_for_customer_with_prefix_template(request.customer_public_id, request.payment_method_id, &CardPart::Expiration))?
+        );
+        let expiry_year = Some(
+            to_value(individual_request_part_for_customer_with_suffix_template(request.customer_public_id, request.payment_method_id, &CardPart::Expiration))?
         );
         let name = Some(
-            to_value(individual_request_part_for_customer(request.customer_public_id, request.payment_method_id, &CardPart::Name))?
+            to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::Name))?
         );
         let payment_request = Some(PaymentRequest {
             account_info: None,
@@ -76,7 +79,7 @@ impl FootprintServiceTrait for FootprintService {
             additional_data: None,
             amount: Box::new(
                 Amount {
-                    currency: "USD".to_string(),
+                    currency: financial_constant::USD.to_string(),
                     value: request.amount_cents as i64
                 }
             ),
@@ -89,7 +92,7 @@ impl FootprintServiceTrait for FootprintService {
             checkout_attempt_id: None,
             company: None,
             conversion_id: None,
-            country_code: None,
+            country_code: Some(financial_constant::US_COUNTRY_CODE.to_string()),
             date_of_birth: None,
             dcc_quote: None,
             deliver_at: None,
@@ -132,8 +135,8 @@ impl FootprintServiceTrait for FootprintService {
                     encrypted_expiry_month: None,
                     encrypted_expiry_year: None,
                     encrypted_security_code: None,
-                    expiry_month: None, // TODO: need to find a way to split this
-                    expiry_year: Some(expiry),
+                    expiry_month: Some(expiry_month),
+                    expiry_year: Some(expiry_year),
                     network_payment_reference: None,
                     number: Some(number),
                     shopper_notification_reference: None,
@@ -190,6 +193,14 @@ impl FootprintServiceTrait for FootprintService {
                 &self.configuration,
                 card_token
             ).await?
+        )
+    }
+
+    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError> {
+        Err(
+            ServiceError::new(
+                ErrorType::InternalServerError, "Not implemented"
+            )
         )
     }
 }

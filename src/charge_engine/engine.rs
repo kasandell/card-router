@@ -214,18 +214,6 @@ impl Engine {
                 statement: &transaction_metadata.memo
             }
         ).await;
-        /*
-        let resp = self.charge_service.clone().charge_card_on_file(
-            &ChargeCardRequest {
-                amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
-                mcc: &transaction_metadata.mcc,
-                payment_method_id: &card.payment_method_id,
-                customer_public_id: &user.public_id,
-                idempotency_key: &idempotency_key,
-                reference: &Uuid::new_v4().to_string(), // TODO: this will later be done with what we put in ledger for attempts
-                statement: &transaction_metadata.memo,
-            }
-        ).await; */
         println!("network request took {:?}", start.elapsed());
 
         start = Instant::now();

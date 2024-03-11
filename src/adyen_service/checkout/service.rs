@@ -20,10 +20,8 @@ use async_trait::async_trait;
 use mockall::{automock, predicate::*};
 use serde_json::to_value;
 use uuid::Uuid;
-
-use crate::constant::env_key;
+use crate::constant::financial_constant;
 use crate::environment::ENVIRONMENT;
-
 use crate::service_error::ServiceError;
 use crate::user::entity::User;
 use super::request::ChargeCardRequest;
@@ -87,7 +85,7 @@ impl AdyenChargeServiceTrait for ChargeService {
             additional_data: None,
             amount: Box::new(
                 Amount {
-                    currency: "USD".to_string(),
+                    currency: financial_constant::USD.to_string(),
                     value: request.amount_cents as i64
                 }
             ),
@@ -226,8 +224,8 @@ impl AdyenChargeServiceTrait for ChargeService {
             additional_amount: None,
             additional_data: None,
             amount: Box::new(Amount {
-                currency: "USD".to_string(),
-                value: 0
+                currency: financial_constant::USD.to_string(),
+                value: financial_constant::ZERO_AUTH_AMOUNT as i64
             }),
             application_info: None,
             authentication_data: None,
@@ -238,7 +236,7 @@ impl AdyenChargeServiceTrait for ChargeService {
             checkout_attempt_id: None,
             company: None,
             conversion_id: None,
-            country_code: Some("US".to_string()), // TODO: from request?
+            country_code: Some(financial_constant::US_COUNTRY_CODE.to_string()),
             date_of_birth: None,
             dcc_quote: None,
             deliver_at: None,

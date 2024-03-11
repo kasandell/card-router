@@ -47,7 +47,7 @@ mod tests {
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
             .return_const(
                 Err(ServiceError::new(ErrorType::InternalServerError, "test_error"))
@@ -92,7 +92,7 @@ mod tests {
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::Authorised);
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
             .return_const(
                 Ok(
@@ -143,7 +143,7 @@ mod tests {
         resp.result_code = Some(ResultCode::PartiallyAuthorised);
         resp.psp_reference = Some(psp_ref.clone());
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
             .return_const(
                 Ok(
@@ -202,7 +202,7 @@ mod tests {
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::Refused);
         resp.psp_reference = Some(psp_ref.clone());
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
             .return_const(
                 Ok(
@@ -266,13 +266,13 @@ mod tests {
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::Authorised);
         resp.psp_reference = Some(psp_ref.clone());
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
                     charge_request.amount_cents == mc_clone.amount_cents
-                    && charge_request.mcc == mc_clone.mcc
-                    && charge_request.payment_method_id == payment_method_1.to_string()
-                    && charge_request.customer_public_id == &user.public_id
+                        && charge_request.mcc == mc_clone.mcc
+                        && charge_request.payment_method_id == payment_method_1.to_string()
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -351,6 +351,7 @@ mod tests {
         let mcc = metadata.mcc.clone();
         let mcc2 = metadata.mcc.clone();
         let mc_clone = metadata.clone();
+        let mc_clone2 = metadata.clone();
 
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
@@ -375,13 +376,13 @@ mod tests {
         resp_2.result_code = Some(ResultCode::Authorised);
         resp_2.psp_reference = Some(psp_ref_2.clone());
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
-                    charge_request.amount_cents == amount_cents
-                        && charge_request.mcc == mcc
+                    charge_request.amount_cents == mc_clone.amount_cents
+                        && charge_request.mcc == mc_clone.mcc
                         && charge_request.payment_method_id == payment_method_1.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -391,13 +392,13 @@ mod tests {
                 )
             );
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
-                    charge_request.amount_cents == amount_cents
-                        && charge_request.mcc == mcc2
+                    charge_request.amount_cents == mc_clone2.amount_cents
+                        && charge_request.mcc == mc_clone2.mcc
                         && charge_request.payment_method_id == payment_method_2.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -406,6 +407,7 @@ mod tests {
                     resp_2
                 )
             );
+
 
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
@@ -452,6 +454,7 @@ mod tests {
         let mcc = metadata.mcc.clone();
         let mcc1 = metadata.mcc.clone();
         let mcc2 = metadata.mcc.clone();
+        let mcc3 = metadata.mcc.clone();
 
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
@@ -479,13 +482,13 @@ mod tests {
         resp_2.result_code = Some(ResultCode::Authorised);
         resp_2.psp_reference = Some(psp_ref_2.clone());
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
-                    charge_request.amount_cents == amount_cents
-                        && charge_request.mcc == mcc
+                    charge_request.amount_cents == 100
+                        && charge_request.mcc == mcc1
                         && charge_request.payment_method_id == payment_method_1.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -495,13 +498,13 @@ mod tests {
                 )
             );
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
-                    charge_request.amount_cents == amount_cents
-                        && charge_request.mcc == mcc1
+                    charge_request.amount_cents == 100
+                        && charge_request.mcc == mcc3
                         && charge_request.payment_method_id == payment_method_2.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -604,13 +607,13 @@ mod tests {
         resp_2.result_code = Some(ResultCode::Refused);
         resp_2.psp_reference = Some(psp_ref_2.clone());
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
                     charge_request.amount_cents == amount_cents
                         && charge_request.mcc == mcc
                         && charge_request.payment_method_id == payment_method_1.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)
@@ -620,13 +623,13 @@ mod tests {
                 )
             );
 
-        charge_service.expect_charge_card_on_file()
+        footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
                 move |charge_request| {
                     charge_request.amount_cents == amount_cents
                         && charge_request.mcc == mcc2
                         && charge_request.payment_method_id == payment_method_2.to_string()
-                        && charge_request.customer_public_id == &user.public_id
+                        && charge_request.customer_public_id == &user.public_id.to_string()
                 }
             )
             .times(1)

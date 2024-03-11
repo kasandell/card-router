@@ -22,6 +22,8 @@ use crate::user::dao::{UserDao, UserDaoTrait};
 pub struct LithicHandler {
     pub charge_engine: Arc<ChargeEngine>,
     pub rule_engine: Arc<dyn RuleEngineTrait>,
+    pub passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
+    pub user_dao: Arc<dyn UserDaoTrait>,
 }
 
 impl LithicHandler {
@@ -29,6 +31,8 @@ impl LithicHandler {
         Self {
             charge_engine: Arc::new(ChargeEngine::new()),
             rule_engine: Arc::new(RuleEngine::new()),
+            passthrough_card_dao: Arc::new(PassthroughCardDao::new()),
+            user_dao: Arc::new(UserDao::new())
         }
     }
 
@@ -50,16 +54,22 @@ impl LithicHandler {
                 footprint_service.clone()
             )),
             rule_engine: rule_engine.clone(),
+            passthrough_card_dao: passthrough_card_dao.clone(),
+            user_dao: user_dao.clone()
         }
     }
 
     pub fn new_with_services(
         charge_engine: Arc<ChargeEngine>,
-        rule_engine: Arc<RuleEngine>
+        rule_engine: Arc<RuleEngine>,
+        passthrough_card_dao: Arc<PassthroughCardDao>,
+        user_dao: Arc<UserDao>,
     ) -> Self {
         Self {
             charge_engine,
-            rule_engine
+            rule_engine,
+            passthrough_card_dao,
+            user_dao
         }
     }
     pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, ApiError>{
@@ -74,10 +84,11 @@ impl LithicHandler {
         let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token"))?;
         println!("token from request took {:?}", start.elapsed());
         start = Instant::now();
-        let passthrough_card = PassthroughCard::get_by_token(&token).await?;
+        let passthrough_card = self.passthrough_card_dao.clone().get_by_token(&token).await?;
         println!("Find card took {:?}", start.elapsed());
         start = Instant::now();
-        let user = User::find_by_internal_id(passthrough_card.user_id).await?;
+        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id).await?;
+        //User::find_by_internal_id(passthrough_card.user_id).await?;
         println!("Find user took {:?}", start.elapsed());
         start = Instant::now();
 

@@ -91,7 +91,9 @@ impl Services {
             )),
             lithic_handler: Arc::new(LithicHandler::new_with_services(
                 charge_engine.clone(),
-                rule_engine.clone()
+                rule_engine.clone(),
+                passthrough_card_dao.clone(),
+                user_dao.clone()
             )),
             user_dao: user_dao.clone(),
             credit_card_dao: credit_card_dao.clone(),

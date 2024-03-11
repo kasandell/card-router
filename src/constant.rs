@@ -18,3 +18,9 @@ pub mod env_key {
 pub mod constant {
     pub const RECURRING_DETAIL_KEY: &str = "recurring.recurringDetailReference";
 }
+
+pub mod financial_constant {
+    pub const USD: &str = "USD";
+    pub const ZERO_AUTH_AMOUNT: i32 = 0;
+    pub const US_COUNTRY_CODE: &str = "US";
+}
