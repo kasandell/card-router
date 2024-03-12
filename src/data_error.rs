@@ -34,8 +34,8 @@ impl From<R2D2Error> for DataError {
 }
 
 impl From<RunError> for DataError {
-    fn from(_: RunError) -> DataError {
-        DataError::new(ErrorType::InternalServerError, "BB8 error")
+    fn from(e: RunError) -> DataError {
+        DataError::new(ErrorType::InternalServerError, &format!("BB8 error: {}", e.to_string()).as_str())
     }
 
 }

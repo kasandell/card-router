@@ -4,14 +4,14 @@ mod tests {
         entity::{User, UserMessage},
         config::config
     };
-    use crate::test::BodyTest;
+    use crate::test_helper::general::BodyTest;
     use actix_web::{test::{self, TestRequest}, App, body::to_bytes};
     use serde_json::json;
 
     // TODO: have to init all services at controller level
     //#[actix_web::test]
     async fn test_dupe_create() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let request_body = json!({
             "email": "test@example.com",
             "password": "test",

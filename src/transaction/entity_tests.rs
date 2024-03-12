@@ -1,25 +1,20 @@
 #[cfg(test)]
 mod entity_tests {
-    use lithic_client::models::Card;
-    use uuid::Uuid;
-    use std::sync::Arc;
-    use crate::passthrough_card::entity::{create_test_lithic_card, PassthroughCard};
-    use crate::schema::inner_charge_ledger::dsl::inner_charge_ledger;
-    use crate::schema::outer_charge_ledger::dsl::outer_charge_ledger;
-    use crate::test_helper::initialize_user;
+    use crate::passthrough_card::entity::PassthroughCard;
+    use crate::test_helper::passthrough_card::create_mock_lithic_card;
+    use crate::test_helper::user::create_user;
     use crate::transaction::constant::ChargeStatus;
     use crate::transaction::entity::{InsertableInnerChargeLedger, InnerChargeLedger, InsertableOuterChargeLedger, OuterChargeLedger, RegisteredTransaction, InsertableRegisteredTransaction, TransactionLedger, InsertableTransactionLedger};
-    use crate::wallet::entity::{Wallet, NewCard};
+    use crate::wallet::entity::Wallet;
 
     const TEST_MEMO: &str = "Test charge";
     const TEST_MCC: &str = "0000";
     const TEST_AMOUNT: i32 = 10000;
-    //const TEST_TXN_ID: Uuid = Uuid::from_u128(0x9cb4cf49_5c3d_4647_83b0_8f3515da7be1);
 
     #[actix_web::test]
     async fn test_registered_txn_create() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let txn_res = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -39,11 +34,10 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    //#[actix_web::test]
     // no longer  possible
     async fn test_registered_txn_create_fails_dupe() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let txn_res = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -72,8 +66,8 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_inner_charge_creates() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let rtx = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -117,8 +111,8 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_inner_charge_creates_several() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let rtx = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -182,8 +176,8 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_inner_charge_fails_dupe_success() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let rtx = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -239,8 +233,8 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_inner_charge_fails_no_registered_txn() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
             user.id,
@@ -267,8 +261,8 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_outer_charge_success() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let rtx = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -280,12 +274,7 @@ mod entity_tests {
 
 
         let card = PassthroughCard::create_from_api_card(
-            &create_test_lithic_card(
-                "09".to_string(),
-                "2026".to_string(),
-                "1234".to_string(),
-                Uuid::new_v4()
-            ),
+            &create_mock_lithic_card(),
             &user
         ).await.expect("should create card");
 
@@ -316,16 +305,11 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_outer_charge_fails_no_registered_txn() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
 
         let card = PassthroughCard::create_from_api_card(
-            &create_test_lithic_card(
-                "09".to_string(),
-                "2026".to_string(),
-                "1234".to_string(),
-                Uuid::new_v4()
-            ),
+            &create_mock_lithic_card(),
             &user
         ).await.expect("should create card");
 
@@ -347,8 +331,8 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_outer_charge_fails_dupe_registered_txn() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let rtx = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -360,12 +344,7 @@ mod entity_tests {
 
 
         let card = PassthroughCard::create_from_api_card(
-            &create_test_lithic_card(
-                "09".to_string(),
-                "2026".to_string(),
-                "1234".to_string(),
-                Uuid::new_v4()
-            ),
+            &create_mock_lithic_card(),
             &user
         ).await.expect("should create card");
 
@@ -408,8 +387,8 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_transaction_ledger_ok() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let rtx = RegisteredTransaction::insert(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -445,12 +424,7 @@ mod entity_tests {
         assert_eq!(inner_charge.registered_transaction_id, rtx.id);
 
         let outer_card = PassthroughCard::create_from_api_card(
-            &create_test_lithic_card(
-                "09".to_string(),
-                "2026".to_string(),
-                "1234".to_string(),
-                Uuid::new_v4()
-            ),
+            &create_mock_lithic_card(),
             &user
         ).await.expect("should create card");
 

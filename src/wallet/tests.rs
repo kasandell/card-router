@@ -10,9 +10,13 @@ mod tests {
     use crate::credit_card_type::dao::MockCreditCardDaoTrait;
     use crate::data_error::DataError;
     use crate::error_type::ErrorType;
-    use crate::schema::wallet::payment_method_id;
-    use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
-    use crate::test_helper::{create_credit_card, create_user_in_mem, create_wallet_card, create_wallet_card_attempt, initialize_user};
+    use crate::test_helper::{
+        credit_card::create_mock_credit_card,
+        wallet::create_mock_wallet,
+        user::create_mock_user
+    };
+    use crate::test_helper::wallet::create_mock_wallet_attempt;
+
     use crate::wallet::constant::WalletCardAttemptStatus;
     use crate::wallet::dao::{MockWalletCardAttemtDaoTrait, MockWalletDaoTrait};
     use crate::wallet::engine::Engine;
@@ -21,6 +25,7 @@ mod tests {
     const USER_ID: i32 = 1;
     const CREDIT_CARD_ID: i32 = 1;
     const CREDIT_CARD_PUBLIC_ID: Uuid = Uuid::from_u128(0x9cb4cf49_5c3d_4647_83b0_8f3515da7be1);
+    const CREDIT_CARD_NAME: &str = "Sapphire Reserve";
 
     #[actix_web::test]
     async fn test_register_attempt() {
@@ -29,12 +34,13 @@ mod tests {
         let mut w_dao = MockWalletDaoTrait::new();
         let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
-        let cc = create_credit_card(CREDIT_CARD_ID);
-        let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let mut wca = create_mock_wallet_attempt();
 
-        let user = create_user_in_mem(USER_ID).await;
+        let user = create_mock_user();
 
         let expected_reference_id = Uuid::new_v4().to_string();
+        wca.expected_reference_id = expected_reference_id.clone();
         let expected_reference_id_clone = expected_reference_id.clone();
 
         wca_dao.expect_insert()
@@ -80,10 +86,9 @@ mod tests {
         let mut w_dao = MockWalletDaoTrait::new();
         let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
-        let cc = create_credit_card(CREDIT_CARD_ID);
-        let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
-
-        let user = create_user_in_mem(USER_ID).await;
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let wca = create_mock_wallet_attempt();
+        let user = create_mock_user();
 
         let expected_reference_id: String = Uuid::new_v4().to_string();
         let expected_reference_id_clone = expected_reference_id.clone();
@@ -131,10 +136,10 @@ mod tests {
         let mut w_dao = MockWalletDaoTrait::new();
         let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
-        let cc = create_credit_card(CREDIT_CARD_ID);
-        let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let wca = create_mock_wallet_attempt();
 
-        let user = create_user_in_mem(USER_ID).await;
+        let user = create_mock_user();
 
         let expected_reference_id = Uuid::new_v4().to_string();
         let expected_reference_id_clone = expected_reference_id.clone();
@@ -192,11 +197,11 @@ mod tests {
         let mut w_dao = MockWalletDaoTrait::new();
         let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
-        let cc = create_credit_card(CREDIT_CARD_ID);
-        let wca = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let wca = create_mock_wallet_attempt();
 
 
-        let user = create_user_in_mem(USER_ID).await;
+        let user = create_mock_user();
 
         let expected_reference_id = Uuid::new_v4().to_string();
         let expected_reference_id_clone = expected_reference_id.clone();
@@ -208,7 +213,7 @@ mod tests {
         let psp_id_clone = psp_id.clone();
 
 
-        let wallet_card = create_wallet_card(USER_ID);
+        let wallet_card = create_mock_wallet();
 
         let mut matched = wca.clone();
         matched.id = 1;
@@ -275,16 +280,16 @@ mod tests {
         let mut w_dao = MockWalletDaoTrait::new();
         let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
-        let cc = create_credit_card(CREDIT_CARD_ID);
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
 
-        let user = create_user_in_mem(USER_ID).await;
+        let user = create_mock_user();
 
         let expected_reference_id = Uuid::new_v4().to_string();
 
         let new_card_id = Uuid::new_v4().to_string();
         let psp_id = Uuid::new_v4().to_string();
 
-        let mut matched = create_wallet_card_attempt(USER_ID, CREDIT_CARD_ID);
+        let mut matched = create_mock_wallet_attempt();
         matched.id = 1;
         matched.credit_card_id = 1;
         matched.expected_reference_id = expected_reference_id.clone();
@@ -332,13 +337,13 @@ mod tests {
         let mut w_dao = MockWalletDaoTrait::new();
         let mut adyen_service = MockAdyenChargeServiceTrait::new();
 
-        let user = create_user_in_mem(USER_ID).await;
+        let user = create_mock_user();
 
         let expected_reference_id = Uuid::new_v4().to_string();
         let new_card_id = Uuid::new_v4().to_string();
         let psp_id = Uuid::new_v4().to_string();
 
-        let wallet_card = create_wallet_card(USER_ID);
+        let wallet_card = create_mock_wallet();
 
         wca_dao.expect_find_by_reference_id()
             .times(1)

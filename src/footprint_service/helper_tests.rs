@@ -11,8 +11,8 @@ mod helper_tests {
         individual_request_part_for_customer
     };
 
-    #[actix_web::test]
-    async fn test_individual_request_part() {
+    #[test]
+    fn test_individual_request_part() {
         let card_id = "1234";
         assert_eq!("card.1234.number", &individual_request_part(card_id, &CardPart::CardNumber));
         assert_eq!("card.1234.cvc", &individual_request_part(card_id, &CardPart::Cvc));
@@ -20,8 +20,8 @@ mod helper_tests {
         assert_eq!("card.1234.name", &individual_request_part(card_id, &CardPart::Name));
     }
 
-    #[actix_web::test]
-    async fn test_all_request_parts() {
+    #[test]
+    fn test_all_request_parts() {
         let card_id = "1234";
         let expected = vec![
             "card.1234.cvc".to_string(),
@@ -34,8 +34,8 @@ mod helper_tests {
     }
 
 
-    #[actix_web::test]
-    async fn test_individual_request_part_for_customer() {
+    #[test]
+    fn test_individual_request_part_for_customer() {
         let card_id = "1234";
         let customer_id = "abc";
         assert_eq!("abc.card.1234.number", &individual_request_part_for_customer(customer_id, card_id, &CardPart::CardNumber));
@@ -44,8 +44,8 @@ mod helper_tests {
         assert_eq!("abc.card.1234.name", &individual_request_part_for_customer(customer_id, card_id, &CardPart::Name));
     }
 
-    #[actix_web::test]
-    async fn test_individual_request_part_for_customer_template() {
+    #[test]
+    fn test_individual_request_part_for_customer_template() {
         let card_id = "1234";
         let customer_id = "abc";
         assert_eq!("{{ abc.card.1234.number }}", &individual_request_part_for_customer_template(customer_id, card_id, &CardPart::CardNumber));
@@ -54,15 +54,15 @@ mod helper_tests {
         assert_eq!("{{ abc.card.1234.name }}", &individual_request_part_for_customer_template(customer_id, card_id, &CardPart::Name));
     }
 
-    #[actix_web::test]
-    async fn test_individual_request_part_for_customer_template_suffix() {
+    #[test]
+    fn test_individual_request_part_for_customer_template_suffix() {
         let card_id = "1234";
         let customer_id = "abc";
         assert_eq!("{{ abc.card.1234.expiration | suffix(2) }}", &individual_request_part_for_customer_with_suffix_template(customer_id, card_id, &CardPart::Expiration));
     }
 
-    #[actix_web::test]
-    async fn test_individual_request_part_for_customer_template_prefix() {
+    #[test]
+    fn test_individual_request_part_for_customer_template_prefix() {
         let card_id = "1234";
         let customer_id = "abc";
         assert_eq!("{{ abc.card.1234.expiration | prefix(2) }}", &individual_request_part_for_customer_with_prefix_template(customer_id, card_id, &CardPart::Expiration));

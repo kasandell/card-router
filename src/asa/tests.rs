@@ -1,14 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use crate::asa::response::{
-        AsaResponseResult,
-        AvsResponseResult
-    };
-    use crate::charge_engine::entity::ChargeEngineResult;
+    use crate::asa::response::AsaResponseResult;
     use serde_json;
+    use crate::charge_engine::entity::ChargeEngineResult;
 
-    #[actix_web::test]
-    async fn test_asa_from_str() {
+    #[test]
+    fn test_asa_from_str() {
         assert_eq!(AsaResponseResult::AccountInactive, AsaResponseResult::from("ACCOUNT_INACTIVE"));
         assert_eq!(AsaResponseResult::AvsInvalid, AsaResponseResult::from("AVS_INVALID"));
         assert_eq!(AsaResponseResult::CardClosed, AsaResponseResult::from("CARD_CLOSED"));
@@ -20,8 +17,8 @@ mod tests {
         assert_eq!(AsaResponseResult::UnauthorizedMerchant, AsaResponseResult::from("WEIRD_CODE"));
     }
 
-    #[actix_web::test]
-    async fn test_asa_from_string() {
+    #[test]
+    fn test_asa_from_string() {
         assert_eq!(AsaResponseResult::AccountInactive, AsaResponseResult::from("ACCOUNT_INACTIVE".to_string()));
         assert_eq!(AsaResponseResult::AvsInvalid, AsaResponseResult::from("AVS_INVALID".to_string()));
         assert_eq!(AsaResponseResult::CardClosed, AsaResponseResult::from("CARD_CLOSED".to_string()));
@@ -33,8 +30,8 @@ mod tests {
         assert_eq!(AsaResponseResult::UnauthorizedMerchant, AsaResponseResult::from("WEIRD_CODE".to_string()));
     }
 
-    #[actix_web::test]
-    async fn test_asa_to_string() {
+    #[test]
+    fn test_asa_to_string() {
         assert_eq!(String::from(AsaResponseResult::AccountInactive), "ACCOUNT_INACTIVE".to_string());
         assert_eq!(String::from(AsaResponseResult::AvsInvalid), "AVS_INVALID".to_string());
         assert_eq!(String::from(AsaResponseResult::CardClosed), "CARD_CLOSED".to_string());
@@ -45,8 +42,8 @@ mod tests {
         assert_eq!(String::from(AsaResponseResult::Approved), "APPROVED".to_string());
     }
 
-    #[actix_web::test]
-    async fn test_asa_from_charge_engine_result() {
+    #[test]
+    fn test_asa_from_charge_engine_result() {
         assert_eq!(AsaResponseResult::CardPaused, AsaResponseResult::from(ChargeEngineResult::CardPaused));
         assert_eq!(AsaResponseResult::CardClosed, AsaResponseResult::from(ChargeEngineResult::CardClosed));
         assert_eq!(AsaResponseResult::UnauthorizedMerchant, AsaResponseResult::from(ChargeEngineResult::Denied));
@@ -55,13 +52,13 @@ mod tests {
 
     }
 
-    #[actix_web::test]
-    async fn test_deserialize_asa() {
+    #[test]
+    fn test_deserialize_asa() {
 
     }
 
-    #[actix_web::test]
-    async fn test_serialize_asa() {
+    #[test]
+    fn test_serialize_asa() {
     }
 
 }

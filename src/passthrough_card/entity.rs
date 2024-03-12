@@ -185,7 +185,6 @@ impl From<LithicCard> for InsertablePassthroughCard {
     }
 }
 
-// async.await?
 impl InsertablePassthroughCard {
     pub fn convert_from(card: &Card) -> Result<Self, DataError> {
         let exp_year = card.exp_year.clone().ok_or(
@@ -205,40 +204,5 @@ impl InsertablePassthroughCard {
             passthrough_card_type: String::from(&PassthroughCardType::VIRTUAL),
             is_active: true
         })
-    }
-}
-
-#[cfg(test)]
-pub fn create_test_lithic_card(
-    exp_month: String,
-    exp_year: String,
-    last_four: String,
-    token: Uuid
-) -> Card {
-    Card {
-        created: "".to_string(),
-        cvv: None,
-        funding: Box::new(FundingAccount {
-            account_name: None,
-            created: "".to_string(),
-            last_four: "".to_string(),
-            nickname: None,
-            state: Default::default(),
-            token: Default::default(),
-            r#type: Default::default(),
-        }),
-        exp_month: Some(exp_month),
-        exp_year: Some(exp_year),
-        hostname: None,
-        last_four: last_four,
-        memo: None,
-        pan: None,
-        spend_limit: 0,
-        spend_limit_duration: Default::default(),
-        state: Default::default(),
-        auth_rule_tokens: None,
-        token: Default::default(),
-        r#type: Default::default(),
-        digital_card_art_token: None,
     }
 }

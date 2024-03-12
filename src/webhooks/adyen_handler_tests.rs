@@ -5,13 +5,13 @@ mod tests {
     use adyen_webhooks::models::{Amount, RecurringContractNotificationRequestItem, RecurringContractNotificationRequestItemWrapper};
     use adyen_webhooks::models::recurring_contract_notification_request_item::EventCode;
     use crate::wallet::entity::{InsertableCardAttempt, Wallet, WalletCardAttempt};
-    use crate::test_helper::initialize_user;
+    use crate::test_helper::user::create_user;
     use crate::wallet::constant::WalletCardAttemptStatus;
     use crate::webhooks::adyen_handler::AdyenHandler;
 
     #[actix_web::test]
     async fn test_successful_match() {
-        let user = initialize_user().await;
+        let user = create_user().await;
         let attempt_reference_id = "abcd";
         let original_psp = "xywz";
         let payment_method_id = "1234";

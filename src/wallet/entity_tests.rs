@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod entity_tests {
     use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
-    use crate::test_helper::initialize_user;
+    use crate::test_helper::user::create_user;
 
     #[actix_web::test]
     async fn test_card_create() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let stripe_pmt_id = "s_1234";
 
         let attempt = WalletCardAttempt::insert(

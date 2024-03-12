@@ -41,8 +41,6 @@ mod charge_engine;
 mod auth;
 
 #[cfg(test)]
-mod test;
-#[cfg(test)]
 mod test_helper;
 mod data_error;
 mod service_error;

@@ -5,7 +5,7 @@ mod tests {
     use crate::credit_card_type::entity::{CreditCardType, CreditCardIssuer, CreditCard};
     use crate::rule_engine::constant::DayOfMonth;
     use crate::rule_engine::request::CreateRuleRequest;
-    use crate::test_helper::initialize_user;
+    use crate::test_helper::user::create_user;
     use crate::rule_engine::engine::{
         RuleEngine,
         RuleEngineTrait,
@@ -20,7 +20,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_filter_rules() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let amount_cents = 30000;
         let mut cards: Vec<WalletDetail> = Vec::new();
         let rule_engine = Arc::new(RuleEngine::new());
@@ -59,7 +59,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_filter_rules_cashback_and_points() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let amount_cents = 30000;
         let mut cards: Vec<WalletDetail> = Vec::new();
         cards.push(
@@ -96,11 +96,10 @@ mod tests {
         assert_eq!(wallet_returned.len(), 2);
     }
 
-    //#[actix_web::test]
     // TODO: disabled while we can't get category to insert properly
     async fn test_order_user_cards_for_request() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let payment_method_id_1 = "s_1234";
         let payment_method_id_2 = "s_1235";
         let rule_mcc = "0000";

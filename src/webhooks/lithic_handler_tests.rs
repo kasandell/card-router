@@ -8,14 +8,13 @@ mod tests {
     use crate::asa::request::create_example_asa;
     use crate::asa::response::AsaResponseResult;
     use crate::rule_engine::engine::MockRuleEngineTrait;
-    use crate::user::entity::User;
     use crate::webhooks::lithic_handler::LithicHandler;
     use std::default::Default;
     use crate::footprint_service::service::MockFootprintServiceTrait;
     use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
-    use crate::schema::passthrough_card::dsl::passthrough_card;
-    use crate::schema::wallet::payment_method_id;
-    use crate::test_helper::{create_failed_inner_charge, create_full_transaction, create_passthrough_card, create_registered_transaction, create_success_inner_charge, create_success_outer_charge, default_transaction_metadata, initialize_passthrough_card, initialize_registered_transaction_for_user, initialize_user, initialize_wallet, initialize_wallet_with_payment_method};
+    use crate::test_helper::ledger::{create_mock_failed_inner_charge, create_mock_full_transaction, create_mock_registered_transaction, create_mock_success_inner_charge, create_mock_success_outer_charge, default_transaction_metadata};
+    use crate::test_helper::passthrough_card::create_mock_passthrough_card;
+    use crate::test_helper::user::create_mock_user;
     use crate::transaction::engine::MockTransactionEngineTrait;
     use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction};
     use crate::user::dao::MockUserDaoTrait;
@@ -24,7 +23,7 @@ mod tests {
     #[actix_web::test]
     pub async fn test_handle() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1).await;
+        let user = create_mock_user();
         let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
 
         metadata.amount_cents = 100;
@@ -36,7 +35,7 @@ mod tests {
         let mcc2 = metadata.mcc.clone();
 
         let passthrough_card_token = "pc_token_123";
-        let mut pc = create_passthrough_card(&user);
+        let mut pc = create_mock_passthrough_card();
         pc.token = passthrough_card_token.to_string();
 
         let payment_method_1 = "card_123";
@@ -120,27 +119,27 @@ mod tests {
         ledger_mock.expect_register_successful_inner_charge()
             .times(1)
             .return_const(
-                Ok(create_success_inner_charge(1))
+                Ok(create_mock_success_inner_charge())
             );
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
             .return_const(
-                Ok(create_failed_inner_charge(1))
+                Ok(create_mock_failed_inner_charge())
             );
         ledger_mock.expect_register_successful_outer_charge()
             .times(1)
             .return_const(
-                Ok(create_success_outer_charge(1))
+                Ok(create_mock_success_outer_charge())
             );
         ledger_mock.expect_register_full_transaction()
             .times(1)
             .return_const(
-                Ok(create_full_transaction())
+                Ok(create_mock_full_transaction())
             );
         ledger_mock.expect_register_transaction_for_user()
             .times(1)
             .return_const(
-                Ok(create_registered_transaction())
+                Ok(create_mock_registered_transaction(&metadata))
             );
 
         let handler = Arc::new(LithicHandler::new_with_engines(

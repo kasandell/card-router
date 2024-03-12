@@ -207,24 +207,6 @@ impl Engine {
             return Ok(true)
         }
         Ok(false)
-        /*
-        let cards = PassthroughCard::find_cards_for_user(user.id)?;
-        if cards.len() == 0 {
-            return Ok(false);
-        }
-        let result: Vec<&PassthroughCard> = cards
-            .iter()
-            .filter(|&card| {
-                return card.passthrough_card_status == String::from(&PassthroughCardStatus::OPEN) ||
-                    card.passthrough_card_status == String::from(&PassthroughCardStatus::PAUSED)
-
-            })
-            .collect();
-        if result.len() > 0 {
-            return Ok(true);
-        }
-        Ok(false)
-         */
     }
 
     //probably need a lifetime

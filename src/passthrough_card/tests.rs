@@ -1,34 +1,24 @@
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
-    use std::collections::HashSet;
-    use chrono::NaiveDate;
-    use lithic_client::models::{FundingAccount};
-    use lithic_client::models::card::{SpendLimitDuration, State, Type, Card};
-    use lithic_client::models::funding_account::{State as FundingState, Type as FundingType};
-    use uuid::Uuid;
+    use lithic_client::models::card::State;
     use crate::error_type::ErrorType;
     use crate::passthrough_card::constant::PassthroughCardStatus;
-    use crate::test_helper::initialize_user;
-    use crate::passthrough_card::entity::{
-        LithicCard,
-        PassthroughCard,
-        PassthroughCardStatusUpdate,
-        InsertablePassthroughCard
-    };
+    use crate::test_helper::user::create_user;
+    use crate::passthrough_card::entity::PassthroughCard;
     use crate::lithic_service::service::MockLithicServiceTrait;
     use crate::passthrough_card::engine::Engine;
-    use crate::user::entity::{User, UserMessage};
+    use crate::test_helper::passthrough_card::create_mock_lithic_card_for_status_update;
 
     #[actix_web::test]
     async fn test_create_card_for_user() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user().await;
+        let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
         let pin = "1234";
-        let mut card = create_test_card();
+        let mut card = create_mock_lithic_card_for_status_update();
         card.exp_month = Some(exp_month.to_string());
         card.exp_year = Some(exp_year.to_string());
         let mut lithic_return = card.clone();
@@ -53,13 +43,13 @@ mod tests {
 
     #[actix_web::test]
     async fn test_create_card_for_user_fails_on_dupe() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user().await;
+        let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
         let pin = "1234";
-        let mut card = create_test_card();
+        let mut card = create_mock_lithic_card_for_status_update();
         card.exp_month = Some(exp_month.to_string());
         card.exp_year = Some(exp_year.to_string());
         let mut lithic_return = card.clone();
@@ -89,12 +79,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_status_successfully_pauses() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user().await;
+        let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
-        let mut card = create_test_card();
+        let mut card = create_mock_lithic_card_for_status_update();
         card.exp_month = Some(exp_month.to_string());
         card.exp_year = Some(exp_year.to_string());
         let mut lithic_return = card.clone();
@@ -127,12 +117,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_status_successfully_closes() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user().await;
+        let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
-        let mut card = create_test_card();
+        let mut card = create_mock_lithic_card_for_status_update();
         card.exp_month = Some(exp_month.to_string());
         card.exp_year = Some(exp_year.to_string());
         let mut lithic_return = card.clone();
@@ -165,12 +155,12 @@ mod tests {
 
     #[actix_web::test]
     async fn test_status_fails_to_reopen() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
-        let user = initialize_user().await;
+        let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
-        let mut card = create_test_card();
+        let mut card = create_mock_lithic_card_for_status_update();
         card.exp_month = Some(exp_month.to_string());
         card.exp_year = Some(exp_year.to_string());
         let mut lithic_return = card.clone();
@@ -214,25 +204,5 @@ mod tests {
 
         created_card.delete_self().await.expect("card should delete cleanly");
         user.delete_self().await.expect("User should delete");
-    }
-
-
-    fn create_test_card() -> Card {
-        Card::new(
-            "".to_string(),
-            FundingAccount::new(
-                "".to_string(),
-                "1234".to_string(),
-                FundingState::Enabled,
-                Uuid::new_v4(),
-                FundingType::Checking
-            ),
-            "1234".to_string(),
-            500,
-            SpendLimitDuration::Forever,
-            State::Open,
-            Uuid::new_v4(),
-            Type::Virtual
-        )
     }
 }

@@ -2,12 +2,11 @@
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use std::fs::metadata;
+    use std::sync::Arc;
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::{PaymentCancelResponse, PaymentResponse};
     use adyen_checkout::models::payment_cancel_response::Status;
-    use chrono::NaiveDateTime;
     use crate::wallet::entity::Wallet;
     use crate::user::entity::User;
     use crate::service_error::ServiceError;
@@ -22,25 +21,34 @@ mod tests {
     use crate::adyen_service::checkout::service::*;
     use crate::asa::request::create_example_asa;
     use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
-    use crate::passthrough_card::entity::PassthroughCard;
-    use crate::test_helper::{default_transaction_metadata, initialize_registered_transaction_for_user, initialize_user, initialize_wallet, initialize_wallet_with_payment_method, initialize_passthrough_card, create_failed_inner_charge, create_success_outer_charge, create_success_inner_charge, create_full_transaction, create_passthrough_card, create_registered_transaction};
-    use crate::transaction::constant::ChargeStatus;
+    use crate::test_helper::{
+        ledger::{
+            default_transaction_metadata,
+            create_mock_registered_transaction,
+            create_mock_failed_inner_charge,
+            create_mock_success_inner_charge,
+            create_mock_failed_outer_charge,
+            create_mock_success_outer_charge
+        },
+        user::create_mock_user,
+        passthrough_card::create_mock_passthrough_card,
+        wallet::create_mock_wallet,
+    };
     use crate::transaction::engine::MockTransactionEngineTrait;
-    use crate::transaction::entity::{InnerChargeLedger, OuterChargeLedger, RegisteredTransaction, TransactionMetadata};
+    use crate::transaction::entity::RegisteredTransaction;
     use crate::user::dao::{MockUserDaoTrait, UserDaoTrait};
-    use chrono::Utc;
     use crate::error_type::ErrorType;
-    use crate::schema::wallet::payment_method_id;
     use crate::footprint_service::service::MockFootprintServiceTrait;
+    use crate::test_helper::ledger::create_mock_full_transaction;
 
     const USER_ID: i32 = 1;
 
     #[actix_web::test]
     async fn test_single_charge_fails_on_error() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID).await;
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
-        let rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
+        let user = create_mock_user();
+        let wallet = create_mock_wallet();
+        let rtx = create_mock_registered_transaction(&metadata);
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
@@ -57,7 +65,7 @@ mod tests {
             .times(1)
             .return_const(
                 Ok(
-                    create_failed_inner_charge(USER_ID)
+                    create_mock_failed_inner_charge()
                 )
             );
 
@@ -80,14 +88,14 @@ mod tests {
 
     #[actix_web::test]
     async fn test_single_charge_succeeds() {
-        let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID).await;
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
-        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata ).await;
+        let metadata = default_transaction_metadata();
+        let user = create_mock_user();
+        let wallet = create_mock_wallet();
+        let rtx = create_mock_registered_transaction(&metadata);
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let charge_service = MockAdyenChargeServiceTrait::new();
+        let user_mock = MockUserDaoTrait::new();
+        let pc_mock = MockPassthroughCardDaoTrait::new();
         let mut ledger_mock = MockTransactionEngineTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let mut resp = PaymentResponse::new();
@@ -104,7 +112,7 @@ mod tests {
             .times(1)
             .return_const(
                 Ok(
-                    create_success_inner_charge(USER_ID)
+                    create_mock_success_inner_charge()
                 )
             );
 
@@ -128,9 +136,9 @@ mod tests {
     #[actix_web::test]
     async fn test_single_charge_needs_cancel_and_succeeds() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID).await;
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
-        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata ).await;
+        let user = create_mock_user();
+        let wallet = create_mock_wallet();
+        let rtx = create_mock_registered_transaction(&metadata);
 
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
@@ -166,7 +174,7 @@ mod tests {
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
             .return_const(
-                Ok(create_failed_inner_charge(USER_ID))
+                Ok(create_mock_failed_inner_charge())
             );
 
         let engine = Arc::new(Engine::new_with_service(
@@ -189,9 +197,9 @@ mod tests {
     #[actix_web::test]
     async fn test_single_charge_does_not_go_through() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(USER_ID).await;
-        let wallet = Wallet::create_test_wallet( 1, USER_ID, 1 ).await;
-        let rtx = RegisteredTransaction::create_test_transaction( USER_ID, &metadata ).await;
+        let user = create_mock_user();
+        let wallet = create_mock_wallet();
+        let rtx = create_mock_registered_transaction(&metadata);
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
@@ -214,7 +222,7 @@ mod tests {
             .times(1)
             .return_const(
                 Ok(
-                    create_failed_inner_charge(USER_ID)
+                    create_mock_failed_inner_charge()
                 )
             );
 
@@ -240,9 +248,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_first_card_success() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1).await;
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
-
+        let user = create_mock_user();
+        let mut rtx = create_mock_registered_transaction(&metadata);
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
 
@@ -286,7 +293,7 @@ mod tests {
             .times(1)
             .return_const(
                 Ok(
-                    create_success_inner_charge(USER_ID)
+                    create_mock_success_inner_charge()
                 )
             );
 
@@ -413,7 +420,7 @@ mod tests {
             .times(1)
             .return_const(
                 Ok(
-                    create_failed_inner_charge(USER_ID)
+                    create_mock_failed_inner_charge()
                 )
             );
 
@@ -421,7 +428,7 @@ mod tests {
             .times(1)
             .return_const(
                 Ok(
-                    create_success_inner_charge(USER_ID)
+                    create_mock_success_inner_charge()
                 )
             );
 
@@ -444,8 +451,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_second_card_from_asa() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1).await;
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
+        let user = create_mock_user();
+        let mut rtx = create_mock_registered_transaction(&metadata);
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -464,7 +471,7 @@ mod tests {
         let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
         card_2.payment_method_id = payment_method_2.to_string();
 
-        let pc = create_passthrough_card(&user);
+        let pc = create_mock_passthrough_card();
 
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
@@ -523,27 +530,27 @@ mod tests {
         ledger_mock.expect_register_successful_inner_charge()
             .times(1)
             .return_const(
-                Ok(create_success_inner_charge(USER_ID))
+                Ok(create_mock_success_inner_charge())
             );
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
             .return_const(
-                Ok(create_failed_inner_charge(USER_ID))
+                Ok(create_mock_failed_inner_charge())
             );
         ledger_mock.expect_register_successful_outer_charge()
             .times(1)
             .return_const(
-                Ok(create_success_outer_charge(USER_ID))
+                Ok(create_mock_success_outer_charge())
             );
         ledger_mock.expect_register_full_transaction()
             .times(1)
             .return_const(
-                Ok(create_full_transaction())
+                Ok(create_mock_full_transaction())
             );
         ledger_mock.expect_register_transaction_for_user()
             .times(1)
             .return_const(
-                Ok(create_registered_transaction())
+                Ok(create_mock_registered_transaction(&metadata))
             );
 
         let engine = Arc::new(Engine::new_with_service(
@@ -569,9 +576,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_second_card_fails() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1).await;
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
-
+        let user = create_mock_user();
+        let mut rtx = create_mock_registered_transaction(&metadata);
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
 
@@ -642,7 +648,7 @@ mod tests {
         ledger_mock.expect_register_failed_inner_charge()
             .times(2)
             .return_const(
-                Ok(create_failed_inner_charge(USER_ID))
+                Ok(create_mock_failed_inner_charge())
             );
 
         let engine = Arc::new(Engine::new_with_service(

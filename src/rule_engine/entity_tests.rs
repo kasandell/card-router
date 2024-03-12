@@ -4,7 +4,7 @@ mod entity_tests {
     use chrono::{Utc, Duration};
     use uuid::Uuid;
     use crate::rule_engine::constant::DayOfMonth;
-    use crate::test_helper::initialize_user;
+    use crate::test_helper::user::create_user;
     use crate::rule_engine::{
         request::CreateRuleRequest,
         entity::Rule,
@@ -20,8 +20,8 @@ mod entity_tests {
     //#[actix_web::test]
     // TODO: disabled while we can't insert category in db
     async fn test_create_rule_in_db() {
-        crate::test::init();
-        let user = initialize_user().await;
+        crate::test_helper::general::init();
+        let user = create_user().await;
         let mcc = "7184";
         let category = Category::create(
             &InsertableCategory { name: "Random" }
@@ -64,7 +64,7 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_rule_invalid_start_and_recur() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -92,7 +92,7 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_rule_invalid_start_no_end() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -117,7 +117,7 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_rule_invalid_start_gt_end() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -144,7 +144,7 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_rule_invalid_mcc_merchant_none() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let rule = Rule {
@@ -167,7 +167,7 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_rule_invalid_mcc_merchant_both_some() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -192,7 +192,7 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_rule_invalid_no_reward() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let credit_card_id = 1;
         let mcc = "7184";
         let rule = Rule {
@@ -215,7 +215,7 @@ mod entity_tests {
 
     #[actix_web::test]
     async fn test_rule_invalid_both_reward() {
-        crate::test::init();
+        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let cashback_percentage_bips = Some(500);
         let credit_card_id = 1;
