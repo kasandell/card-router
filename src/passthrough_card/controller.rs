@@ -1,7 +1,7 @@
 use std::any::Any;
 use actix_web::{put, post, get, HttpResponse, web};
 use uuid::Uuid;
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::response::{HasActiveResponse, PassthroughCardResposnse};
 use crate::user::entity::User;

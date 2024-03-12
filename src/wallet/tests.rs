@@ -6,10 +6,10 @@ mod tests {
     use mockall::predicate::eq;
     use uuid::Uuid;
     use crate::adyen::checkout::service::MockAdyenChargeServiceTrait;
-    use crate::api_error::ApiError;
+    use crate::error::api_error::ApiError;
     use crate::credit_card_type::dao::MockCreditCardDaoTrait;
-    use crate::data_error::DataError;
-    use crate::error_type::ErrorType;
+    use crate::error::data_error::DataError;
+    use crate::error::error_type::ErrorType;
     use crate::test_helper::{
         credit_card::create_mock_credit_card,
         wallet::create_mock_wallet,

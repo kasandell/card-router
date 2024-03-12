@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use crate::category::entity::{Category, InsertableCategory, InsertableMccMapping, MccMapping};
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use async_trait::async_trait;
 
 #[cfg(test)]

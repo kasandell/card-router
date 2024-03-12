@@ -3,12 +3,12 @@ use async_trait::async_trait;
 use base64::Engine as base64Engine;
 use uuid::Uuid;
 use crate::user::entity::User;
-use crate::service_error::ServiceError;
+use crate::error::service_error::ServiceError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::PassthroughCard;
 use base64::engine::general_purpose;
 use lithic_client::models::card::Card;
-use crate::error_type::ErrorType;
+use crate::error::error_type::ErrorType;
 use crate::lithic::{
     service::LithicService,
     service::LithicServiceTrait,

@@ -5,8 +5,8 @@ use diesel::result::Error as DieselError;
 use diesel_async::pooled_connection::bb8::RunError;
 use r2d2::Error as R2D2Error;
 use serde_json::{json, Error as SerdeError};
-use crate::api_error::ApiError;
-use crate::error_type::ErrorType;
+use crate::error::api_error::ApiError;
+use crate::error::error_type::ErrorType;
 
 #[derive(Debug, Clone)]
 pub struct DataError {

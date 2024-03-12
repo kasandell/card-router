@@ -2,8 +2,8 @@ use std::env;
 use std::sync::Arc;
 use adyen_checkout::models::{Amount, PaymentCancelResponse, PaymentRequest, PaymentRequestPaymentMethod, PaymentResponse};
 use async_trait::async_trait;
-use crate::error_type::ErrorType;
-use crate::service_error::ServiceError;
+use crate::error::error_type::ErrorType;
+use crate::error::service_error::ServiceError;
 use footprint::apis::configuration::Configuration;
 use footprint::apis::default_api::{
     post_vault_proxy,

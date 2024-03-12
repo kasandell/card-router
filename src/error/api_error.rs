@@ -12,9 +12,9 @@ use serde_json::{json, Error as SerdeError};
 use std::fmt;
 use std::num::ParseIntError;
 use crate::adyen;
-use crate::data_error::DataError;
-use crate::error_type::ErrorType;
-use crate::service_error::ServiceError;
+use crate::error::data_error::DataError;
+use crate::error::error_type::ErrorType;
+use crate::error::service_error::ServiceError;
 
 #[derive(Debug, Clone)]
 pub struct ApiError {

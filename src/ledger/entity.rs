@@ -8,8 +8,8 @@ use crate::util::db;
 use crate::wallet::entity::Wallet;
 use diesel::prelude::*;
 use crate::asa::request::AsaRequest;
-use crate::data_error::DataError;
-use crate::error_type::ErrorType;
+use crate::error::data_error::DataError;
+use crate::error::error_type::ErrorType;
 use crate::ledger::constant::ChargeStatus;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

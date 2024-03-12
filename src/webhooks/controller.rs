@@ -4,7 +4,7 @@ use actix_web::{
     post,
     HttpResponse,
 };
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use crate::asa::request::AsaRequest;
 use adyen_webhooks::models::{
     RecurringContractNotificationRequest,

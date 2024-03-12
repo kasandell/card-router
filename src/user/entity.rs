@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 
 #[derive(Serialize, Deserialize, AsChangeset)]
 #[diesel(table_name = users)]

@@ -6,7 +6,7 @@ use crate::{schema::{
     credit_card_type
 }, credit_card_type::entity::{CreditCardType,CreditCard,CreditCardIssuer}};
 use crate::util::db;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::user::entity::User;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;

@@ -1,6 +1,6 @@
 use std::fmt;
 use serde::Deserialize;
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use diesel::result::Error as DieselError;
 use r2d2::Error as R2D2Error;
 

@@ -1,5 +1,5 @@
 use actix_web::{put, post, get, HttpResponse, web};
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use crate::credit_card_type::dao::CreditCardDaoTrait;
 use crate::credit_card_type::response::CardTypeResponse;
 use crate::middleware::services::Services;

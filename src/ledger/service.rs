@@ -5,7 +5,7 @@ use mockall::automock;
 
 use uuid::Uuid;
 use crate::passthrough_card::entity::PassthroughCard;
-use crate::service_error::ServiceError;
+use crate::error::service_error::ServiceError;
 use crate::ledger::constant::ChargeStatus;
 use crate::ledger::dao::{LedgerDao, LedgerDaoTrait};
 use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};

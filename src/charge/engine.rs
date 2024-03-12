@@ -15,13 +15,13 @@ use crate::charge::entity::{
     ChargeEngineResult,
     ChargeCardAttemptResult
 };
-use crate::error_type::ErrorType;
+use crate::error::error_type::ErrorType;
 use crate::footprint::request::ChargeThroughProxyRequest;
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
 use crate::schema::registered_transactions::transaction_id;
-use crate::service_error::ServiceError;
+use crate::error::service_error::ServiceError;
 use crate::ledger::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;

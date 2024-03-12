@@ -1,6 +1,6 @@
 use chrono::Utc;
 use uuid::Uuid;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt};
 

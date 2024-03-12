@@ -1,7 +1,7 @@
 use actix_web::{web, get, post, HttpResponse, services};
 use uuid::Uuid;
-use crate::api_error::ApiError;
-use crate::error_type::ErrorType;
+use crate::error::api_error::ApiError;
+use crate::error::error_type::ErrorType;
 use crate::auth::entity::Claims;
 use crate::middleware::services::Services;
 use crate::user::dao::{UserDao, UserDaoTrait};

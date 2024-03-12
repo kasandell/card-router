@@ -5,7 +5,7 @@ use actix_web::{
     HttpResponse,
 };
 
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use crate::middleware::services::Services;
 use crate::user::entity::User;
 use crate::wallet::service::WalletService;

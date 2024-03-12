@@ -4,7 +4,7 @@ use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::util::db;
 use diesel_async::RunQueryDsl;
 

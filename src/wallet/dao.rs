@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::user::entity::User;
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt, UpdateCardAttempt};
 use async_trait::async_trait;

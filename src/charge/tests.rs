@@ -8,7 +8,7 @@ mod tests {
     use adyen_checkout::models::{PaymentCancelResponse, PaymentResponse};
     use adyen_checkout::models::payment_cancel_response::Status;
     use crate::user::entity::User;
-    use crate::service_error::ServiceError;
+    use crate::error::service_error::ServiceError;
     use crate::charge::{
         engine::Engine,
         entity::{
@@ -36,7 +36,7 @@ mod tests {
     use crate::ledger::service::MockLedgerServiceTrait;
     use crate::ledger::entity::RegisteredTransaction;
     use crate::user::dao::{MockUserDaoTrait, UserDaoTrait};
-    use crate::error_type::ErrorType;
+    use crate::error::error_type::ErrorType;
     use crate::footprint::service::MockFootprintServiceTrait;
     use crate::test_helper::ledger::create_mock_full_transaction;
 

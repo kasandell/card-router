@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use lithic_client::models::Card;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::{LithicCard, PassthroughCard};
 use crate::user::entity::User;

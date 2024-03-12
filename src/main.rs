@@ -23,7 +23,6 @@ use crate::auth::entity::{Claims, Auth0Config};
 mod adyen;
 mod asa;
 mod util;
-mod api_error;
 mod constant;
 mod lithic;
 mod credit_card_type;
@@ -42,11 +41,9 @@ mod auth;
 
 #[cfg(test)]
 mod test_helper;
-mod data_error;
-mod service_error;
 mod environment;
-mod error_type;
 mod footprint;
+mod error;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {

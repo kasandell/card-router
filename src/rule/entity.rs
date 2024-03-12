@@ -6,7 +6,7 @@ use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::util::math::{
     get_cents_of_cashback,
     get_number_of_points

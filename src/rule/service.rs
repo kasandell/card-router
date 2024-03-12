@@ -5,12 +5,12 @@ use async_trait::async_trait;
 
 use chrono::Utc;
 
-use crate::service_error::ServiceError;
+use crate::error::service_error::ServiceError;
 use crate::asa::request::AsaRequest;
 use crate::category::dao::{MccMappingDao, MccMappingDaoTrait};
 use crate::category::entity::MccMapping;
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
-use crate::error_type::ErrorType;
+use crate::error::error_type::ErrorType;
 use crate::user::entity::User;
 use crate::util::date::adjust_recurring_to_date;
 use crate::wallet::entity::Wallet;

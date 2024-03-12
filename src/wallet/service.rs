@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use uuid::Uuid;
 use crate::adyen::checkout::service::{AdyenChargeServiceTrait, ChargeService};
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
-use crate::service_error::ServiceError;
+use crate::error::service_error::ServiceError;
 use crate::user::entity::User;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
@@ -11,7 +11,7 @@ use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, W
 use crate::wallet::request::{AddCardRequest, MatchAttemptRequest, RegisterAttemptRequest};
 use adyen_checkout::models::{PaymentRequestPaymentMethod as AdyenPaymentMethod, PaymentResponse};
 use crate::constant::constant;
-use crate::error_type::ErrorType;
+use crate::error::error_type::ErrorType;
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one

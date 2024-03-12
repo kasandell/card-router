@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
 use async_trait::async_trait;
 

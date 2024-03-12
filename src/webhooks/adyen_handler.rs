@@ -14,7 +14,7 @@ use crate::wallet::entity::{
 
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::service::WalletService as WalletEngine;
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use crate::wallet::request::MatchAttemptRequest;
 
 pub struct AdyenHandler {

@@ -13,9 +13,9 @@ use jsonwebtoken::{
 use serde::Deserialize;
 use std::{collections::HashSet, future::Future, pin::Pin, env};
 use futures_util::TryStreamExt;
-use crate::api_error::ApiError;
+use crate::error::api_error::ApiError;
 use crate::constant;
-use crate::error_type::ErrorType;
+use crate::error::error_type::ErrorType;
 
 #[derive(Clone, Deserialize)]
 pub struct Auth0Config {

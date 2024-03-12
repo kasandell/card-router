@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::rule::entity::Rule;
 use crate::rule::request::CreateRuleRequest;
 use async_trait::async_trait;

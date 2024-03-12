@@ -3,7 +3,7 @@ use crate::{
         category,
         mcc_mapping
     },
-    data_error::DataError,
+    error::data_error::DataError,
     util::db
 };
 use chrono::NaiveDateTime;

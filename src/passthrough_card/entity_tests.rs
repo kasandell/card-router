@@ -2,7 +2,7 @@
 mod tests {
     use std::collections::HashSet;
     use chrono::NaiveDate;
-    use crate::error_type::ErrorType;
+    use crate::error::error_type::ErrorType;
     use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardType};
     use crate::test_helper::user::create_user;
     use crate::passthrough_card::entity::{

@@ -1,5 +1,5 @@
 use uuid::Uuid;
-use crate::data_error::DataError;
+use crate::error::data_error::DataError;
 use crate::user::entity::{User, UserMessage};
 use async_trait::async_trait;
 
