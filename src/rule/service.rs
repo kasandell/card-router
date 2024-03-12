@@ -19,13 +19,13 @@ use super::constant::DayOfMonth;
 use super::entity::Rule;
 
 pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
-pub struct RuleEngine {
+pub struct RuleService {
     mcc_mapping_dao: Arc<dyn MccMappingDaoTrait>,
 }
 
 #[mockall::automock]
 #[async_trait(?Send)]
-pub trait RuleEngineTrait {
+pub trait RuleServiceTrait {
     async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
 }
 
@@ -33,7 +33,7 @@ pub trait RuleEngineTrait {
 
 
 #[async_trait(?Send)]
-impl RuleEngineTrait for RuleEngine {
+impl RuleServiceTrait for RuleService {
     async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
@@ -62,7 +62,7 @@ impl RuleEngineTrait for RuleEngine {
 
 // TODO: create as a self reference?
 
-impl RuleEngine {
+impl RuleService {
     pub fn new() -> Self {
         Self {
             mcc_mapping_dao: Arc::new(MccMappingDao::new())

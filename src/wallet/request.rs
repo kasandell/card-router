@@ -172,7 +172,7 @@ pub struct PaymentMethod {
     /// The type of flow to initiate.
     #[serde(rename = "subtype", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub subtype: Option<Option<Subtype>>,
-    /// The Masterpass transaction ID.
+    /// The Masterpass ledger ID.
     #[serde(rename = "masterpassTransactionId", deserialize_with = "Option::deserialize")]
     pub masterpass_transaction_id: Option<serde_json::Value>,
     /// The unique ID associated with the order.

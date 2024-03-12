@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use adyen_checkout::models::payment_response::ResultCode;
-    use crate::charge_engine::entity::{
+    use crate::charge::entity::{
             ChargeCardAttemptResult,
             ChargeEngineResult
     };

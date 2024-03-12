@@ -3,8 +3,8 @@ mod entity_tests {
     use crate::passthrough_card::entity::PassthroughCard;
     use crate::test_helper::passthrough_card::create_mock_lithic_card;
     use crate::test_helper::user::create_user;
-    use crate::transaction::constant::ChargeStatus;
-    use crate::transaction::entity::{InsertableInnerChargeLedger, InnerChargeLedger, InsertableOuterChargeLedger, OuterChargeLedger, RegisteredTransaction, InsertableRegisteredTransaction, TransactionLedger, InsertableTransactionLedger};
+    use crate::ledger::constant::ChargeStatus;
+    use crate::ledger::entity::{InsertableInnerChargeLedger, InnerChargeLedger, InsertableOuterChargeLedger, OuterChargeLedger, RegisteredTransaction, InsertableRegisteredTransaction, TransactionLedger, InsertableTransactionLedger};
     use crate::wallet::entity::Wallet;
 
     const TEST_MEMO: &str = "Test charge";
@@ -24,12 +24,12 @@ mod entity_tests {
             }
         ).await;
 
-        let txn = txn_res.expect("transaction should be ok");
+        let txn = txn_res.expect("ledger should be ok");
         assert_eq!(txn.user_id, user.id);
         assert_eq!(txn.memo, TEST_MEMO);
         assert_eq!(txn.amount_cents, TEST_AMOUNT);
         assert_eq!(txn.mcc, TEST_MCC);
-        txn.delete_self().await.expect("transaction should delete");
+        txn.delete_self().await.expect("ledger should delete");
 
         user.delete_self().await.expect("should delete");
     }
@@ -47,7 +47,7 @@ mod entity_tests {
             }
         ).await;
 
-        let txn = txn_res.expect("transaction should be ok");
+        let txn = txn_res.expect("ledger should be ok");
         assert_eq!(txn.user_id, user.id);
         assert_eq!(txn.memo, TEST_MEMO);
         assert_eq!(txn.amount_cents, TEST_AMOUNT);
@@ -60,7 +60,7 @@ mod entity_tests {
                 mcc: TEST_MCC
             }
         ).await.expect_err("Expect api error");
-        txn.delete_self().await.expect("transaction should delete");
+        txn.delete_self().await.expect("ledger should delete");
         user.delete_self().await.expect("should delete");
     }
 
@@ -75,7 +75,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC
             }
-        ).await.expect("transaction should be ok");
+        ).await.expect("ledger should be ok");
 
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
@@ -120,7 +120,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC
             }
-        ).await.expect("transaction should be ok");
+        ).await.expect("ledger should be ok");
 
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
@@ -185,7 +185,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC,
             }
-        ).await.expect("transaction should be ok");
+        ).await.expect("ledger should be ok");
 
 
         let (card, ca) = Wallet::create_test_wallet_in_db(
@@ -270,7 +270,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC
             }
-        ).await.expect("transaction should be ok");
+        ).await.expect("ledger should be ok");
 
 
         let card = PassthroughCard::create_from_api_card(
@@ -340,7 +340,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC
             }
-        ).await.expect("transaction should be ok");
+        ).await.expect("ledger should be ok");
 
 
         let card = PassthroughCard::create_from_api_card(
@@ -396,7 +396,7 @@ mod entity_tests {
                 amount_cents: TEST_AMOUNT,
                 mcc: TEST_MCC
             }
-        ).await.expect("transaction should be ok");
+        ).await.expect("ledger should be ok");
 
 
         let (wallet_card, ca) = Wallet::create_test_wallet_in_db(

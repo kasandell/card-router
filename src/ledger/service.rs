@@ -6,15 +6,15 @@ use mockall::automock;
 use uuid::Uuid;
 use crate::passthrough_card::entity::PassthroughCard;
 use crate::service_error::ServiceError;
-use crate::transaction::constant::ChargeStatus;
-use crate::transaction::dao::{TransactionDao, TransactionDaoTrait};
-use crate::transaction::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
+use crate::ledger::constant::ChargeStatus;
+use crate::ledger::dao::{LedgerDao, LedgerDaoTrait};
+use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
-pub trait TransactionEngineTrait {
+pub trait LedgerServiceTrait {
     async fn register_transaction_for_user(
         self: Arc<Self>,
         user: &User,
@@ -57,20 +57,20 @@ pub trait TransactionEngineTrait {
     ) -> Result<TransactionLedger, ServiceError>;
 }
 
-pub struct Engine {
-    dao: Arc<dyn TransactionDaoTrait>
+pub struct LedgerService {
+    dao: Arc<dyn LedgerDaoTrait>
 }
 
-impl Engine {
+impl LedgerService {
     pub fn new() -> Self {
         Self {
-            dao: Arc::new(TransactionDao {})
+            dao: Arc::new(LedgerDao {})
         }
     }
 }
 
 #[async_trait(?Send)]
-impl TransactionEngineTrait for Engine {
+impl LedgerServiceTrait for LedgerService {
     async fn register_transaction_for_user(
         self: Arc<Self>,
         user: &User,

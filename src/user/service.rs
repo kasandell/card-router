@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use async_trait::async_trait;
 use crate::error_type::ErrorType;
-use crate::footprint_service::service::{FootprintService, FootprintServiceTrait};
+use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::service_error::ServiceError;
 use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::entity::{User, UserMessage};

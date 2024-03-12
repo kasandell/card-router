@@ -137,21 +137,6 @@ impl User {
     }
 
     #[cfg(test)]
-    pub async fn create_test_user(
-        id: i32,
-    ) -> Self {
-        User {
-            id: id,
-            public_id: Uuid::new_v4(),
-            email: "test@test.com".to_string(),
-            auth0_user_id: "TestPassword".to_string(),
-            created_at: Utc::now().naive_utc(),
-            updated_at: Utc::now().naive_utc(),
-            footprint_vault_id: "test".to_string()
-        }
-    }
-
-    #[cfg(test)]
     pub async fn delete_all() -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 

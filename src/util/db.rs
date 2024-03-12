@@ -80,7 +80,7 @@ where
 {
     async fn on_acquire(&self, conn: &mut C) -> Result<(), E> {
         conn.begin_test_transaction().await
-            .expect("Failed to start test transaction");
+            .expect("Failed to start test ledger");
         Ok(())
     }
 }
@@ -94,7 +94,7 @@ where
 {
     fn on_acquire(&self, conn: &mut C) -> Result<(), E> {
         conn.begin_test_transaction()
-            .expect("Failed to start test transaction");
+            .expect("Failed to start test ledger");
         Ok(())
     }
 }

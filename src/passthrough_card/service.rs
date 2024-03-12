@@ -9,24 +9,24 @@ use crate::passthrough_card::entity::PassthroughCard;
 use base64::engine::general_purpose;
 use lithic_client::models::card::Card;
 use crate::error_type::ErrorType;
-use crate::lithic_service::{
+use crate::lithic::{
     service::LithicService,
     service::LithicServiceTrait,
 };
 use crate::passthrough_card::crypto::encrypt_pin;
 
-pub struct Engine {
+pub struct PassthroughCardService {
     pub lithic_service: Arc<dyn LithicServiceTrait>
 }
 
-impl Engine {
+impl PassthroughCardService {
     pub fn new() -> Self {
-        Engine {
+        Self {
             lithic_service: Arc::new(LithicService::new())
         }
     }
     pub fn new_with_service(service: Arc<dyn LithicServiceTrait>) -> Self {
-        Engine {
+        Self {
             lithic_service: service
         }
     }
@@ -80,7 +80,7 @@ impl Engine {
         user: &User,
         status: PassthroughCardStatus
     ) -> Result<(), ServiceError> {
-        info!("Searching for cards for userId={} to go to status={}", user.id, String::from(&status));
+        info!("Searching for cards for userId={} to go to status={}", user.id, &status);
         let card = self.clone().find_card_for_user_in_status(
             &user,
             &status
@@ -90,15 +90,15 @@ impl Engine {
 
         let updated = PassthroughCard::update_status(
             card.id,
-            status.clone()
+            status
         ).await?;
 
         info!("Updated card={} for userId={}", card.id, user.id);
 
         let lithic_result = match &status {
-            PassthroughCardStatus::CLOSED => self.close_lithic_card(&updated.token).await,
-            PassthroughCardStatus::OPEN => self.activate_lithic_card(&updated.token).await,
-            PassthroughCardStatus::PAUSED =>  self.pause_lithic_card(&updated.token).await,
+            PassthroughCardStatus::Closed => self.close_lithic_card(&updated.token).await,
+            PassthroughCardStatus::Open => self.activate_lithic_card(&updated.token).await,
+            PassthroughCardStatus::Paused =>  self.pause_lithic_card(&updated.token).await,
             _ => Err(ServiceError::new(ErrorType::InternalServerError, "Invalid state transition from engine"))
         };
 
@@ -116,7 +116,7 @@ impl Engine {
                 // TODO: don't call direct
                 let rollback = PassthroughCard::update_status(
                     updated.id,
-                    PassthroughCardStatus::from(&*previous_status)
+                    previous_status
                 ).await;
 
                 match rollback {
@@ -142,31 +142,29 @@ impl Engine {
         status: &PassthroughCardStatus
     ) -> Result<PassthroughCard, ServiceError> {
         // TODO: don't call db direct
+        let cards: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
         return match status {
-            PassthroughCardStatus::CLOSED => {
-                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
+            PassthroughCardStatus::Closed => {
                 self.filter_cards(
-                    &v,
+                    &cards,
                     |card| {card.is_active.is_some_and(|active|active)}
                 ).cloned()
             },
-            PassthroughCardStatus::OPEN => {
-                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
+            PassthroughCardStatus::Open => {
                 self.filter_cards(
-                    &v,
+                    &cards,
                     |item| {
                         item.is_active.is_some_and(|active| active)
-                            && item.passthrough_card_status == String::from(&PassthroughCardStatus::PAUSED)
+                            && item.passthrough_card_status == PassthroughCardStatus::Paused
                     }
                 ).cloned()
             },
-            PassthroughCardStatus::PAUSED => {
-                let v: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
+            PassthroughCardStatus::Paused => {
                 self.filter_cards(
-                    &v,
+                    &cards,
                     |item| {
                         item.is_active.is_some_and(|active| active)
-                            && item.passthrough_card_status == String::from(&PassthroughCardStatus::OPEN)
+                            && item.passthrough_card_status == PassthroughCardStatus::Open
                     }
                 ).cloned()
             },
@@ -185,8 +183,8 @@ impl Engine {
         let result: Vec<&PassthroughCard> = cards
             .iter()
             .filter(|&card| {
-                return card.passthrough_card_status == String::from(&PassthroughCardStatus::OPEN) ||
-                    card.passthrough_card_status == String::from(&PassthroughCardStatus::PAUSED)
+                return card.passthrough_card_status == PassthroughCardStatus::Open ||
+                    card.passthrough_card_status == PassthroughCardStatus::Paused
 
             })
             .collect();

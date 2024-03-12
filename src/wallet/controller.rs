@@ -8,7 +8,7 @@ use actix_web::{
 use crate::api_error::ApiError;
 use crate::middleware::services::Services;
 use crate::user::entity::User;
-use crate::wallet::engine::Engine;
+use crate::wallet::service::WalletService;
 use crate::wallet::entity::DisplayableCardInfo;
 use crate::wallet::response::WalletCardAttemptResponse;
 use super::{

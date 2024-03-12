@@ -3,20 +3,20 @@ mod tests {
     use std::sync::Arc;
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::PaymentResponse;
-    use crate::wallet::entity::Wallet;
-    use crate::adyen_service::checkout::service::MockAdyenChargeServiceTrait;
+    use crate::adyen::checkout::service::MockAdyenChargeServiceTrait;
     use crate::asa::request::create_example_asa;
     use crate::asa::response::AsaResponseResult;
-    use crate::rule_engine::engine::MockRuleEngineTrait;
+    use crate::rule::service::MockRuleServiceTrait;
     use crate::webhooks::lithic_handler::LithicHandler;
     use std::default::Default;
-    use crate::footprint_service::service::MockFootprintServiceTrait;
+    use crate::footprint::service::MockFootprintServiceTrait;
     use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
     use crate::test_helper::ledger::{create_mock_failed_inner_charge, create_mock_full_transaction, create_mock_registered_transaction, create_mock_success_inner_charge, create_mock_success_outer_charge, default_transaction_metadata};
     use crate::test_helper::passthrough_card::create_mock_passthrough_card;
     use crate::test_helper::user::create_mock_user;
-    use crate::transaction::engine::MockTransactionEngineTrait;
-    use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction};
+    use crate::test_helper::wallet::create_mock_wallet_with_args;
+    use crate::ledger::service::MockLedgerServiceTrait;
+    use crate::ledger::entity::{InnerChargeLedger, RegisteredTransaction};
     use crate::user::dao::MockUserDaoTrait;
 
     // TODO: how to use the mocks appropriately here / how to share them
@@ -24,7 +24,7 @@ mod tests {
     pub async fn test_handle() {
         let mut metadata = default_transaction_metadata();
         let user = create_mock_user();
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
+        let mut rtx = create_mock_registered_transaction(&metadata);
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -41,16 +41,16 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
+        let mut card_1 = create_mock_wallet_with_args( 1, 1, 1 );
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
+        let mut card_2 = create_mock_wallet_with_args( 2, 1, 2 );
         card_2.payment_method_id = payment_method_2.to_string();
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
-        let mut rule_engine = MockRuleEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
+        let mut rule_engine = MockRuleServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();

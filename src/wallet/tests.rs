@@ -5,7 +5,7 @@ mod tests {
     use std::sync::Arc;
     use mockall::predicate::eq;
     use uuid::Uuid;
-    use crate::adyen_service::checkout::service::MockAdyenChargeServiceTrait;
+    use crate::adyen::checkout::service::MockAdyenChargeServiceTrait;
     use crate::api_error::ApiError;
     use crate::credit_card_type::dao::MockCreditCardDaoTrait;
     use crate::data_error::DataError;
@@ -19,7 +19,7 @@ mod tests {
 
     use crate::wallet::constant::WalletCardAttemptStatus;
     use crate::wallet::dao::{MockWalletCardAttemtDaoTrait, MockWalletDaoTrait};
-    use crate::wallet::engine::Engine;
+    use crate::wallet::service::WalletService;
     use crate::wallet::request::{MatchAttemptRequest, RegisterAttemptRequest};
 
     const USER_ID: i32 = 1;
@@ -61,7 +61,7 @@ mod tests {
                 Ok(cc.clone())
             );
 
-        let wallet_engine = Arc::new(Engine::new_with_services(
+        let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(cc_dao),
             Arc::new(wca_dao),
             Arc::new(w_dao),
@@ -111,7 +111,7 @@ mod tests {
                 Ok(cc.clone())
             );
 
-        let wallet_engine = Arc::new(Engine::new_with_services(
+        let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(cc_dao),
             Arc::new(wca_dao),
             Arc::new(w_dao),
@@ -162,7 +162,7 @@ mod tests {
                 Ok(cc.clone())
             );
 
-        let wallet_engine = Arc::new(Engine::new_with_services(
+        let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(cc_dao),
             Arc::new(wca_dao),
             Arc::new(w_dao),
@@ -255,7 +255,7 @@ mod tests {
                 Ok(wallet_card.clone())
             );
 
-        let wallet_engine = Arc::new(Engine::new_with_services(
+        let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(cc_dao),
             Arc::new(wca_dao),
             Arc::new(w_dao),
@@ -312,7 +312,7 @@ mod tests {
             .times(0);
 
 
-        let wallet_engine = Arc::new(Engine::new_with_services(
+        let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(cc_dao),
             Arc::new(wca_dao),
             Arc::new(w_dao),
@@ -360,7 +360,7 @@ mod tests {
             .times(0);
 
 
-        let wallet_engine = Arc::new(Engine::new_with_services(
+        let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(cc_dao),
             Arc::new(wca_dao),
             Arc::new(w_dao),

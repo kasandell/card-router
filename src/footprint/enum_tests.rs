@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod enum_tests {
-    use crate::footprint_service::r#enum::CardPart;
+    use crate::footprint::r#enum::CardPart;
     use actix_web;
 
     #[test]

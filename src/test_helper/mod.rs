@@ -13,3 +13,6 @@ pub mod ledger;
 pub mod credit_card;
 #[cfg(test)]
 pub mod general;
+
+#[cfg(test)]
+pub mod rule;

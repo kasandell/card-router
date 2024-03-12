@@ -1,6 +1,6 @@
 use std::fmt;
 use serde::Deserialize;
-use crate::transaction::error::Error as LedgerError;
+use crate::ledger::error::Error as LedgerError;
 
 #[derive(Debug, Deserialize)]
 pub struct Error {

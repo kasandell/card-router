@@ -1,23 +1,23 @@
 use std::sync::Arc;
 use actix_web::web;
-use crate::passthrough_card::engine::Engine as PassthroughCardEngine;
-use crate::lithic_service::service::LithicService as LithicService;
-use crate::charge_engine::engine::Engine as ChargeEngine;
+use crate::passthrough_card::service::PassthroughCardService as PassthroughCardEngine;
+use crate::lithic::service::LithicService as LithicService;
+use crate::charge::engine::Engine as ChargeEngine;
 use crate::user::dao::UserDao;
-use crate::adyen_service::checkout::service::ChargeService as AdyenChargeService;
+use crate::adyen::checkout::service::ChargeService as AdyenChargeService;
 use crate::category::dao::MccMappingDao;
 use crate::credit_card_type::dao::{
     CreditCardDao,
 };
-use crate::footprint_service::service::FootprintService;
+use crate::footprint::service::FootprintService;
 use crate::passthrough_card::dao::PassthroughCardDao;
-use crate::rule_engine::engine::RuleEngine;
+use crate::rule::service::RuleService;
 use crate::schema::registered_transactions::mcc;
-use crate::transaction::engine::Engine as LedgerEngine;
+use crate::ledger::service::LedgerService as LedgerEngine;
 use crate::user::service::UserService;
 use crate::wallet::{
     dao::{WalletDao, WalletCardAttemptDao},
-    engine::Engine as WalletEngine
+    service::WalletService as WalletEngine
 };
 use crate::webhooks::adyen_handler::AdyenHandler;
 use crate::webhooks::lithic_handler::LithicHandler;
@@ -26,14 +26,14 @@ use crate::webhooks::lithic_handler::LithicHandler;
 pub struct Services {
     // TODO: no dao's should be present in services layer
     pub passthrough_card_engine: Arc<PassthroughCardEngine>,
-    //lithic_service: Arc<LithicService>,
+    //lithic: Arc<LithicService>,
     pub charge_engine: Arc<ChargeEngine>,
     pub wallet_engine: Arc<WalletEngine>,
     pub adyen_handler: Arc<AdyenHandler>,
     pub lithic_handler: Arc<LithicHandler>,
     pub user_dao: Arc<UserDao>,
     pub credit_card_dao: Arc<CreditCardDao>,
-    pub rule_engine: Arc<RuleEngine>,
+    pub rule_engine: Arc<RuleService>,
     pub user_service: Arc<UserService>,
     pub footprint_service: Arc<FootprintService>
 }
@@ -64,7 +64,7 @@ impl Services {
             footprint_service.clone()
         ));
         let mcc_mapping_dao = Arc::new(MccMappingDao::new());
-        let rule_engine = Arc::new(RuleEngine::new_with_services(
+        let rule_engine = Arc::new(RuleService::new_with_services(
             mcc_mapping_dao.clone()
         ));
         let user_service = Arc::new(UserService::new_with_services(

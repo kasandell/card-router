@@ -3,7 +3,7 @@ mod tests {
     use std::collections::HashSet;
     use chrono::NaiveDate;
     use crate::error_type::ErrorType;
-    use crate::passthrough_card::constant::PassthroughCardStatus;
+    use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardType};
     use crate::test_helper::user::create_user;
     use crate::passthrough_card::entity::{
         LithicCard,
@@ -30,11 +30,11 @@ mod tests {
             exp_month: EXP_MONTH.to_string(),
             exp_year: EXP_YEAR.to_string()
         };
-        let insertable_card = InsertablePassthroughCard::from(card.clone());
+        let insertable_card = InsertablePassthroughCard::convert_from_lithic_card(&card.clone()).expect("should convert");
         assert_eq!(expected_date, insertable_card.expiration);
         assert_eq!(TOKEN, insertable_card.token);
-        assert_eq!("OPEN", insertable_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", insertable_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Open, insertable_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, insertable_card.passthrough_card_type);
         let created_card = PassthroughCard::create(
             card,
             &user
@@ -42,8 +42,8 @@ mod tests {
 
         assert_eq!(user.id, created_card.user_id);
         assert_eq!(expected_date, created_card.expiration);
-        assert_eq!("OPEN", created_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", created_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Open, created_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, created_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, created_card.last_four);
         assert!(created_card.is_active.expect("should be here and true"));
         created_card.delete_self().await.expect("card should delete");
@@ -60,11 +60,11 @@ mod tests {
             exp_month: EXP_MONTH.to_string(),
             exp_year: EXP_YEAR.to_string()
         };
-        let insertable_card = InsertablePassthroughCard::from(card.clone());
+        let insertable_card = InsertablePassthroughCard::convert_from_lithic_card(&card.clone()).expect("should convert");
         assert_eq!(expected_date, insertable_card.expiration);
         assert_eq!(TOKEN, insertable_card.token);
-        assert_eq!("OPEN", insertable_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", insertable_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Open, insertable_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, insertable_card.passthrough_card_type);
         let created_card = PassthroughCard::create(
             card,
             &user
@@ -72,32 +72,32 @@ mod tests {
 
         assert_eq!(user.id, created_card.user_id);
         assert_eq!(expected_date, created_card.expiration);
-        assert_eq!("OPEN", created_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", created_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Open, created_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, created_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, created_card.last_four);
         assert!(created_card.is_active.expect("should be here and true"));
 
         let mut updated_card = PassthroughCard::update_status(
             created_card.id,
-            PassthroughCardStatus::PAUSED
+            PassthroughCardStatus::Paused
         ).await.expect("should update");
 
         assert_eq!(user.id, updated_card.user_id);
         assert_eq!(expected_date, updated_card.expiration);
-        assert_eq!("PAUSED", updated_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", updated_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Paused, updated_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, updated_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, updated_card.last_four);
         assert!(updated_card.is_active.expect("should be here and true"));
 
         updated_card = PassthroughCard::update_status(
             created_card.id,
-            PassthroughCardStatus::CLOSED
+            PassthroughCardStatus::Closed
         ).await.expect("should update");
 
         assert_eq!(user.id, updated_card.user_id);
         assert_eq!(expected_date, updated_card.expiration);
-        assert_eq!("CLOSED", updated_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", updated_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Closed, updated_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, updated_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, updated_card.last_four);
         assert!(updated_card.is_active.is_none());
 
@@ -123,8 +123,8 @@ mod tests {
         ).await.expect("card should create");
         assert_eq!(user.id, created_card.user_id);
         assert_eq!(expected_date, created_card.expiration);
-        assert_eq!("OPEN", created_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", created_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Open, created_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, created_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, created_card.last_four);
         assert!(created_card.is_active.expect("should be here and true"));
 
@@ -157,8 +157,8 @@ mod tests {
         ).await.expect("card should create");
         assert_eq!(user.id, created_card.user_id);
         assert_eq!(expected_date, created_card.expiration);
-        assert_eq!("OPEN", created_card.passthrough_card_status);
-        assert_eq!("VIRTUAL", created_card.passthrough_card_type);
+        assert_eq!(PassthroughCardStatus::Open, created_card.passthrough_card_status);
+        assert_eq!(PassthroughCardType::Virtual, created_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, created_card.last_four);
         assert!(created_card.is_active.expect("should be here and true"));
 
@@ -205,7 +205,7 @@ mod tests {
         ).await.expect("card should create");
         created_card1 = PassthroughCard::update_status(
             created_card1.id,
-            PassthroughCardStatus::CLOSED
+            PassthroughCardStatus::Closed
         ).await.expect("should be fine");
 
         let card2 = LithicCard {

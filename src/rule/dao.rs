@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use crate::data_error::DataError;
-use crate::rule_engine::entity::Rule;
-use crate::rule_engine::request::CreateRuleRequest;
+use crate::rule::entity::Rule;
+use crate::rule::request::CreateRuleRequest;
 use async_trait::async_trait;
 
 #[cfg(test)]

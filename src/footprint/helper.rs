@@ -1,5 +1,5 @@
 use std::ops::Add;
-use crate::footprint_service::r#enum::CardPart;
+use crate::footprint::r#enum::CardPart;
 use crate::service_error::ServiceError;
 
 pub fn card_request_parts_for_card_id(card_id: &str) -> Result<Vec<String>, ServiceError> {

@@ -2,7 +2,7 @@
 mod tests {
     use crate::asa::response::AsaResponseResult;
     use serde_json;
-    use crate::charge_engine::entity::ChargeEngineResult;
+    use crate::charge::entity::ChargeEngineResult;
 
     #[test]
     fn test_asa_from_str() {

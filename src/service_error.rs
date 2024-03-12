@@ -1,12 +1,12 @@
 use std::fmt;
 use crate::data_error::DataError;
 use adyen_checkout::apis::Error as AdyenCheckoutError;
-use crate::adyen_service::checkout::error::Error as AdyenCheckoutServiceError;
-use crate::lithic_service::error::Error as LithicServiceError;
+use crate::adyen::checkout::error::Error as AdyenCheckoutServiceError;
+use crate::lithic::error::Error as LithicServiceError;
 use serde_json::{json, Error as SerdeError};
 use crate::error_type::ErrorType;
 use footprint::apis::Error as FootprintError;
-use crate::footprint_service::service::FootprintService;
+use crate::footprint::service::FootprintService;
 
 #[derive(Debug, Clone)]
 pub struct ServiceError {

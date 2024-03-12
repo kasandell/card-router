@@ -3,18 +3,21 @@ mod tests {
     use std::sync::Arc;
     use crate::category::entity::{Category, InsertableCategory, MccMapping, InsertableMccMapping};
     use crate::credit_card_type::entity::{CreditCardType, CreditCardIssuer, CreditCard};
-    use crate::rule_engine::constant::DayOfMonth;
-    use crate::rule_engine::request::CreateRuleRequest;
+    use crate::rule::constant::DayOfMonth;
+    use crate::rule::request::CreateRuleRequest;
     use crate::test_helper::user::create_user;
-    use crate::rule_engine::engine::{
-        RuleEngine,
-        RuleEngineTrait,
+    use crate::rule::service::{
+        RuleService,
+        RuleServiceTrait,
         WalletDetail
     };
     use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
-    use crate::rule_engine::entity::Rule;
+    use crate::rule::entity::Rule;
     use crate::asa::request::create_example_asa;
     use chrono::Utc;
+    use crate::test_helper::credit_card::{create_mock_credit_card_issuer_with_args, create_mock_credit_card_type_with_args, create_mock_credit_card_with_args};
+    use crate::test_helper::rule::{create_mock_rule_dateless_mcc_cashback, create_mock_rule_dateless_mcc_points};
+    use crate::test_helper::wallet::create_mock_wallet_with_args;
 
     const RULE_CATEGORY: i32 = 1;
 
@@ -23,31 +26,31 @@ mod tests {
         crate::test_helper::general::init();
         let amount_cents = 30000;
         let mut cards: Vec<WalletDetail> = Vec::new();
-        let rule_engine = Arc::new(RuleEngine::new());
+        let rule_engine = Arc::new(RuleService::new());
         cards.push(
             (
-                Wallet::create_test_wallet(1, 1, 1).await,
-                CreditCard::create_test_credit_card(1, "Sapphire".to_string(), 1, 1).await,
-                CreditCardType::create_test_credit_card_type(1, "Chase".to_string()),
-                CreditCardIssuer::create_test_credit_card_issuer(1, "Visa".to_string())
+                create_mock_wallet_with_args(1, 1, 1),
+                create_mock_credit_card_with_args(1, "Sapphire", 1, 1),
+                create_mock_credit_card_type_with_args(1, "Chase"),
+                create_mock_credit_card_issuer_with_args(1, "Visa")
             )
        );
 
        cards.push(
             (
-                Wallet::create_test_wallet(2, 1, 2).await,
-                CreditCard::create_test_credit_card(2, "Bilt".to_string(), 1, 1).await,
-                CreditCardType::create_test_credit_card_type(2, "Bilt".to_string()),
-                CreditCardIssuer::create_test_credit_card_issuer(1, "MasterCard".to_string())
+                create_mock_wallet_with_args(2, 1, 2),
+                create_mock_credit_card_with_args(2, "Bilt", 1, 1),
+                create_mock_credit_card_type_with_args(2, "Bilt"),
+                create_mock_credit_card_issuer_with_args(1, "MasterCard")
             )
         );
 
         let mut rules: Vec<Rule> = Vec::new();
         rules.push(
-            Rule::create_test_rule_dateless_mcc_points(1, 1, 2)
+            create_mock_rule_dateless_mcc_points(1, 1, 2)
         );
         rules.push(
-            Rule::create_test_rule_dateless_mcc_points(2, 2, 3)
+            create_mock_rule_dateless_mcc_points(2, 2, 3)
         );
 
         let wallet_returned = rule_engine.get_card_order_from_rules(&cards, &rules, amount_cents).await.expect("wallet should come back");
@@ -64,31 +67,31 @@ mod tests {
         let mut cards: Vec<WalletDetail> = Vec::new();
         cards.push(
             (
-                Wallet::create_test_wallet(1, 1, 1).await,
-                CreditCard::create_test_credit_card(1, "Sapphire".to_string(), 1, 1).await,
-                CreditCardType::create_test_credit_card_type(1, "Chase".to_string()),
-                CreditCardIssuer::create_test_credit_card_issuer(1, "Visa".to_string())
+                create_mock_wallet_with_args(1, 1, 1),
+                create_mock_credit_card_with_args(1, "Sapphire", 1, 1),
+                create_mock_credit_card_type_with_args(1, "Chase"),
+                create_mock_credit_card_issuer_with_args(1, "Visa")
             )
        );
 
        cards.push(
             (
-                Wallet::create_test_wallet(2, 1, 2).await,
-                CreditCard::create_test_credit_card(2, "Bilt".to_string(), 1, 1).await,
-                CreditCardType::create_test_credit_card_type(2, "Bilt".to_string()),
-                CreditCardIssuer::create_test_credit_card_issuer(1, "MasterCard".to_string())
+                create_mock_wallet_with_args(2, 1, 2),
+                create_mock_credit_card_with_args(2, "Bilt", 1, 1),
+                create_mock_credit_card_type_with_args(2, "Bilt"),
+                create_mock_credit_card_issuer_with_args(1, "MasterCard")
             )
         );
 
         let mut rules: Vec<Rule> = Vec::new();
         rules.push(
-            Rule::create_test_rule_dateless_mcc_points(1, 1, 2) // 2x point multiple
+            create_mock_rule_dateless_mcc_points(1, 1, 2) // 2x point multiple
         );
         rules.push(
-            Rule::create_test_rule_dateless_mcc_cashback(2, 2, 250) // 2.5% cashback
+            create_mock_rule_dateless_mcc_cashback(2, 2, 250) // 2.5% cashback
         );
 
-        let rule_engine = Arc::new(RuleEngine::new());
+        let rule_engine = Arc::new(RuleService::new());
 
         let wallet_returned = rule_engine.get_card_order_from_rules(&cards, &rules, amount_cents).await.expect("wallet should come back");
         assert_eq!(wallet_returned[0].credit_card_id, 2);
@@ -187,7 +190,7 @@ mod tests {
             }
         ).await.expect("rule should be created");
 
-        let rule_engine = Arc::new(RuleEngine::new());
+        let rule_engine = Arc::new(RuleService::new());
         let cards = rule_engine.clone().order_user_cards_for_request(
             &create_example_asa(30000, "0000".to_string()),
             &user

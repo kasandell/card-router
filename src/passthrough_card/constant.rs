@@ -1,77 +1,105 @@
-#[derive(Debug)]
+use std::{fmt, io};
+use std::io::Write;
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
+use diesel::pg::Pg;
+use diesel::sql_types::Text;
+use serde::{Deserialize, Serialize};
+use diesel::backend::Backend;
+use diesel::deserialize::{self, FromSql};
+use diesel::serialize::{self, ToSql, Output, IsNull};
+use diesel::sql_types::*;
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[diesel(sql_type = Text)]
 pub enum PassthroughCardType {
-    VIRTUAL,
-    PHYSICAL,
-    MERCHANT_LOCKED,
-    SINGLE_USE
+    Virtual,
+    Physical,
+    MerchantLocked,
+    SingleUse
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone, AsExpression, FromSqlRow, Copy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[diesel(sql_type = Text)]
 pub enum PassthroughCardStatus {
-    CLOSED,
-    OPEN,
-    PAUSED,
-    PENDING_ACTIVATION,
-    PENDING_FULFILLMENT
+    Closed,
+    Open,
+    Paused,
+    PendingActivation,
+    PendingFulfillment
+}
+
+impl ToSql<Text, Pg> for PassthroughCardType {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_all(self.to_string().as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+impl FromSql<Text, Pg> for PassthroughCardType {
+    fn from_sql(bytes: <Pg as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        match bytes.as_bytes() {
+            b"VIRTUAL" => Ok(PassthroughCardType::Virtual),
+            b"PHYSICAL" => Ok(PassthroughCardType::Physical),
+            b"MERCHANT_LOCKED" => Ok(PassthroughCardType::MerchantLocked),
+            b"SINGLE_USE" => Ok(PassthroughCardType::SingleUse),
+            v => Err(format!("Unknown value for PassthroughCardType found").into()),
+
+        }
+    }
+}
+
+impl ToSql<Text, Pg> for PassthroughCardStatus {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_all(self.to_string().as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+impl FromSql<Text, Pg> for PassthroughCardStatus {
+    fn from_sql(bytes: <Pg as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        match bytes.as_bytes() {
+            b"CLOSED" => Ok(PassthroughCardStatus::Closed),
+            b"OPEN" => Ok(PassthroughCardStatus::Open),
+            b"PAUSED" => Ok(PassthroughCardStatus::Paused),
+            b"PENDING_ACTIVATION" => Ok(PassthroughCardStatus::PendingActivation),
+            b"PENDING_FULFILLMENT" => Ok(PassthroughCardStatus::PendingFulfillment),
+            v => Err(format!("Unknown value for PassthroughCardStatus found").into())
+        }
+    }
 }
 
 impl PassthroughCardStatus {
     pub fn is_active_for_status(&self) -> Option<bool> {
         match *self {
-            PassthroughCardStatus::CLOSED => None,
-            PassthroughCardStatus::OPEN => Some(true),
-            PassthroughCardStatus::PAUSED => Some(true),
-            PassthroughCardStatus::PENDING_ACTIVATION => Some(true),
-            PassthroughCardStatus::PENDING_FULFILLMENT => Some(true),
+            PassthroughCardStatus::Closed => None,
+            PassthroughCardStatus::Open => Some(true),
+            PassthroughCardStatus::Paused => Some(true),
+            PassthroughCardStatus::PendingActivation => Some(true),
+            PassthroughCardStatus::PendingFulfillment => Some(true),
         }
     }
 }
 
-impl From<&PassthroughCardType> for String {
-    fn from(value: &PassthroughCardType) -> Self {
-        match *value {
-            PassthroughCardType::VIRTUAL => "VIRTUAL".to_string(),
-            PassthroughCardType::PHYSICAL => "PHYSICAL".to_string(),
-            PassthroughCardType::MERCHANT_LOCKED => "MERCHANT_LOCKED".to_string(),
-            PassthroughCardType::SINGLE_USE => "SINGLE_USE".to_string(),
-        }
+impl fmt::Display for PassthroughCardType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            PassthroughCardType::Virtual => "VIRTUAL",
+            PassthroughCardType::Physical => "PHYSICAL",
+            PassthroughCardType::MerchantLocked => "MERCHANT_LOCKED",
+            PassthroughCardType::SingleUse => "SINGLE_USE"
+        })
     }
 }
 
-impl From<&str> for PassthroughCardType {
-    fn from(value: &str) -> Self {
-        match value {
-            "VIRTUAL" => PassthroughCardType::VIRTUAL,
-            "PHYSICAL" => PassthroughCardType::PHYSICAL,
-            "MERCHANT_LOCKED" => PassthroughCardType::MERCHANT_LOCKED,
-            "SINGLE_USE" => PassthroughCardType::SINGLE_USE,
-            _ => PassthroughCardType::VIRTUAL
-        }
-    }
-}
-
-
-impl From<&PassthroughCardStatus> for String {
-    fn from(value: &PassthroughCardStatus) -> Self {
-        match *value {
-            PassthroughCardStatus::CLOSED => "CLOSED".to_string(),
-            PassthroughCardStatus::OPEN => "OPEN".to_string(),
-            PassthroughCardStatus::PAUSED => "PAUSED".to_string(),
-            PassthroughCardStatus::PENDING_ACTIVATION => "PENDING_ACTIVATION".to_string(),
-            PassthroughCardStatus::PENDING_FULFILLMENT => "PENDING_FULFILLMENT".to_string(),
-        }
-    }
-}
-
-impl From<&str> for PassthroughCardStatus {
-    fn from(value: &str) -> Self {
-        match value {
-            "CLOSED" => PassthroughCardStatus::CLOSED,
-            "OPEN" => PassthroughCardStatus::OPEN,
-            "PAUSED" => PassthroughCardStatus::PAUSED,
-            "PENDING_ACTIVATION" => PassthroughCardStatus::PENDING_ACTIVATION,
-            "PENDING_FULFILLMENT" => PassthroughCardStatus::PENDING_FULFILLMENT,
-            _ => PassthroughCardStatus::PAUSED,
-        }
+impl fmt::Display for PassthroughCardStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            PassthroughCardStatus::Closed => "CLOSED",
+            PassthroughCardStatus::Open => "OPEN",
+            PassthroughCardStatus::Paused => "PAUSED",
+            PassthroughCardStatus::PendingActivation => "PENDING_ACTIVATION",
+            PassthroughCardStatus::PendingFulfillment => "PENDING_FULFILLMENT",
+        })
     }
 }

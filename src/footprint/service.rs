@@ -18,9 +18,9 @@ use mockall::automock;
 use serde_json::to_value;
 use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_VAULT_PROXY_ID};
 use crate::environment::ENVIRONMENT;
-use crate::footprint_service::helper::{individual_request_part_for_customer_template, individual_request_part_for_customer_with_prefix_template, individual_request_part_for_customer_with_suffix_template};
-use crate::footprint_service::r#enum::CardPart;
-use crate::footprint_service::request::ChargeThroughProxyRequest;
+use crate::footprint::helper::{individual_request_part_for_customer_template, individual_request_part_for_customer_with_prefix_template, individual_request_part_for_customer_with_suffix_template};
+use crate::footprint::r#enum::CardPart;
+use crate::footprint::request::ChargeThroughProxyRequest;
 use crate::constant::financial_constant;
 
 #[automock]
@@ -174,9 +174,9 @@ impl FootprintServiceTrait for FootprintService {
         let response = post_vault_proxy(
             &self.configuration,
             &self.adyen_proxy_id,
-            &crate::footprint_service::constant::Constant::CONTENT_TYPE,
-            &crate::footprint_service::constant::Constant::PROXY_METHOD,
-            &crate::footprint_service::constant::Constant::PROXY_ACCESS_REASON,
+            &crate::footprint::constant::Constant::CONTENT_TYPE,
+            &crate::footprint::constant::Constant::PROXY_METHOD,
+            &crate::footprint::constant::Constant::PROXY_ACCESS_REASON,
             &self.adyen_api_key,
             Some(
                 to_value(payment_request)?

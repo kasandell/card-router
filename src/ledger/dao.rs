@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use uuid::Uuid;
 use crate::data_error::DataError;
-use crate::transaction::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
+use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
 use async_trait::async_trait;
 
 #[cfg(test)]
@@ -9,7 +9,7 @@ use mockall::{automock, predicate::*};
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
-pub trait TransactionDaoTrait {
+pub trait LedgerDaoTrait {
     async fn insert_registered_transaction<'a>(self: Arc<Self>, transaction: &InsertableRegisteredTransaction<'a>) -> Result<RegisteredTransaction, DataError>;
     async fn get_registered_transaction_by_transaction_id(self: Arc<Self>, id: &Uuid) -> Result<RegisteredTransaction, DataError>;
     async fn get_registered_transaction(self: Arc<Self>, id: i32) -> Result<RegisteredTransaction, DataError>;
@@ -25,16 +25,16 @@ pub trait TransactionDaoTrait {
     async fn get_transaction_ledger_by_id(self: Arc<Self>, id: i32) -> Result<TransactionLedger, DataError>;
 }
 
-pub struct TransactionDao {}
+pub struct LedgerDao {}
 
-impl TransactionDao {
+impl LedgerDao {
     pub fn new() -> Self {
         Self {}
     }
 }
 
 #[async_trait(?Send)]
-impl TransactionDaoTrait for TransactionDao {
+impl LedgerDaoTrait for LedgerDao {
     async fn insert_registered_transaction<'a>(self: Arc<Self>, transaction: &InsertableRegisteredTransaction<'a>) -> Result<RegisteredTransaction, DataError> {
         RegisteredTransaction::insert(transaction).await
     }

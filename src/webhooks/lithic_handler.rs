@@ -1,27 +1,27 @@
 use std::sync::Arc;
 use std::time::Instant;
 use chrono::Utc;
-use crate::adyen_service::checkout::service::AdyenChargeServiceTrait;
+use crate::adyen::checkout::service::AdyenChargeServiceTrait;
 
 use crate::api_error::ApiError;
-use crate::charge_engine::engine::Engine as ChargeEngine;
+use crate::charge::engine::Engine as ChargeEngine;
 use crate::asa::request::AsaRequest;
-use crate::rule_engine::engine::RuleEngine;
+use crate::rule::service::RuleService;
 use crate::user::entity::User;
-use crate::rule_engine::engine::RuleEngineTrait;
+use crate::rule::service::RuleServiceTrait;
 
 use crate::asa::response::{AsaResponse, AsaResponseResult};
 use crate::error_type::ErrorType;
-use crate::footprint_service::service::{FootprintService, FootprintServiceTrait};
+use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
 use crate::service_error::ServiceError;
-use crate::transaction::engine::TransactionEngineTrait;
+use crate::ledger::service::LedgerServiceTrait;
 use crate::user::dao::{UserDao, UserDaoTrait};
 
 pub struct LithicHandler {
     pub charge_engine: Arc<ChargeEngine>,
-    pub rule_engine: Arc<dyn RuleEngineTrait>,
+    pub rule_engine: Arc<dyn RuleServiceTrait>,
     pub passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
     pub user_dao: Arc<dyn UserDaoTrait>,
 }
@@ -30,7 +30,7 @@ impl LithicHandler {
     pub fn new() -> Self {
         Self {
             charge_engine: Arc::new(ChargeEngine::new()),
-            rule_engine: Arc::new(RuleEngine::new()),
+            rule_engine: Arc::new(RuleService::new()),
             passthrough_card_dao: Arc::new(PassthroughCardDao::new()),
             user_dao: Arc::new(UserDao::new())
         }
@@ -41,8 +41,8 @@ impl LithicHandler {
         charge_service: Arc<dyn AdyenChargeServiceTrait>,
         passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
         user_dao: Arc<dyn UserDaoTrait>,
-        ledger: Arc<dyn TransactionEngineTrait>,
-        rule_engine: Arc<dyn RuleEngineTrait>,
+        ledger: Arc<dyn LedgerServiceTrait>,
+        rule_engine: Arc<dyn RuleServiceTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
         Self {
@@ -61,7 +61,7 @@ impl LithicHandler {
 
     pub fn new_with_services(
         charge_engine: Arc<ChargeEngine>,
-        rule_engine: Arc<RuleEngine>,
+        rule_engine: Arc<RuleService>,
         passthrough_card_dao: Arc<PassthroughCardDao>,
         user_dao: Arc<UserDao>,
     ) -> Self {

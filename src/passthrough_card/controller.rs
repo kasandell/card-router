@@ -5,7 +5,7 @@ use crate::api_error::ApiError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::response::{HasActiveResponse, PassthroughCardResposnse};
 use crate::user::entity::User;
-use super::engine::Engine;
+use super::service::PassthroughCardService;
 use log::warn;
 use crate::middleware::services::Services;
 
@@ -22,8 +22,8 @@ async fn create_card(
         HttpResponse::Ok().json(
             PassthroughCardResposnse {
                 public_id: card.public_id.clone(),
-                card_status: card.passthrough_card_status.clone(),
-                card_type: card.passthrough_card_type.clone(),
+                card_status: card.passthrough_card_status.to_string(),
+                card_type: card.passthrough_card_type.to_string(),
                 last_four: card.last_four.clone(),
             }
         )
@@ -41,8 +41,8 @@ async fn get_card(
             HttpResponse::Ok().json(
                 PassthroughCardResposnse {
                     public_id: card.public_id.clone(),
-                    card_status: card.passthrough_card_status.clone(),
-                    card_type: card.passthrough_card_type.clone(),
+                    card_status: card.passthrough_card_status.to_string(),
+                    card_type: card.passthrough_card_type.to_string(),
                     last_four: card.last_four.clone(),
                 }
             )
@@ -76,7 +76,7 @@ async fn pause_card(
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
-    services.passthrough_card_engine.clone().update_card_status(&user, PassthroughCardStatus::PAUSED).await?;
+    services.passthrough_card_engine.clone().update_card_status(&user, PassthroughCardStatus::Paused).await?;
     Ok(
         HttpResponse::Ok().finish()
     )
@@ -88,7 +88,7 @@ async fn unpause_card(
     services: web::Data<Services>,
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
-    services.passthrough_card_engine.clone().update_card_status(&user, PassthroughCardStatus::OPEN).await?;
+    services.passthrough_card_engine.clone().update_card_status(&user, PassthroughCardStatus::Open).await?;
     Ok(
         HttpResponse::Ok().finish()
     )
@@ -100,7 +100,7 @@ async fn cancel_card(
     services: web::Data<Services>,
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
-    services.passthrough_card_engine.clone().update_card_status(&user, PassthroughCardStatus::CLOSED).await?;
+    services.passthrough_card_engine.clone().update_card_status(&user, PassthroughCardStatus::Closed).await?;
     Ok(
         HttpResponse::Ok().finish()
     )

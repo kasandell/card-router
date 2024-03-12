@@ -3,9 +3,9 @@ mod entity_tests {
     use std::sync::Arc;
     use chrono::{Utc, Duration};
     use uuid::Uuid;
-    use crate::rule_engine::constant::DayOfMonth;
+    use crate::rule::constant::DayOfMonth;
     use crate::test_helper::user::create_user;
-    use crate::rule_engine::{
+    use crate::rule::{
         request::CreateRuleRequest,
         entity::Rule,
         constant::RuleStatus

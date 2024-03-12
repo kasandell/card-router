@@ -6,7 +6,7 @@ use lithic_client::models::{
     funding_account::{State as FundingState, Type as FundingType}
 };
 use uuid::Uuid;
-use crate::passthrough_card::constant::PassthroughCardStatus;
+use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardType};
 use crate::passthrough_card::entity::PassthroughCard;
 use crate::test_helper::constant::{EXP_MONTH, EXP_YEAR, LAST_FOUR};
 use crate::user::entity::User;
@@ -15,13 +15,13 @@ pub fn create_mock_passthrough_card() -> PassthroughCard {
     PassthroughCard {
         id: 0,
         public_id: Default::default(),
-        passthrough_card_status: String::from(&PassthroughCardStatus::OPEN),
+        passthrough_card_status: PassthroughCardStatus::Open,
         is_active: Some(true),
         user_id: 1,
         token: "".to_string(),
         expiration: NaiveDate::MAX,
         last_four: "1234".to_string(),
-        passthrough_card_type: "VIRTUAL".to_string(),
+        passthrough_card_type: PassthroughCardType::Virtual,
         created_at: Default::default(),
         updated_at: Default::default(),
     }

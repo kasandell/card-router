@@ -5,34 +5,34 @@ use adyen_checkout::models::payment_response::ResultCode;
 use chrono::Utc;
 use lazy_static::lazy_static;
 use uuid::Uuid;
-use crate::adyen_service::checkout::request::ChargeCardRequest;
-use crate::adyen_service::checkout::service::{
+use crate::adyen::checkout::request::ChargeCardRequest;
+use crate::adyen::checkout::service::{
     ChargeService,
     AdyenChargeServiceTrait
 };
 use crate::asa::request::AsaRequest;
-use crate::charge_engine::entity::{
+use crate::charge::entity::{
     ChargeEngineResult,
     ChargeCardAttemptResult
 };
 use crate::error_type::ErrorType;
-use crate::footprint_service::request::ChargeThroughProxyRequest;
-use crate::footprint_service::service::{FootprintService, FootprintServiceTrait};
+use crate::footprint::request::ChargeThroughProxyRequest;
+use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
 use crate::schema::registered_transactions::transaction_id;
 use crate::service_error::ServiceError;
-use crate::transaction::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
+use crate::ledger::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
-use crate::transaction::engine::{Engine as Ledger, TransactionEngineTrait};
+use crate::ledger::service::{LedgerService as Ledger, LedgerServiceTrait};
 use crate::user::dao::{UserDao, UserDaoTrait};
 
 pub struct Engine {
     charge_service: Arc<dyn AdyenChargeServiceTrait>,
     passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
     user_dao: Arc<dyn UserDaoTrait>,
-    ledger: Arc<dyn TransactionEngineTrait>,
+    ledger: Arc<dyn LedgerServiceTrait>,
     footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
@@ -68,7 +68,7 @@ impl Engine {
         charge_service: Arc<dyn AdyenChargeServiceTrait>,
         passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
         user_dao: Arc<dyn UserDaoTrait>,
-        ledger: Arc<dyn TransactionEngineTrait>,
+        ledger: Arc<dyn LedgerServiceTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
         Self {

@@ -7,10 +7,9 @@ mod tests {
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::{PaymentCancelResponse, PaymentResponse};
     use adyen_checkout::models::payment_cancel_response::Status;
-    use crate::wallet::entity::Wallet;
     use crate::user::entity::User;
     use crate::service_error::ServiceError;
-    use crate::charge_engine::{
+    use crate::charge::{
         engine::Engine,
         entity::{
             ChargeCardAttemptResult,
@@ -18,7 +17,7 @@ mod tests {
         }
     };
     use uuid::Uuid;
-    use crate::adyen_service::checkout::service::*;
+    use crate::adyen::checkout::service::*;
     use crate::asa::request::create_example_asa;
     use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
     use crate::test_helper::{
@@ -32,13 +31,13 @@ mod tests {
         },
         user::create_mock_user,
         passthrough_card::create_mock_passthrough_card,
-        wallet::create_mock_wallet,
+        wallet::{create_mock_wallet, create_mock_wallet_with_args},
     };
-    use crate::transaction::engine::MockTransactionEngineTrait;
-    use crate::transaction::entity::RegisteredTransaction;
+    use crate::ledger::service::MockLedgerServiceTrait;
+    use crate::ledger::entity::RegisteredTransaction;
     use crate::user::dao::{MockUserDaoTrait, UserDaoTrait};
     use crate::error_type::ErrorType;
-    use crate::footprint_service::service::MockFootprintServiceTrait;
+    use crate::footprint::service::MockFootprintServiceTrait;
     use crate::test_helper::ledger::create_mock_full_transaction;
 
     const USER_ID: i32 = 1;
@@ -53,7 +52,7 @@ mod tests {
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
@@ -96,7 +95,7 @@ mod tests {
         let charge_service = MockAdyenChargeServiceTrait::new();
         let user_mock = MockUserDaoTrait::new();
         let pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::Authorised);
@@ -144,7 +143,7 @@ mod tests {
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let psp_ref = "abc123".to_string();
         let mut resp = PaymentResponse::new();
@@ -204,7 +203,7 @@ mod tests {
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let psp_ref = "abc123".to_string();
         let mut resp = PaymentResponse::new();
@@ -257,14 +256,14 @@ mod tests {
 
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
+        let mut card_1 = create_mock_wallet_with_args( 1, 1, 1 );
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
+        let mut card_2 = create_mock_wallet_with_args( 2, 1, 2 );
         card_2.payment_method_id = payment_method_2.to_string();
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
 
@@ -316,8 +315,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_no_cards_fails() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1).await;
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
+        let user = create_mock_user();
+        let mut rtx = create_mock_registered_transaction(&metadata);
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -325,7 +324,7 @@ mod tests {
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let engine = Arc::new(Engine::new_with_service(
@@ -348,8 +347,8 @@ mod tests {
     #[actix_web::test]
     async fn test_charge_user_wallet_second_card() {
         let mut metadata = default_transaction_metadata();
-        let user = User::create_test_user(1).await;
-        let mut rtx = RegisteredTransaction::create_test_transaction( 1, &metadata ).await;
+        let user = create_mock_user();
+        let mut rtx = create_mock_registered_transaction(&metadata);
 
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
@@ -363,15 +362,15 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
+        let mut card_1 = create_mock_wallet_with_args( 1, 1, 1 );
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
+        let mut card_2 = create_mock_wallet_with_args( 2, 1, 2 );
         card_2.payment_method_id = payment_method_2.to_string();
 
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();
@@ -466,9 +465,9 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
+        let mut card_1 = create_mock_wallet_with_args( 1, 1, 1 );
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
+        let mut card_2 = create_mock_wallet_with_args( 2, 1, 2 );
         card_2.payment_method_id = payment_method_2.to_string();
 
         let pc = create_mock_passthrough_card();
@@ -477,7 +476,7 @@ mod tests {
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();
@@ -589,9 +588,9 @@ mod tests {
         let payment_method_1 = "card_123";
         let payment_method_2 = "card_246";
 
-        let mut card_1 = Wallet::create_test_wallet( 1, 1, 1 ).await;
+        let mut card_1 = create_mock_wallet_with_args( 1, 1, 1 );
         card_1.payment_method_id = payment_method_1.to_string();
-        let mut card_2 = Wallet::create_test_wallet( 2, 1, 2 ).await;
+        let mut card_2 = create_mock_wallet_with_args( 2, 1, 2 );
         card_2.payment_method_id = payment_method_2.to_string();
 
         let amount_cents = metadata.amount_cents;
@@ -601,7 +600,7 @@ mod tests {
         let mut charge_service = MockAdyenChargeServiceTrait::new();
         let mut user_mock = MockUserDaoTrait::new();
         let mut pc_mock = MockPassthroughCardDaoTrait::new();
-        let mut ledger_mock = MockTransactionEngineTrait::new();
+        let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
         let psp_ref = "abc123".to_string();

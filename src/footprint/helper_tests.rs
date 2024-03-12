@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod helper_tests {
-    use crate::footprint_service::r#enum::CardPart;
+    use crate::footprint::r#enum::CardPart;
     use actix_web;
-    use crate::footprint_service::helper::{
+    use crate::footprint::helper::{
         card_request_parts_for_card_id,
         individual_request_part,
         individual_request_part_for_customer_with_prefix_template,

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::adyen_service::checkout::service::{AdyenChargeServiceTrait, ChargeService};
+use crate::adyen::checkout::service::{AdyenChargeServiceTrait, ChargeService};
 use crate::api_error::ApiError;
 use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
 use crate::service_error::ServiceError;
@@ -15,7 +15,7 @@ use crate::error_type::ErrorType;
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one
-pub struct Engine {
+pub struct WalletService {
     pub credit_card_dao: Arc<dyn CreditCardDaoTrait>,
     pub wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
     pub wallet_dao: Arc<dyn WalletDaoTrait>,
@@ -23,7 +23,7 @@ pub struct Engine {
 }
 
 
-impl Engine {
+impl WalletService {
     pub fn new() -> Self {
         Self {
             credit_card_dao: Arc::new(CreditCardDao::new()),

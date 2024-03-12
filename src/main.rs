@@ -20,24 +20,24 @@ use uuid::Uuid;
 use crate::auth::entity::{Claims, Auth0Config};
 
 
-mod adyen_service;
+mod adyen;
 mod asa;
 mod util;
 mod api_error;
 mod constant;
-mod lithic_service;
+mod lithic;
 mod credit_card_type;
-mod rule_engine;
+mod rule;
 mod category;
 mod membership;
-mod transaction;
+mod ledger;
 mod passthrough_card;
 mod schema;
 mod user;
 mod wallet;
 mod middleware;
 mod webhooks;
-mod charge_engine;
+mod charge;
 mod auth;
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ mod data_error;
 mod service_error;
 mod environment;
 mod error_type;
-mod footprint_service;
+mod footprint;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {

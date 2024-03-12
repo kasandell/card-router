@@ -6,8 +6,8 @@ mod tests {
     use crate::passthrough_card::constant::PassthroughCardStatus;
     use crate::test_helper::user::create_user;
     use crate::passthrough_card::entity::PassthroughCard;
-    use crate::lithic_service::service::MockLithicServiceTrait;
-    use crate::passthrough_card::engine::Engine;
+    use crate::lithic::service::MockLithicServiceTrait;
+    use crate::passthrough_card::service::PassthroughCardService;
     use crate::test_helper::passthrough_card::create_mock_lithic_card_for_status_update;
 
     #[actix_web::test]
@@ -29,14 +29,14 @@ mod tests {
                 Ok(lithic_return)
             );
 
-        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
         let ret = engine.clone().issue_card_to_user(
             &user,
             pin
         ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
-        assert_eq!(String::from(&PassthroughCardStatus::OPEN), ret.passthrough_card_status);
+        assert_eq!(PassthroughCardStatus::Open, ret.passthrough_card_status);
         ret.delete_self().await.expect("Should delete");
         user.delete_self().await.expect("Should delete");
     }
@@ -60,14 +60,14 @@ mod tests {
                 Ok(lithic_return)
             );
 
-        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
         let ret = engine.clone().issue_card_to_user(
             &user,
             pin
         ).await.expect("should create");
 
         assert_eq!(ret.token, card.token.to_string());
-        assert_eq!(String::from(&PassthroughCardStatus::OPEN), ret.passthrough_card_status);
+        assert_eq!(PassthroughCardStatus::Open, ret.passthrough_card_status);
         let error = engine.clone().issue_card_to_user(
             &user,
             pin
@@ -98,16 +98,16 @@ mod tests {
             &card,
             &user
         ).await.expect("Card should create");
-        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
         let res = engine.clone().update_card_status(
             &user,
-            PassthroughCardStatus::PAUSED
+            PassthroughCardStatus::Paused
         ).await;
 
         assert!(res.is_ok());
         created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
-            String::from(&PassthroughCardStatus::PAUSED),
+            PassthroughCardStatus::Paused,
             created_card.passthrough_card_status
         );
 
@@ -136,16 +136,16 @@ mod tests {
             &card,
             &user
         ).await.expect("Card should create");
-        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
         let res = engine.clone().update_card_status(
             &user,
-            PassthroughCardStatus::CLOSED
+            PassthroughCardStatus::Closed
         ).await;
 
         assert!(res.is_ok());
         created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
-            String::from(&PassthroughCardStatus::CLOSED),
+            PassthroughCardStatus::Closed,
             created_card.passthrough_card_status
         );
 
@@ -175,29 +175,29 @@ mod tests {
             &card,
             &user
         ).await.expect("Card should create");
-        let engine = Arc::new(Engine::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
         let res = engine.clone().update_card_status(
             &user,
-            PassthroughCardStatus::CLOSED
+            PassthroughCardStatus::Closed
         ).await;
 
         assert!(res.is_ok());
         created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
-            String::from(&PassthroughCardStatus::CLOSED),
+            PassthroughCardStatus::Closed,
             created_card.passthrough_card_status
         );
 
         let res = engine.clone().update_card_status(
             &user,
-            PassthroughCardStatus::OPEN
+            PassthroughCardStatus::Open
         ).await.expect_err("Should throw api errror");
 
         assert_eq!(ErrorType::NotFound, res.error_type);
 
         created_card = PassthroughCard::get(created_card.id).await.expect("card should be found");
         assert_eq!(
-            String::from(&PassthroughCardStatus::CLOSED),
+            PassthroughCardStatus::Closed,
             created_card.passthrough_card_status
         );
 
