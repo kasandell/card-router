@@ -5,3 +5,4 @@ pub mod entity_tests;
 pub mod tests;
 pub mod request;
 pub mod dao;
+mod consant_tests;

@@ -72,7 +72,10 @@ impl Services {
             footprint_service.clone()
         ));
         Self {
-            passthrough_card_engine: Arc::new(PassthroughCardEngine::new_with_service(lithic_service.clone())),
+            passthrough_card_engine: Arc::new(PassthroughCardEngine::new_with_services(
+                lithic_service.clone(),
+                passthrough_card_dao.clone()
+            )),
             charge_engine: Arc::new(ChargeEngine::new_with_service(
                 adyen_service.clone(),
                 passthrough_card_dao.clone(),

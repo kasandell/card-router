@@ -14,20 +14,27 @@ use crate::lithic::{
     service::LithicServiceTrait,
 };
 use crate::passthrough_card::crypto::encrypt_pin;
+use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 
 pub struct PassthroughCardService {
-    pub lithic_service: Arc<dyn LithicServiceTrait>
+    pub lithic_service: Arc<dyn LithicServiceTrait>,
+    pub passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>
 }
 
 impl PassthroughCardService {
     pub fn new() -> Self {
         Self {
-            lithic_service: Arc::new(LithicService::new())
+            lithic_service: Arc::new(LithicService::new()),
+            passthrough_card_dao: Arc::new(PassthroughCardDao::new())
         }
     }
-    pub fn new_with_service(service: Arc<dyn LithicServiceTrait>) -> Self {
+    pub fn new_with_services(
+        lithic_service: Arc<dyn LithicServiceTrait>,
+        passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
+    ) -> Self {
         Self {
-            lithic_service: service
+            lithic_service,
+            passthrough_card_dao
         }
     }
     pub async fn issue_card_to_user(
@@ -45,7 +52,7 @@ impl PassthroughCardService {
             &pin_encoded,
             &idempotency_key
         ).await?;
-        let inserted_card = PassthroughCard::create_from_api_card(
+        let inserted_card = self.passthrough_card_dao.clone().create_from_api_card(
             &lithic_card,
             &user
         ).await;
@@ -88,7 +95,7 @@ impl PassthroughCardService {
         let previous_status = card.passthrough_card_status;
         info!("Found card={} for userId={}", card.id, user.id);
 
-        let updated = PassthroughCard::update_status(
+        let updated = self.passthrough_card_dao.clone().update_status(
             card.id,
             status
         ).await?;
@@ -96,9 +103,9 @@ impl PassthroughCardService {
         info!("Updated card={} for userId={}", card.id, user.id);
 
         let lithic_result = match &status {
-            PassthroughCardStatus::Closed => self.close_lithic_card(&updated.token).await,
-            PassthroughCardStatus::Open => self.activate_lithic_card(&updated.token).await,
-            PassthroughCardStatus::Paused =>  self.pause_lithic_card(&updated.token).await,
+            PassthroughCardStatus::Closed => self.clone().close_lithic_card(&updated.token).await,
+            PassthroughCardStatus::Open => self.clone().activate_lithic_card(&updated.token).await,
+            PassthroughCardStatus::Paused =>  self.clone().pause_lithic_card(&updated.token).await,
             _ => Err(ServiceError::new(ErrorType::InternalServerError, "Invalid state transition from engine"))
         };
 
@@ -114,7 +121,7 @@ impl PassthroughCardService {
                 error!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
                 println!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
                 // TODO: don't call direct
-                let rollback = PassthroughCard::update_status(
+                let rollback = self.passthrough_card_dao.clone().update_status(
                     updated.id,
                     previous_status
                 ).await;
@@ -142,7 +149,7 @@ impl PassthroughCardService {
         status: &PassthroughCardStatus
     ) -> Result<PassthroughCard, ServiceError> {
         // TODO: don't call db direct
-        let cards: Vec<PassthroughCard> = PassthroughCard::find_cards_for_user(user.id).await?;
+        let cards: Vec<PassthroughCard> = self.passthrough_card_dao.clone().find_cards_for_user(user.id).await?;
         return match status {
             PassthroughCardStatus::Closed => {
                 self.filter_cards(
@@ -176,7 +183,7 @@ impl PassthroughCardService {
         self: Arc<Self>,
         user: &User
     ) -> Result<Option<PassthroughCard>, ServiceError> {
-        let cards = PassthroughCard::find_cards_for_user(user.id).await?;
+        let cards: Vec<PassthroughCard> = self.passthrough_card_dao.clone().find_cards_for_user(user.id).await?;
         if cards.len() == 0 {
             return Ok(None);
         }

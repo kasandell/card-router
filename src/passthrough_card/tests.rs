@@ -7,6 +7,7 @@ mod tests {
     use crate::test_helper::user::create_user;
     use crate::passthrough_card::entity::PassthroughCard;
     use crate::lithic::service::MockLithicServiceTrait;
+    use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
     use crate::passthrough_card::service::PassthroughCardService;
     use crate::test_helper::passthrough_card::create_mock_lithic_card_for_status_update;
 
@@ -14,6 +15,7 @@ mod tests {
     async fn test_create_card_for_user() {
         crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
+        let mut mock_dao = MockPassthroughCardDaoTrait::new();
         let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
@@ -29,7 +31,10 @@ mod tests {
                 Ok(lithic_return)
             );
 
-        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_services(
+            Arc::new(lithic_service),
+            Arc::new(mock_dao)
+        ));
         let ret = engine.clone().issue_card_to_user(
             &user,
             pin
@@ -45,6 +50,7 @@ mod tests {
     async fn test_create_card_for_user_fails_on_dupe() {
         crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
+        let mut mock_dao = MockPassthroughCardDaoTrait::new();
         let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
@@ -60,7 +66,10 @@ mod tests {
                 Ok(lithic_return)
             );
 
-        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_services(
+            Arc::new(lithic_service),
+            Arc::new(mock_dao)
+        ));
         let ret = engine.clone().issue_card_to_user(
             &user,
             pin
@@ -81,6 +90,7 @@ mod tests {
     async fn test_status_successfully_pauses() {
         crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
+        let mut mock_dao = MockPassthroughCardDaoTrait::new();
         let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
@@ -98,7 +108,10 @@ mod tests {
             &card,
             &user
         ).await.expect("Card should create");
-        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_services(
+            Arc::new(lithic_service),
+            Arc::new(mock_dao)
+        ));
         let res = engine.clone().update_card_status(
             &user,
             PassthroughCardStatus::Paused
@@ -119,6 +132,7 @@ mod tests {
     async fn test_status_successfully_closes() {
         crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
+        let mut mock_dao = MockPassthroughCardDaoTrait::new();
         let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
@@ -136,7 +150,10 @@ mod tests {
             &card,
             &user
         ).await.expect("Card should create");
-        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_services(
+            Arc::new(lithic_service),
+            Arc::new(mock_dao)
+        ));
         let res = engine.clone().update_card_status(
             &user,
             PassthroughCardStatus::Closed
@@ -157,6 +174,7 @@ mod tests {
     async fn test_status_fails_to_reopen() {
         crate::test_helper::general::init();
         let mut lithic_service = MockLithicServiceTrait::new();
+        let mut mock_dao = MockPassthroughCardDaoTrait::new();
         let user = create_user().await;
         let exp_month = "09";
         let exp_year = "2026";
@@ -175,7 +193,10 @@ mod tests {
             &card,
             &user
         ).await.expect("Card should create");
-        let engine = Arc::new(PassthroughCardService::new_with_service(Arc::new(lithic_service)));
+        let engine = Arc::new(PassthroughCardService::new_with_services(
+            Arc::new(lithic_service),
+            Arc::new(mock_dao)
+        ));
         let res = engine.clone().update_card_status(
             &user,
             PassthroughCardStatus::Closed
