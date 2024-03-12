@@ -152,10 +152,7 @@ impl RuleService {
             info!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());
             println!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());
             let Some(day_of_month) = rule.recurring_day_of_month.as_ref() else { return false; };
-            let recur = DayOfMonth::from_str(
-                &day_of_month
-            );
-            let expected_date = adjust_recurring_to_date(today, recur);
+            let expected_date = adjust_recurring_to_date(today, &day_of_month);
             expected_date == today
         } else if rule.start_date.is_none() && rule.end_date.is_none() && rule.recurring_day_of_month.is_none() {
             info!("Rule {} has no dates so is always valid", rule.id);

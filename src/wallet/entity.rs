@@ -14,6 +14,7 @@ use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use uuidv7;
+use crate::wallet::constant::WalletCardAttemptStatus;
 
 
 #[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
@@ -27,7 +28,7 @@ pub struct WalletCardAttempt {
     pub credit_card_id: i32,
     pub expected_reference_id: String,
     pub psp_id: Option<String>,
-    pub status: String,
+    pub status: WalletCardAttemptStatus,
     pub recurring_detail_reference: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
@@ -48,7 +49,7 @@ pub struct InsertableCardAttempt<'a> {
 pub struct UpdateCardAttempt<'a> {
     pub recurring_detail_reference: &'a str,
     pub psp_id: &'a str,
-    pub status: &'a str
+    pub status: WalletCardAttemptStatus
 }
 
 

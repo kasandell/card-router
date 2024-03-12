@@ -22,7 +22,7 @@ mod tests {
                 expected_reference_id: attempt_reference_id
             }
         ).await.expect("should create");
-        assert_eq!(att1.status, WalletCardAttemptStatus::PENDING.as_str());
+        assert_eq!(att1.status, WalletCardAttemptStatus::Pending);
         let adyen_handler = Arc::new(AdyenHandler::new());
         let _ = adyen_handler.clone().handle_item(
             RecurringContractNotificationRequestItemWrapper {
@@ -53,7 +53,7 @@ mod tests {
         ).await.expect("should be fine");
         let att_returned = WalletCardAttempt::find_by_reference_id(attempt_reference_id).await.expect("should create");
         assert_eq!(att_returned.id, att1.id);
-        assert_eq!(att_returned.status, WalletCardAttemptStatus::MATCHED.as_str());
+        assert_eq!(att_returned.status, WalletCardAttemptStatus::Matched);
         let wallet_returned = Wallet::find_all_for_user(&user).await.expect("should get wallet");
         assert_eq!(wallet_returned.len(), 1);
         let card = &wallet_returned[0];

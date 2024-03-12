@@ -10,6 +10,7 @@ use diesel::prelude::*;
 use crate::asa::request::AsaRequest;
 use crate::data_error::DataError;
 use crate::error_type::ErrorType;
+use crate::ledger::constant::ChargeStatus;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TransactionMetadata {
@@ -53,7 +54,7 @@ pub struct OuterChargeLedger {
     pub user_id: i32,
     pub passthrough_card_id: i32,
     pub amount_cents: i32,
-    pub status: String,
+    pub status: ChargeStatus,
     pub is_success: Option<bool>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime
@@ -64,12 +65,12 @@ pub struct OuterChargeLedger {
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(PassthroughCard))]
 #[diesel(table_name = outer_charge_ledger)]
-pub struct InsertableOuterChargeLedger<'a> {
+pub struct InsertableOuterChargeLedger {
     pub registered_transaction_id: i32,
     pub user_id: i32,
     pub passthrough_card_id: i32,
     pub amount_cents: i32,
-    pub status: &'a str,
+    pub status: ChargeStatus,
     pub is_success: Option<bool>,
 }
 
@@ -84,7 +85,7 @@ pub struct InnerChargeLedger {
     pub user_id: i32,
     pub wallet_card_id: i32,
     pub amount_cents: i32,
-    pub status: String,
+    pub status: ChargeStatus,
     pub is_success: Option<bool>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime
@@ -95,12 +96,12 @@ pub struct InnerChargeLedger {
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Wallet))]
 #[diesel(table_name = inner_charge_ledger)]
-pub struct InsertableInnerChargeLedger<'a> {
+pub struct InsertableInnerChargeLedger {
     pub registered_transaction_id: i32,
     pub user_id: i32,
     pub wallet_card_id: i32,
     pub amount_cents: i32,
-    pub status: &'a str,
+    pub status: ChargeStatus,
     pub is_success: Option<bool>,
 }
 
@@ -186,7 +187,7 @@ impl RegisteredTransaction {
 
 
 impl InnerChargeLedger {
-    pub async fn insert<'a>(transaction: &InsertableInnerChargeLedger<'a>) -> Result<Self, DataError> {
+    pub async fn insert(transaction: &InsertableInnerChargeLedger) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = diesel::insert_into(inner_charge_ledger::table)
             .values(transaction)
@@ -258,7 +259,7 @@ impl InnerChargeLedger {
 }
 
 impl OuterChargeLedger {
-    pub async fn insert<'a>(transaction: &InsertableOuterChargeLedger<'a>) -> Result<Self, DataError> {
+    pub async fn insert(transaction: &InsertableOuterChargeLedger) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = diesel::insert_into(outer_charge_ledger::table)
             .values(transaction)

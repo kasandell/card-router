@@ -11,7 +11,7 @@ use crate::util::math::{
     get_cents_of_cashback,
     get_number_of_points
 };
-use super::constant::RuleStatus;
+use super::constant::{DayOfMonth, RuleStatus};
 
 #[derive(Insertable, Debug)]
 #[diesel(table_name = rule)]
@@ -23,10 +23,10 @@ struct InsertableRule {
     pub merchant_name: Option<String>,
     pub points_multiplier: Option<i32>,
     pub cashback_percentage_bips: Option<i32>,
-    pub recurring_day_of_month: Option<String>,
+    pub recurring_day_of_month: Option<DayOfMonth>,
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
-    pub rule_status: String
+    pub rule_status: RuleStatus
 }
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable)]
@@ -40,10 +40,10 @@ pub struct Rule {
     pub merchant_name: Option<String>,
     pub points_multiplier: Option<i32>,
     pub cashback_percentage_bips: Option<i32>,
-    pub recurring_day_of_month: Option<String>,
+    pub recurring_day_of_month: Option<DayOfMonth>,
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
-    pub rule_status: String,
+    pub rule_status: RuleStatus,
 }
 
 impl Rule {
@@ -84,7 +84,7 @@ impl Rule {
     }
 
     fn is_active_rule(&self) -> bool {
-        RuleStatus::from_str(&self.rule_status) == RuleStatus::ACTIVE
+        self.rule_status == RuleStatus::Active
     }
 
     fn is_valid_mcc_merchant_name(&self) -> bool {
@@ -160,7 +160,7 @@ impl From<&CreateRuleRequest> for InsertableRule {
                 Some(end_date) => Some(end_date.clone()),
                 None => None
             },
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         }
     }
 }

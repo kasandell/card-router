@@ -158,7 +158,7 @@ mod tests {
                 merchant_name: None,
                 points_multiplier: Some(1000),
                 cashback_percentage_bips: None,
-                recurring_day_of_month: Some(DayOfMonth::FIRST.as_str()),
+                recurring_day_of_month: Some(DayOfMonth::First),
                 start_date: Some(Utc::now().naive_utc().date()),
                 end_date: None,
             }

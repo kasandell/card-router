@@ -221,7 +221,7 @@ mod tests {
         matched.expected_reference_id = expected_reference_id.clone();
         matched.psp_id = Some(psp_id.clone());
         matched.recurring_detail_reference = Some(new_card_id.clone());
-        matched.status = WalletCardAttemptStatus::MATCHED.as_str();
+        matched.status = WalletCardAttemptStatus::Matched;
 
         wca_dao.expect_find_by_reference_id()
             .times(1)
@@ -236,7 +236,7 @@ mod tests {
                 *card_id == wca.id
                 && card_attempt.recurring_detail_reference == new_card_id_clone
                 && card_attempt.psp_id == psp_id_clone
-                &&  card_attempt.status == WalletCardAttemptStatus::MATCHED.as_str()
+                &&  card_attempt.status == WalletCardAttemptStatus::Matched
 
             })
             .return_const(
@@ -295,7 +295,7 @@ mod tests {
         matched.expected_reference_id = expected_reference_id.clone();
         matched.psp_id = Some(psp_id.clone());
         matched.recurring_detail_reference = Some(new_card_id.clone());
-        matched.status = WalletCardAttemptStatus::MATCHED.as_str();
+        matched.status = WalletCardAttemptStatus::Matched;
 
         wca_dao.expect_find_by_reference_id()
             .times(1)

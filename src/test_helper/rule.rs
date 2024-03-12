@@ -18,7 +18,7 @@ pub fn create_mock_rule_dateless_mcc_points(
         recurring_day_of_month: None,
         start_date: None,
         end_date: None,
-        rule_status: RuleStatus::ACTIVE.as_str()
+        rule_status: RuleStatus::Active
     }
 }
 
@@ -38,6 +38,6 @@ pub fn create_mock_rule_dateless_mcc_cashback(
         recurring_day_of_month: None,
         start_date: None,
         end_date: None,
-        rule_status: RuleStatus::ACTIVE.as_str()
+        rule_status: RuleStatus::Active
     }
 }

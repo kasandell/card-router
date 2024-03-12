@@ -50,7 +50,7 @@ mod entity_tests {
         assert_eq!(category.id, rule.rule_category_id.expect("expect rule id"));
         assert_eq!(mcc_mapping.id, rule.rule_category_id.expect("Expect rule category id"));
         assert_eq!(points_multiplier, rule.points_multiplier);
-        assert_eq!(RuleStatus::ACTIVE.as_str(), rule.rule_status);
+        assert_eq!(RuleStatus::Active, rule.rule_status);
         assert!(rule.merchant_name.is_none());
         assert!(rule.cashback_percentage_bips.is_none());
         assert!(rule.recurring_day_of_month.is_none());
@@ -69,7 +69,7 @@ mod entity_tests {
         let credit_card_id = 1;
         let mcc = "7184";
         let date = Some(Utc::now().date_naive());
-        let recurring_day_of_month = Some(DayOfMonth::FIRST.as_str());
+        let recurring_day_of_month = Some(DayOfMonth::First);
         let rule = Rule {
             id: 1,
             public_id: Uuid::new_v4(),
@@ -81,10 +81,10 @@ mod entity_tests {
             recurring_day_of_month: recurring_day_of_month.clone(),
             start_date: date,
             end_date: None,
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         };
         assert!(!rule.is_valid());
-        assert_eq!(RuleStatus::ACTIVE.as_str(), rule.rule_status);
+        assert_eq!(RuleStatus::Active, rule.rule_status);
         assert_eq!(rule.recurring_day_of_month, recurring_day_of_month.clone());
         assert_eq!(rule.start_date, date);
         assert!(rule.end_date.is_none());
@@ -108,7 +108,7 @@ mod entity_tests {
             recurring_day_of_month: None,
             start_date: date,
             end_date: None,
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         };
         assert!(!rule.is_valid());
         assert_eq!(rule.start_date, date);
@@ -135,7 +135,7 @@ mod entity_tests {
             recurring_day_of_month: None,
             start_date: start_date,
             end_date: end_date,
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         };
         assert!(!rule.is_valid());
         assert_eq!(rule.start_date, start_date);
@@ -158,7 +158,7 @@ mod entity_tests {
             recurring_day_of_month: None,
             start_date: None,
             end_date: None,
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         };
         assert!(!rule.is_valid());
         assert!(rule.rule_category_id.is_none());
@@ -183,7 +183,7 @@ mod entity_tests {
             recurring_day_of_month: None,
             start_date: None,
             end_date: None,
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         };
         assert!(!rule.is_valid());
         assert_eq!(rule.rule_category_id, Some(1));
@@ -206,7 +206,7 @@ mod entity_tests {
             recurring_day_of_month: None,
             start_date: None,
             end_date: None,
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         };
         assert!(!rule.is_valid());
         assert!(rule.points_multiplier.is_none());
@@ -231,7 +231,7 @@ mod entity_tests {
             recurring_day_of_month: None,
             start_date: None,
             end_date: None,
-            rule_status: RuleStatus::ACTIVE.as_str()
+            rule_status: RuleStatus::Active
         };
         assert!(!rule.is_valid());
         assert_eq!(rule.points_multiplier, points_multiplier);

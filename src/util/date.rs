@@ -15,11 +15,11 @@ pub fn last_of_month(date: NaiveDate) -> NaiveDate {
     }
 }
 
-pub fn adjust_recurring_to_date(date: NaiveDate, day_of_month: DayOfMonth) -> NaiveDate {
+pub fn adjust_recurring_to_date(date: NaiveDate, day_of_month: &DayOfMonth) -> NaiveDate {
     //given a date and a day_of_month enum, use the month from date and day of month from day of month
     match day_of_month {
-        DayOfMonth::FIRST => first_of_month(date),
-        DayOfMonth::LAST => last_of_month(date),
+        DayOfMonth::First => first_of_month(date),
+        DayOfMonth::Last => last_of_month(date),
     }
 }
 

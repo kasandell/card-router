@@ -5,6 +5,7 @@ mod entity_tests {
     use crate::test_helper::user::create_user;
     use crate::ledger::constant::ChargeStatus;
     use crate::ledger::entity::{InsertableInnerChargeLedger, InnerChargeLedger, InsertableOuterChargeLedger, OuterChargeLedger, RegisteredTransaction, InsertableRegisteredTransaction, TransactionLedger, InsertableTransactionLedger};
+    use crate::test_helper::wallet::create_test_wallet_in_db;
     use crate::wallet::entity::Wallet;
 
     const TEST_MEMO: &str = "Test charge";
@@ -78,7 +79,7 @@ mod entity_tests {
         ).await.expect("ledger should be ok");
 
 
-        let (card, ca) = Wallet::create_test_wallet_in_db(
+        let (card, ca) = create_test_wallet_in_db(
             user.id,
             1
         ).await.expect("should create");
@@ -89,7 +90,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Fail.as_str(),
+                status: ChargeStatus::Fail,
                 is_success: None
 
             }
@@ -98,7 +99,7 @@ mod entity_tests {
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, card.id);
         assert_eq!(inner_charge.amount_cents, TEST_AMOUNT);
-        assert_eq!(inner_charge.status, ChargeStatus::Fail.as_str());
+        assert_eq!(inner_charge.status, ChargeStatus::Fail);
         assert_eq!(inner_charge.is_success, None);
         assert_eq!(inner_charge.registered_transaction_id, rtx.id);
 
@@ -123,7 +124,7 @@ mod entity_tests {
         ).await.expect("ledger should be ok");
 
 
-        let (card, ca) = Wallet::create_test_wallet_in_db(
+        let (card, ca) = create_test_wallet_in_db(
             user.id,
             1
         ).await.expect("should create");
@@ -134,7 +135,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Fail.as_str(),
+                status: ChargeStatus::Fail,
                 is_success: None
 
             }
@@ -143,7 +144,7 @@ mod entity_tests {
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
         assert_eq!(inner_charge1.amount_cents, TEST_AMOUNT);
-        assert_eq!(inner_charge1.status, ChargeStatus::Fail.as_str());
+        assert_eq!(inner_charge1.status, ChargeStatus::Fail);
         assert_eq!(inner_charge1.is_success, None);
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
@@ -153,7 +154,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Fail.as_str(),
+                status: ChargeStatus::Fail,
                 is_success: None
 
             }
@@ -162,7 +163,7 @@ mod entity_tests {
         assert_eq!(inner_charge2.user_id, user.id);
         assert_eq!(inner_charge2.wallet_card_id, card.id);
         assert_eq!(inner_charge2.amount_cents, TEST_AMOUNT);
-        assert_eq!(inner_charge2.status, ChargeStatus::Fail.as_str());
+        assert_eq!(inner_charge2.status, ChargeStatus::Fail);
         assert_eq!(inner_charge2.is_success, None);
         assert_eq!(inner_charge2.registered_transaction_id, rtx.id);
 
@@ -188,7 +189,7 @@ mod entity_tests {
         ).await.expect("ledger should be ok");
 
 
-        let (card, ca) = Wallet::create_test_wallet_in_db(
+        let (card, ca) = create_test_wallet_in_db(
             user.id,
             1
         ).await.expect("should create");
@@ -199,7 +200,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Success.as_str(),
+                status: ChargeStatus::Success,
                 is_success: Some(true)
 
             }
@@ -208,7 +209,7 @@ mod entity_tests {
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
         assert_eq!(inner_charge1.amount_cents, TEST_AMOUNT);
-        assert_eq!(inner_charge1.status, ChargeStatus::Success.as_str());
+        assert_eq!(inner_charge1.status, ChargeStatus::Success);
         assert_eq!(inner_charge1.is_success, Some(true));
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
@@ -218,7 +219,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Success.as_str(),
+                status: ChargeStatus::Success,
                 is_success: Some(true)
 
             }
@@ -236,7 +237,7 @@ mod entity_tests {
         crate::test_helper::general::init();
         let user = create_user().await;
 
-        let (card, ca) = Wallet::create_test_wallet_in_db(
+        let (card, ca) = create_test_wallet_in_db(
             user.id,
             1
         ).await.expect("should create");
@@ -247,7 +248,7 @@ mod entity_tests {
                 user_id: user.id,
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Success.as_str(),
+                status: ChargeStatus::Success,
                 is_success: Some(true)
 
             }
@@ -284,7 +285,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Fail.as_str(),
+                status: ChargeStatus::Fail,
                 is_success: None
 
             }
@@ -293,7 +294,7 @@ mod entity_tests {
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
         assert_eq!(outer_charge.amount_cents, TEST_AMOUNT);
-        assert_eq!(outer_charge.status, ChargeStatus::Fail.as_str());
+        assert_eq!(outer_charge.status, ChargeStatus::Fail);
         assert_eq!(outer_charge.is_success, None);
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
@@ -319,7 +320,7 @@ mod entity_tests {
                 user_id: user.id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Fail.as_str(),
+                status: ChargeStatus::Fail,
                 is_success: None
 
             }
@@ -354,7 +355,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Success.as_str(),
+                status: ChargeStatus::Success,
                 is_success: Some(true)
 
             }
@@ -363,7 +364,7 @@ mod entity_tests {
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
         assert_eq!(outer_charge.amount_cents, TEST_AMOUNT);
-        assert_eq!(outer_charge.status, ChargeStatus::Success.as_str());
+        assert_eq!(outer_charge.status, ChargeStatus::Success);
         assert_eq!(outer_charge.is_success, Some(true));
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
@@ -373,7 +374,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 passthrough_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Success.as_str(),
+                status: ChargeStatus::Success,
                 is_success: Some(true)
 
             }
@@ -399,7 +400,7 @@ mod entity_tests {
         ).await.expect("ledger should be ok");
 
 
-        let (wallet_card, ca) = Wallet::create_test_wallet_in_db(
+        let (wallet_card, ca) = create_test_wallet_in_db(
             user.id,
             1
         ).await.expect("should create");
@@ -410,7 +411,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 wallet_card_id: wallet_card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Success.as_str(),
+                status: ChargeStatus::Success,
                 is_success: Some(true)
 
             }
@@ -419,7 +420,7 @@ mod entity_tests {
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, wallet_card.id);
         assert_eq!(inner_charge.amount_cents, TEST_AMOUNT);
-        assert_eq!(inner_charge.status, ChargeStatus::Success.as_str());
+        assert_eq!(inner_charge.status, ChargeStatus::Success);
         assert_eq!(inner_charge.is_success, Some(true));
         assert_eq!(inner_charge.registered_transaction_id, rtx.id);
 
@@ -434,7 +435,7 @@ mod entity_tests {
                 user_id: rtx.user_id,
                 passthrough_card_id: outer_card.id,
                 amount_cents: TEST_AMOUNT,
-                status: &ChargeStatus::Success.as_str(),
+                status: ChargeStatus::Success,
                 is_success: Some(true)
 
             }
@@ -443,7 +444,7 @@ mod entity_tests {
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, outer_card.id);
         assert_eq!(outer_charge.amount_cents, TEST_AMOUNT);
-        assert_eq!(outer_charge.status, ChargeStatus::Success.as_str());
+        assert_eq!(outer_charge.status, ChargeStatus::Success);
         assert_eq!(outer_charge.is_success, Some(true));
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 

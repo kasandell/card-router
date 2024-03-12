@@ -31,7 +31,7 @@ pub fn create_mock_failed_inner_charge() -> InnerChargeLedger {
         user_id: 1,
         wallet_card_id: 1,
         amount_cents: 0,
-        status: ChargeStatus::Fail.as_str(),
+        status: ChargeStatus::Fail,
         is_success: None,
         created_at: Utc::now().naive_utc(),
         updated_at: Utc::now().naive_utc()
@@ -45,7 +45,7 @@ pub fn create_mock_success_inner_charge() -> InnerChargeLedger {
         user_id: 1,
         wallet_card_id: 1,
         amount_cents: 0,
-        status: ChargeStatus::Success.as_str(),
+        status: ChargeStatus::Success,
         is_success: Some(true),
         created_at: Utc::now().naive_utc(),
         updated_at: Utc::now().naive_utc()
@@ -59,7 +59,7 @@ pub fn create_mock_failed_outer_charge() -> OuterChargeLedger {
         user_id: 1,
         passthrough_card_id: 1,
         amount_cents: 0,
-        status: ChargeStatus::Fail.as_str(),
+        status: ChargeStatus::Fail,
         is_success: None,
         created_at: Utc::now().naive_utc(),
         updated_at: Utc::now().naive_utc()
@@ -73,7 +73,7 @@ pub fn create_mock_success_outer_charge() -> OuterChargeLedger {
         user_id: 1,
         passthrough_card_id: 1,
         amount_cents: 0,
-        status: ChargeStatus::Success.as_str(),
+        status: ChargeStatus::Success,
         is_success: Some(true),
         created_at: Utc::now().naive_utc(),
         updated_at: Utc::now().naive_utc()

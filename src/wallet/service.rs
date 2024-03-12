@@ -125,14 +125,14 @@ impl WalletService {
         ).await?;
         info!("Found wallet card attempt id {}", card_attempt.id);
 
-        if card_attempt.status.eq(&WalletCardAttemptStatus::MATCHED.as_str()) {
+        if card_attempt.status.eq(&WalletCardAttemptStatus::Matched) {
             return Err(ServiceError::new(ErrorType::Conflict, "Card already matched"));
         }
 
         let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {
             recurring_detail_reference: &request.psp_reference,
             psp_id: &request.original_psp_reference,
-            status: &WalletCardAttemptStatus::MATCHED.as_str()
+            status: WalletCardAttemptStatus::Matched
         }).await?;
         info!("Updated to matched: {}", &update.status);
 

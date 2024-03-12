@@ -1,6 +1,7 @@
 use chrono::Utc;
 use uuid::Uuid;
 use crate::data_error::DataError;
+use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt};
 
 pub fn create_mock_wallet() -> Wallet {
@@ -41,7 +42,7 @@ pub fn create_mock_wallet_attempt() -> WalletCardAttempt {
         credit_card_id: 1,
         expected_reference_id: "".to_string(),
         psp_id: None,
-        status: "".to_string(),
+        status: WalletCardAttemptStatus::Pending,
         recurring_detail_reference: None,
         created_at: Default::default(),
         updated_at: Default::default(),

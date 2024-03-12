@@ -103,7 +103,7 @@ impl LedgerServiceTrait for LedgerService {
                     user_id: registered_transaction.user_id,
                     wallet_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: &ChargeStatus::Fail.as_str(),
+                    status: ChargeStatus::Fail,
                     is_success: None,
                 }
             ).await?
@@ -124,7 +124,7 @@ impl LedgerServiceTrait for LedgerService {
                     user_id: registered_transaction.user_id,
                     wallet_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: &ChargeStatus::Success.as_str(),
+                    status: ChargeStatus::Success,
                     is_success: Some(true),
                 }
             ).await?
@@ -145,7 +145,7 @@ impl LedgerServiceTrait for LedgerService {
                     user_id: registered_transaction.user_id,
                     passthrough_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: &ChargeStatus::Fail.as_str(),
+                    status: ChargeStatus::Fail,
                     is_success: None,
                 }
             ).await?
@@ -166,7 +166,7 @@ impl LedgerServiceTrait for LedgerService {
                     user_id: registered_transaction.user_id,
                     passthrough_card_id: card.id,
                     amount_cents: metadata.amount_cents,
-                    status: &ChargeStatus::Success.as_str(),
+                    status: ChargeStatus::Success,
                     is_success: Some(true),
                 }
             ).await?
