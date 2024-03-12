@@ -4,7 +4,7 @@ use adyen_checkout::models::{Amount, PaymentCancelResponse, PaymentRequest, Paym
 use async_trait::async_trait;
 use crate::error::error_type::ErrorType;
 use crate::error::service_error::ServiceError;
-use footprint::apis::configuration::Configuration;
+use footprint::apis::configuration::{BasicAuth, Configuration};
 use footprint::apis::default_api::{
     post_vault_proxy,
     create_user_vault,
@@ -16,7 +16,7 @@ use footprint::models::{
 };
 use mockall::automock;
 use serde_json::to_value;
-use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_VAULT_PROXY_ID};
+use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_SECRET_KEY, FOOTPRINT_VAULT_PROXY_ID};
 use crate::environment::ENVIRONMENT;
 use crate::footprint::helper::{individual_request_part_for_customer_template, individual_request_part_for_customer_with_prefix_template, individual_request_part_for_customer_with_suffix_template};
 use crate::footprint::r#enum::CardPart;
@@ -40,8 +40,10 @@ pub struct FootprintService {
 
 impl FootprintService {
     pub fn new() -> Self {
+        let mut cfg = Configuration::new();
+        cfg.basic_auth = Some((env::var(FOOTPRINT_SECRET_KEY).expect("need key"), None));
         Self {
-            configuration: Configuration::new(),
+            configuration: cfg,
             adyen_proxy_id: env::var(FOOTPRINT_VAULT_PROXY_ID).expect("Need a proxy id"),
             adyen_api_key: env::var(ADYEN_API_KEY).expect("Need an api key"),
         }
@@ -52,6 +54,7 @@ impl FootprintService {
 #[async_trait(?Send)]
 impl FootprintServiceTrait for FootprintService {
     async fn add_vault_for_user(self: Arc<Self>) ->  Result<CreateUserVaultResponse, ServiceError> {
+        println!("Creating user vault");
         Ok(create_user_vault(
             &self.configuration
         ).await?)

@@ -44,25 +44,28 @@ impl <T> From<AdyenCheckoutError<T>> for ServiceError {
 }
 
 impl From<AdyenCheckoutServiceError> for ServiceError {
-    fn from(_: AdyenCheckoutServiceError) -> Self {
+    fn from(error: AdyenCheckoutServiceError) -> Self {
         info!("Converting from adyen service error");
         println!("Converting from adyen service error");
+        println!("{:?}", error);
         ServiceError::new(ErrorType::InternalServerError, "Service error")
     }
 }
 
 impl <T> From<FootprintError<T>> for ServiceError {
-    fn from(_: FootprintError<T>) -> Self {
+    fn from(error: FootprintError<T>) -> Self {
         info!("Converting from footprint error");
         println!("Converting from footprint error");
+        println!("{}", error.to_string());
         ServiceError::new(ErrorType::InternalServerError, "Service error")
     }
 }
 
 
 impl From<LithicServiceError> for ServiceError {
-    fn from(_: LithicServiceError) -> Self {
+    fn from(error: LithicServiceError) -> Self {
         info!("converting from lithic service error");
+        println!("{:?}", error);
         ServiceError::new(ErrorType::InternalServerError, "Lithic service error")
     }
 }
@@ -70,6 +73,7 @@ impl From<LithicServiceError> for ServiceError {
 impl From<SerdeError> for ServiceError {
     fn from(error: SerdeError) -> ServiceError {
         info!("Converting from serde error");
+        println!("{}", error.to_string());
         match error {
             err => ServiceError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
         }

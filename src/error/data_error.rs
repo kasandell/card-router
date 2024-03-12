@@ -34,8 +34,9 @@ impl From<R2D2Error> for DataError {
 }
 
 impl From<RunError> for DataError {
-    fn from(e: RunError) -> DataError {
-        DataError::new(ErrorType::InternalServerError, &format!("BB8 error: {}", e.to_string()).as_str())
+    fn from(error: RunError) -> DataError {
+        println!("{}", error.to_string());
+        DataError::new(ErrorType::InternalServerError, &format!("Data Error").as_str())
     }
 
 }
@@ -43,6 +44,7 @@ impl From<RunError> for DataError {
 impl From<DieselError> for DataError {
     fn from(error: DieselError) -> DataError {
         info!("Converting from diesel error");
+        println!("{}", error.to_string());
         match error {
             DieselError::DatabaseError(kind, err) => {
                 /*
@@ -69,6 +71,7 @@ impl From<DieselError> for DataError {
 impl From<SerdeError> for DataError {
     fn from(error: SerdeError) -> DataError {
         info!("Converting from serde error");
+        println!("{}", error.to_string());
         match error {
             err => DataError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
         }
@@ -76,7 +79,8 @@ impl From<SerdeError> for DataError {
 }
 
 impl From<ParseIntError> for DataError {
-    fn from(_: ParseIntError) -> Self {
+    fn from(error: ParseIntError) -> Self {
+        println!("{}", error.to_string());
         DataError::new(ErrorType::InternalServerError, "Parse error")
     }
 }
