@@ -21,3 +21,4 @@ Cargo.log
 .env
 api.lithic.com.pub.pem
 countlines.sh
+tarpaulin-report.html

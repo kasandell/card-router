@@ -1,6 +1,12 @@
 # Rust specific 
 https://github.com/serde-rs/serde/issues/1019
 
+# Coverage 
+```
+cargo tarpaulin --out Html -- --nocapture --test-threads=1
+```
+
+
 # Timing 
 https://crates.io/crates/metered
 
