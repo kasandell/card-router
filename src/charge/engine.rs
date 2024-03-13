@@ -203,6 +203,18 @@ impl Engine {
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ServiceError> {
         let mut start = Instant::now();
+        let resp = self.charge_service.clone().charge_card_on_file(
+            &ChargeCardRequest {
+                amount_cents: transaction_metadata.amount_cents,
+                mcc: &transaction_metadata.mcc,
+                payment_method_id: &card.payment_method_id,
+                customer_public_id: &user.public_id,
+                idempotency_key: &idempotency_key,
+                reference: &Uuid::new_v4().to_string(),
+                statement: &transaction_metadata.memo,
+            }
+        ).await;
+        /*
         let resp = self.footprint_service.clone().proxy_adyen_payment_request(
             &ChargeThroughProxyRequest {
                 amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
@@ -214,6 +226,7 @@ impl Engine {
                 statement: &transaction_metadata.memo
             }
         ).await;
+         */
         println!("network request took {:?}", start.elapsed());
 
         start = Instant::now();
