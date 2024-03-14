@@ -4,16 +4,9 @@ use adyen_checkout::models::{Amount, PaymentCancelResponse, PaymentRequest, Paym
 use async_trait::async_trait;
 use crate::error::error_type::ErrorType;
 use crate::error::service_error::ServiceError;
-use footprint::apis::configuration::{BasicAuth, Configuration};
-use footprint::apis::default_api::{
-    post_vault_proxy,
-    create_user_vault,
-    create_client_token
-};
-use footprint::models::{
-    CreateClientTokenResponse,
-    CreateUserVaultResponse
-};
+use footprint::apis::configuration::{ApiKey, BasicAuth, Configuration};
+use footprint::apis::default_api::{post_vault_proxy, create_user_vault, create_client_token, post_vault_proxy_jit};
+use footprint::models::{CreateClientTokenRequest, CreateClientTokenResponse, CreateUserVaultResponse};
 use mockall::automock;
 use serde_json::to_value;
 use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_SECRET_KEY, FOOTPRINT_VAULT_PROXY_ID};
@@ -22,13 +15,14 @@ use crate::footprint::helper::{individual_request_part_for_customer_template, in
 use crate::footprint::r#enum::CardPart;
 use crate::footprint::request::ChargeThroughProxyRequest;
 use crate::constant::financial_constant;
+use crate::user::entity::User;
 
 #[automock]
 #[async_trait(?Send)]
 pub trait FootprintServiceTrait {
     async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, ServiceError>;
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError>;
-    async fn create_client_token(self: Arc<Self>, card_token: &str) -> Result<CreateClientTokenResponse, ServiceError>;
+    async fn create_client_token(self: Arc<Self>, user: &User, create_client_token_request: CreateClientTokenRequest) -> Result<CreateClientTokenResponse, ServiceError>;
     async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError>;
 }
 
@@ -43,6 +37,10 @@ impl FootprintService {
     pub fn new() -> Self {
         let mut cfg = Configuration::new();
         cfg.basic_auth = Some((env::var(FOOTPRINT_SECRET_KEY).expect("need key"), None));
+        cfg.api_key = Some(ApiKey {
+            prefix: None,
+            key: env::var(FOOTPRINT_SECRET_KEY).expect("need key"),
+        });
         Self {
             configuration: cfg,
             adyen_proxy_id: env::var(FOOTPRINT_VAULT_PROXY_ID).expect("Need a proxy id"),
@@ -131,7 +129,7 @@ impl FootprintServiceTrait for FootprintService {
                     checkout_attempt_id: None,
                     recurring_detail_reference: None,
                     stored_payment_method_id: None,//Some(Some(to_value(request.payment_method_id)?)),
-                    r#type: None,//Some(Some(adyen_checkout::models::payment_request_payment_method::Type::Scheme)),
+                    r#type: Some(Some(adyen_checkout::models::payment_request_payment_method::Type::Scheme)),//Some(Some(adyen_checkout::models::payment_request_payment_method::Type::Scheme)),
                     funding_source: None,
                     holder_name: Some(name),
                     brand: None,
@@ -177,6 +175,7 @@ impl FootprintServiceTrait for FootprintService {
             three_ds_authentication_only: None,
             trusted_shopper: None
         });
+        /*
         let response = post_vault_proxy(
             &self.configuration,
             &self.adyen_proxy_id,
@@ -189,16 +188,31 @@ impl FootprintServiceTrait for FootprintService {
             )
         ).await?; // post vault proxy response error needed
 
+         */
+
+        let response = post_vault_proxy_jit(
+            &self.configuration,
+            "application/json",
+            "https://checkout-test.adyen.com/v71/payments",
+            "POST",
+            "charging",
+            &self.adyen_api_key,
+            Some(
+                to_value(payment_request)?
+            )
+        ).await?;
+
         let payment_response: PaymentResponse = serde_json::from_value(response)?;
         Ok(payment_response)
     }
 
     #[tracing::instrument(skip(self))]
-    async fn create_client_token(self: Arc<Self>, card_token: &str) -> Result<CreateClientTokenResponse, ServiceError> {
+    async fn create_client_token(self: Arc<Self>, user: &User, create_client_token_request: CreateClientTokenRequest) -> Result<CreateClientTokenResponse, ServiceError> {
         Ok(
             create_client_token(
                 &self.configuration,
-                card_token
+                &user.footprint_vault_id,
+                create_client_token_request
             ).await?
         )
     }

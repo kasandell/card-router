@@ -42,3 +42,7 @@ pub fn individual_request_part_for_customer_with_suffix_template(customer_id: &s
     // {{ CCCC.card.XXXXX.expiry | suffix(2) }} used for extracting year
     return "{{ ".to_string().add(&customer_id).add(".card.").add(card_id).add(".").add(part.as_str()).add(" | suffix(2) }}");
 }
+
+pub fn get_scopes_for_request() -> Vec<String> {
+    vec!["vault".to_string()]
+}

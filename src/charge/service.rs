@@ -193,6 +193,7 @@ impl ChargeService {
         transaction_metadata: &TransactionMetadata,
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ServiceError> {
+        /*
         let resp = self.charge_service.clone().charge_card_on_file(
             &ChargeCardRequest {
                 amount_cents: transaction_metadata.amount_cents,
@@ -204,7 +205,8 @@ impl ChargeService {
                 statement: &transaction_metadata.memo,
             }
         ).await;
-        /*
+
+         */
         let resp = self.footprint_service.clone().proxy_adyen_payment_request(
             &ChargeThroughProxyRequest {
                 amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
@@ -216,7 +218,6 @@ impl ChargeService {
                 statement: &transaction_metadata.memo
             }
         ).await;
-         */
 
         if let Ok(response) = resp {
             if let Some(code) = response.result_code {

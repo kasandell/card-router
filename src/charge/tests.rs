@@ -10,7 +10,7 @@ mod tests {
     use crate::user::entity::User;
     use crate::error::service_error::ServiceError;
     use crate::charge::{
-        service::AdyenCheckoutService,
+        service::ChargeService,
         entity::{
             ChargeCardAttemptResult,
             ChargeEngineResult

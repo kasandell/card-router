@@ -7,6 +7,10 @@ cargo tarpaulin --out Html -- --nocapture --test-threads=1
 ```
 
 
+# Logging
+https://mcarton.github.io/rust-derivative/latest/Debug.html
+
+
 # Timing 
 https://crates.io/crates/metered
 
