@@ -52,6 +52,7 @@ pub struct MccMapping {
 }
 
 impl Category {
+    #[tracing::instrument]
     pub async fn create<'a>(category: &InsertableCategory<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let cat = diesel::insert_into(category::table)
@@ -61,6 +62,7 @@ impl Category {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -73,12 +75,14 @@ impl Category {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         Category::delete(self.id).await
     }
 }
 
 impl MccMapping {
+    #[tracing::instrument]
     pub async fn create<'a>(mapping: &InsertableMccMapping<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let map = diesel::insert_into(mcc_mapping::table)
@@ -87,6 +91,7 @@ impl MccMapping {
         Ok(map)
     }
 
+    #[tracing::instrument]
     pub async fn get_by_mcc(mcc: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let mapping = mcc_mapping::table.filter(
@@ -96,6 +101,7 @@ impl MccMapping {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -108,6 +114,7 @@ impl MccMapping {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         MccMapping::delete(self.id).await
     }

@@ -34,9 +34,9 @@ impl From<DataError> for ServiceError {
 
 impl <T> From<AdyenCheckoutError<T>> for ServiceError {
     fn from(error: AdyenCheckoutError<T>) -> ServiceError {
-        info!("Converting from adyen checkout error");
-        println!("Converting from adyen checkout error");
-        println!("{}", error);
+        tracing::info!("Converting from adyen checkout error");
+        tracing::info!("Converting from adyen checkout error");
+        tracing::info!("{}", error);
         match error {
             err => ServiceError::new(ErrorType::InternalServerError, &format!("Adyen error")),
         }
@@ -45,18 +45,18 @@ impl <T> From<AdyenCheckoutError<T>> for ServiceError {
 
 impl From<AdyenCheckoutServiceError> for ServiceError {
     fn from(error: AdyenCheckoutServiceError) -> Self {
-        info!("Converting from adyen service error");
-        println!("Converting from adyen service error");
-        println!("{:?}", error);
+        tracing::info!("Converting from adyen service error");
+        tracing::info!("Converting from adyen service error");
+        tracing::info!("{:?}", error);
         ServiceError::new(ErrorType::InternalServerError, "Service error")
     }
 }
 
 impl <T> From<FootprintError<T>> for ServiceError {
     fn from(error: FootprintError<T>) -> Self {
-        info!("Converting from footprint error");
-        println!("Converting from footprint error");
-        println!("{}", error.to_string());
+        tracing::info!("Converting from footprint error");
+        tracing::info!("Converting from footprint error");
+        tracing::info!("{}", error.to_string());
         ServiceError::new(ErrorType::InternalServerError, "Service error")
     }
 }
@@ -64,16 +64,16 @@ impl <T> From<FootprintError<T>> for ServiceError {
 
 impl From<LithicServiceError> for ServiceError {
     fn from(error: LithicServiceError) -> Self {
-        info!("converting from lithic service error");
-        println!("{:?}", error);
+        tracing::info!("converting from lithic service error");
+        tracing::info!("{:?}", error);
         ServiceError::new(ErrorType::InternalServerError, "Lithic service error")
     }
 }
 
 impl From<SerdeError> for ServiceError {
     fn from(error: SerdeError) -> ServiceError {
-        info!("Converting from serde error");
-        println!("{}", error.to_string());
+        tracing::info!("Converting from serde error");
+        tracing::info!("{}", error.to_string());
         match error {
             err => ServiceError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
         }

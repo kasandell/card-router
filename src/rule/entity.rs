@@ -47,6 +47,7 @@ pub struct Rule {
 }
 
 impl Rule {
+    #[tracing::instrument]
     pub async fn create(new_rule: &CreateRuleRequest) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let rule = diesel::insert_into(rule::table)
@@ -55,6 +56,7 @@ impl Rule {
         Ok(rule)
     }
 
+    #[tracing::instrument]
     pub async fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
 
@@ -119,6 +121,7 @@ impl Rule {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -131,6 +134,7 @@ impl Rule {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         Rule::delete(self.id).await
     }

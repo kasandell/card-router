@@ -1,3 +1,4 @@
+use std::fmt::Formatter;
 use std::sync::Arc;
 use crate::category::entity::{Category, InsertableCategory, InsertableMccMapping, MccMapping};
 use crate::error::data_error::DataError;
@@ -22,9 +23,10 @@ pub struct CategoryDao{}
 
 pub struct MccMappingDao{}
 
-
 // async?
 impl CategoryDao {
+
+    #[tracing::instrument]
     pub fn new() -> Self {
         Self{}
     }
@@ -32,12 +34,14 @@ impl CategoryDao {
 
 #[async_trait(?Send)]
 impl CategoryDaoTrait for CategoryDao {
+    #[tracing::instrument(skip(self))]
     async fn create<'a>(self: Arc<Self>, category: &InsertableCategory<'a>) -> Result<Category, DataError> {
         Category::create(category).await
     }
 }
 
 impl MccMappingDao {
+    #[tracing::instrument]
     pub fn new() -> Self {
         Self{}
     }
@@ -45,10 +49,12 @@ impl MccMappingDao {
 
 #[async_trait(?Send)]
 impl MccMappingDaoTrait for MccMappingDao {
+    #[tracing::instrument(skip(self))]
     async fn create<'a>(self: Arc<Self>, mapping: &InsertableMccMapping<'a>) -> Result<MccMapping, DataError> {
         MccMapping::create(mapping).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn get_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, DataError> {
         MccMapping::get_by_mcc(mcc).await
     }

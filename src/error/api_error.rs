@@ -36,8 +36,8 @@ impl fmt::Display for ApiError {
 
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
-        info!("Converting from serde error");
-        println!("SERDE ERROR");
+        tracing::info!("Converting from serde error");
+        tracing::info!("SERDE ERROR");
         match error {
             err => ApiError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
         }
@@ -48,7 +48,7 @@ impl From<SerdeError> for ApiError {
 
 impl From<ChargeEngineError> for ApiError {
     fn from(_: ChargeEngineError) -> Self {
-        info!("Converting from charge engine error");
+        tracing::info!("Converting from charge engine error");
         ApiError::new(ErrorType::InternalServerError, "Service error")
 
     }
@@ -56,7 +56,7 @@ impl From<ChargeEngineError> for ApiError {
 
 impl From<LedgerError> for ApiError {
     fn from(_: LedgerError) -> Self {
-        info!("Converting from ledger error");
+        tracing::info!("Converting from ledger error");
         ApiError::new(ErrorType::InternalServerError, "Service error")
 
     }
@@ -72,11 +72,11 @@ impl ResponseError for ApiError {
 
         let message = match status_code.as_u16() < 500 {
             true => {
-                warn!("{}: {}", self.error_type, self.message);
+                tracing::warn!("{}: {}", self.error_type, self.message);
                 self.message.clone()
             },
             false => {
-                error!("{}: {}", self.error_type, self.message);
+                tracing::error!("{}: {}", self.error_type, self.message);
                 "Internal server error".to_string()
             },
         };

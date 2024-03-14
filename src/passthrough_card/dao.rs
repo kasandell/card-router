@@ -1,3 +1,4 @@
+use std::fmt::Formatter;
 use std::sync::Arc;
 use lithic_client::models::Card;
 use crate::error::data_error::DataError;
@@ -36,26 +37,32 @@ impl PassthroughCardDao {
 
 #[async_trait(?Send)]
 impl PassthroughCardDaoTrait for PassthroughCardDao {
+    #[tracing::instrument(skip(self))]
     async fn create(self: Arc<Self>, card: LithicCard, user: &User) -> Result<PassthroughCard, DataError> {
         PassthroughCard::create(card, user).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn create_from_api_card(self: Arc<Self>, card: &Card, user: &User) -> Result<PassthroughCard, DataError> {
         PassthroughCard::create_from_api_card(card, user).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn get(self: Arc<Self>, id: i32) -> Result<PassthroughCard, DataError> {
         PassthroughCard::get(id).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCard, DataError> {
         PassthroughCard::get_by_token(token).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn find_cards_for_user(self: Arc<Self>, user_id: i32) -> Result<Vec<PassthroughCard>, DataError> {
         PassthroughCard::find_cards_for_user(user_id).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn find_card_for_user_in_status(
         self: Arc<Self>,
         user_id: i32,
@@ -64,8 +71,8 @@ impl PassthroughCardDaoTrait for PassthroughCardDao {
         PassthroughCard::find_card_for_user_in_status(user_id, status).await
     }
 
+    #[tracing::instrument(skip(self))]
     async fn update_status(self: Arc<Self>, id: i32, status: PassthroughCardStatus) -> Result<PassthroughCard, DataError> {
         PassthroughCard::update_status(id, status).await
     }
-
 }

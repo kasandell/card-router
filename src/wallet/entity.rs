@@ -44,7 +44,7 @@ pub struct InsertableCardAttempt<'a> {
     pub expected_reference_id: &'a str,
 }
 
-#[derive(Serialize, Deserialize, AsChangeset, Clone)]
+#[derive(Serialize, Deserialize, AsChangeset, Clone, Debug)]
 #[diesel(table_name = wallet_card_attempt)]
 pub struct UpdateCardAttempt<'a> {
     pub recurring_detail_reference: &'a str,
@@ -80,7 +80,7 @@ pub struct InsertableCard {
     pub wallet_card_attempt_id: i32,
 }
 
-#[derive(Serialize, Deserialize, AsChangeset)]
+#[derive(Serialize, Deserialize, AsChangeset, Debug)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
@@ -102,6 +102,7 @@ pub struct DisplayableCardInfo {
 }
 
 impl Wallet {
+    #[tracing::instrument]
     pub async fn find_all_for_user(user: &User) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
         //let cards = Wallet::belonging_to(&user).load::<Wallet>(&mut conn).await?;
@@ -111,7 +112,7 @@ impl Wallet {
         Ok(cards) 
     }
 
-    /**/
+    #[tracing::instrument]
     pub async fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
         let mut conn = db::connection().await?;
         let cards = wallet::table
@@ -129,6 +130,7 @@ impl Wallet {
     }
 
     // TODO: from consumes
+    #[tracing::instrument]
     pub async fn insert_card<'a>(card: &NewCard<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let insertable_card = InsertableCard::from(card);
@@ -140,6 +142,7 @@ impl Wallet {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -152,6 +155,7 @@ impl Wallet {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         Wallet::delete(self.id).await
     }
@@ -171,6 +175,7 @@ impl From<&NewCard<'_>> for InsertableCard {
 
 #[cfg(test)]
 impl Wallet {
+    #[tracing::instrument]
     pub async fn create_test_wallet(
         id: i32,
         user_id: i32,
@@ -188,6 +193,7 @@ impl Wallet {
         }
     }
 
+    #[tracing::instrument]
     pub async fn create_test_wallet_in_db(
         user_id: i32,
         credit_card_id: i32
@@ -213,6 +219,7 @@ impl Wallet {
 }
 
 impl WalletCardAttempt {
+    #[tracing::instrument]
     pub async fn insert<'a>(card_attempt: &InsertableCardAttempt<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -222,6 +229,7 @@ impl WalletCardAttempt {
         Ok(wallet)
     }
 
+    #[tracing::instrument]
     pub async fn find_by_reference_id(reference: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -232,6 +240,7 @@ impl WalletCardAttempt {
         Ok(card_attempt)
     }
 
+    #[tracing::instrument]
     pub async fn update_card<'a>(id: i32, card: &UpdateCardAttempt<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -243,6 +252,7 @@ impl WalletCardAttempt {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -255,6 +265,7 @@ impl WalletCardAttempt {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         WalletCardAttempt::delete(self.id).await
     }

@@ -33,10 +33,10 @@ pub async fn init_db() -> Pool<AsyncPgConnection>{
    };
    let mut builder = Pool::builder();
     if cfg!(test) {
-        warn!("Running test pool");
+        tracing::warn!("Running test pool");
         builder = builder.connection_customizer(Box::new(TestConnectionCustomizer));
     }
-   info!("Initializing connnection pool with {} connections", pool_size);
+   tracing::info!("Initializing connection pool with {} connections", pool_size);
    builder.max_size(pool_size).build(manager).await.expect("Failed to create db pool")
 }
 
@@ -46,19 +46,19 @@ pub async fn init_sync_db() -> r2d2::Pool<ConnectionManager<PgConnection>> {
     let pool_size = 1;
     let mut builder = r2d2::Pool::builder();
     if cfg!(test) {
-        warn!("Running test pool");
+        tracing::warn!("Running test pool");
         builder = builder.connection_customizer(Box::new(SyncTestConnectionCustomizer));
     }
-    info!("Initializing connnection pool with {} connections", pool_size);
+    tracing::info!("Initializing connnection pool with {} connections", pool_size);
     builder.max_size(pool_size).build(manager).expect("Failed to create db pool")
 }
 
 pub async fn init() {
-    info!("Initializing DB");
+    tracing::info!("Initializing DB");
     POOL.get_or_init(init_db).await;
     let mut conn = SYNC_POOL.get_or_init(init_sync_db).await.get().expect("need sync connection");
     run_migration(&mut conn);
-    info!("Initialized DB");
+    tracing::info!("Initialized DB");
 }
 
 pub type ConnResult<'a> = Result<PooledConnection<'a, AsyncDieselConnectionManager<AsyncPgConnection>>, RunError>;

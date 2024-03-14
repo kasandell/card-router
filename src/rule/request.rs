@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
 use crate::rule::constant::DayOfMonth;
 
+#[derive(Debug)]
 pub struct CreateRuleRequest {
     pub credit_card_id: i32,
     //pub rule_mcc: Option<String>,

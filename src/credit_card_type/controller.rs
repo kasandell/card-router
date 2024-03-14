@@ -12,7 +12,7 @@ use super::entity::CreditCard;
 async fn list_cards(
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError>{
-    warn!("Hi Im here");
+    tracing::warn!("Hi Im here");
     let cards: Vec<CardTypeResponse> = services.credit_card_dao.clone().list_all_card_types().await?
         .iter()
         .map(|card| CardTypeResponse {

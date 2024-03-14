@@ -26,18 +26,18 @@ async fn add_card(
     info: web::Json<request::AddCardRequest>,
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
-    println!("IN REQUEST");
+    tracing::info!("IN REQUEST");
     let user = user.into_inner();
-    println!("GOT USER");
+    tracing::info!("GOT USER");
     let info = info.into_inner();
-    println!("GOT ENGINE");
-    let (wca, payment_response) = services.wallet_engine.clone().register_attempt_and_send_card_to_adyen(
+    tracing::info!("GOT ENGINE");
+    let (wca, payment_response) = services.wallet_service.clone().register_attempt_and_send_card_to_adyen(
         &user,
         &info
     ).await?;
-    println!("registered attempt");
-    let match_from_response = services.wallet_engine.clone().attempt_match_from_response(&payment_response).await;
-    println!("done registering");
+    tracing::info!("registered attempt");
+    let match_from_response = services.wallet_service.clone().attempt_match_from_response(&payment_response).await;
+    tracing::info!("done registering");
     Ok(HttpResponse::Ok().json(
         WalletCardAttemptResponse {
             public_id: wca.public_id
@@ -53,7 +53,7 @@ async fn register_new_card_attempt(
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
     let info = info.into_inner();
-    let wca = services.wallet_engine.clone().attempt_register_new_attempt(
+    let wca = services.wallet_service.clone().attempt_register_new_attempt(
         &user,
         &info
     ).await?;
@@ -70,7 +70,7 @@ async fn list_cards(
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
-    let cards: Vec<DisplayableCardInfo> = services.wallet_engine.wallet_dao.clone().find_all_for_user_with_card_info(
+    let cards: Vec<DisplayableCardInfo> = services.wallet_service.wallet_dao.clone().find_all_for_user_with_card_info(
         &user
     ).await?
         .iter()

@@ -37,9 +37,7 @@ async fn lithic_asa_webhook(
     asa: web::Json<AsaRequest>,
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
-    let mut start = Instant::now();
     let resp = services.lithic_handler.clone().handle(asa.into_inner()).await?;
-    println!("Lithic handler took {:?}", start.elapsed());
     Ok(
         HttpResponse::Ok().json(
             resp
@@ -53,10 +51,10 @@ async fn lithic_asa_webhook(
 async fn lithic_asa_webhook(asa: Bytes) -> Result<HttpResponse, ApiError> {
     match String::from_utf8(asa.to_vec()) {
         Ok(text) => {
-            println!("{}", text);
+            tracing::info!("{}", text);
         }
         Err(_) => {
-            println!("COULD NOT DESERIALIZE");
+            tracing::info!("COULD NOT DESERIALIZE");
         }
     }
 

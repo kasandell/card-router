@@ -30,7 +30,7 @@ impl From<R2D2Error> for Error {
 
 impl From<DieselError> for Error {
     fn from(error: DieselError) -> Error {
-        info!("Converting from diesel error");
+        tracing::info!("Converting from diesel error");
         match error {
             DieselError::DatabaseError(_, err) => Error::new(err.message().to_string()),
             DieselError::NotFound => Error::new("Record not found".to_string()),

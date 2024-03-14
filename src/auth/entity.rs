@@ -52,6 +52,7 @@ impl FromRequest for Claims {
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
     //type Config = ();
 
+    #[tracing::instrument(skip_all)]
     fn from_request(
         req: &actix_web::HttpRequest,
         _payload: &mut actix_web::dev::Payload,

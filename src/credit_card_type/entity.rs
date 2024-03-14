@@ -45,6 +45,7 @@ pub struct CreditCardIssuer {
 }
 
 impl CreditCard {
+    #[tracing::instrument]
     pub async fn list_all_card_types() -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
         let mut conn = db::connection().await?;
         let cards = credit_card::table
@@ -52,10 +53,11 @@ impl CreditCard {
             .inner_join(credit_card_issuer::table)
             .select((Self::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
             .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn).await?;
-        info!("Query executed ok");
+        tracing::info!("Query executed ok");
         Ok(cards)
     }
 
+    #[tracing::instrument]
     pub async fn search_all_card_types(
         query: &str
     ) -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
@@ -70,10 +72,11 @@ impl CreditCard {
             ))
             .select((Self::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
             .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn).await?;
-        info!("Query executed ok");
+        tracing::info!("Query executed ok");
         Ok(cards)
     }
 
+    #[tracing::instrument]
     pub async fn find_by_public_id(
         public_id: &Uuid
     ) -> Result<Self, DataError> {

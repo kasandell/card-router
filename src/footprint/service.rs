@@ -39,6 +39,7 @@ pub struct FootprintService {
 }
 
 impl FootprintService {
+    #[tracing::instrument]
     pub fn new() -> Self {
         let mut cfg = Configuration::new();
         cfg.basic_auth = Some((env::var(FOOTPRINT_SECRET_KEY).expect("need key"), None));
@@ -53,13 +54,15 @@ impl FootprintService {
 
 #[async_trait(?Send)]
 impl FootprintServiceTrait for FootprintService {
+    #[tracing::instrument(skip(self))]
     async fn add_vault_for_user(self: Arc<Self>) ->  Result<CreateUserVaultResponse, ServiceError> {
-        println!("Creating user vault");
+        tracing::info!("Creating user vault");
         Ok(create_user_vault(
             &self.configuration
         ).await?)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError> {
         let number = Some(
             to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::CardNumber))?
@@ -190,6 +193,7 @@ impl FootprintServiceTrait for FootprintService {
         Ok(payment_response)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn create_client_token(self: Arc<Self>, card_token: &str) -> Result<CreateClientTokenResponse, ServiceError> {
         Ok(
             create_client_token(
@@ -199,6 +203,7 @@ impl FootprintServiceTrait for FootprintService {
         )
     }
 
+    #[tracing::instrument(skip(self))]
     async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError> {
         Err(
             ServiceError::new(

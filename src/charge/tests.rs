@@ -10,7 +10,7 @@ mod tests {
     use crate::user::entity::User;
     use crate::error::service_error::ServiceError;
     use crate::charge::{
-        engine::Engine,
+        service::AdyenCheckoutService,
         entity::{
             ChargeCardAttemptResult,
             ChargeEngineResult
@@ -68,7 +68,7 @@ mod tests {
                 )
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -115,7 +115,7 @@ mod tests {
                 )
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -176,7 +176,7 @@ mod tests {
                 Ok(create_mock_failed_inner_charge())
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -225,7 +225,7 @@ mod tests {
                 )
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -296,7 +296,7 @@ mod tests {
                 )
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -327,7 +327,7 @@ mod tests {
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -431,7 +431,7 @@ mod tests {
                 )
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -552,7 +552,7 @@ mod tests {
                 Ok(create_mock_registered_transaction(&metadata))
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),
@@ -650,7 +650,7 @@ mod tests {
                 Ok(create_mock_failed_inner_charge())
             );
 
-        let engine = Arc::new(Engine::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_service(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),

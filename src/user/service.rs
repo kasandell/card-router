@@ -17,6 +17,7 @@ pub struct UserService {
 }
 
 impl UserService {
+    #[tracing::instrument]
     pub fn new() -> Self {
         Self {
             user_dao: Arc::new(UserDao::new()),
@@ -24,6 +25,7 @@ impl UserService {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn new_with_services(
         user_dao: Arc<dyn UserDaoTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
@@ -37,6 +39,7 @@ impl UserService {
 
 #[async_trait(?Send)]
 impl UserServiceTrait for UserService {
+    #[tracing::instrument(skip(self))]
     async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<User, ServiceError> {
         let res = self.user_dao.clone().find_by_auth0_id(auth0_user_id).await;
         match res {

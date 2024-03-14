@@ -7,7 +7,6 @@ extern crate diesel_async;
 extern crate log;
 extern crate num;
 extern crate num_derive;
-extern crate env_logger;
 extern crate console_subscriber;
 extern crate uuidv7;
 
@@ -18,6 +17,12 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 use uuid::Uuid;
 use crate::auth::entity::{Claims, Auth0Config};
+
+use tracing::subscriber::set_global_default;
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
+use tracing_log::LogTracer;
+use tracing_subscriber::fmt::format::FmtSpan;
+use tracing_actix_web::TracingLogger;
 
 
 mod adyen;
@@ -47,7 +52,7 @@ mod error;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {
-    println!("{:?}", &claims);
+    tracing::info!("{:?}", &claims);
     HttpResponse::Ok().body("Hey there!")
 }
 
@@ -55,23 +60,38 @@ async fn manual_hello(claims: Claims) -> impl Responder {
 // TODO: why does tokio vs actix cause inner requests not to hang
 #[tokio::main(flavor = "multi_thread", worker_threads = 32)]
 async fn main() -> std::io::Result<()> {
-    console_subscriber::init();
-    dotenv().ok();
-    let orig_id = uuidv7::create();
-    println!("{:?}", orig_id.to_string());
-    let id = Uuid::from_str(orig_id.as_str()).expect("should serialize");
-    println!("{:?}", id.to_string());
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    //std::env::set_var("RUST_LOG", "info");
+    //console_subscriber::init();
+    LogTracer::init().expect("Failed to set logger");
+    /*
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     util::db::init().await;
 
+     */
 
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"));
+    // The `with` method is provided by `SubscriberExt`, an extension
+    // trait for `Subscriber` exposed by `tracing_subscriber`
+    let stdout_log = tracing_subscriber::fmt::layer()
+        .with_span_events(FmtSpan::CLOSE)
+        .compact();
+        //.pretty();
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(stdout_log);
+    // `set_global_default` can be used by applications to specify
+    // what subscriber should be used to process spans.
+    set_global_default(subscriber).expect("Failed to set subscriber");
+    tracing::warn!("TEST");
+
+    dotenv().ok();
 
     HttpServer::new(move || {
         let services = middleware::services::Services::new();
         let auth0_config = Auth0Config::default();
         App::new()
-            .wrap(Logger::default())
+            .wrap(TracingLogger::default())
             .app_data(web::Data::new(services.clone()))
             .app_data(auth0_config.clone())
             .wrap(Logger::new("%a %{User-Agent}i"))

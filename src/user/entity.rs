@@ -37,6 +37,7 @@ pub struct InsertableUser<'a> {
 }
 
 impl User {
+    #[tracing::instrument]
     pub async fn find_all() -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
 
@@ -46,6 +47,7 @@ impl User {
         Ok(users)
     }
 
+    #[tracing::instrument]
     pub async fn find(id: &Uuid) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -56,6 +58,7 @@ impl User {
         Ok(user)
     }
 
+    #[tracing::instrument]
     pub async fn find_by_email_password(
         email: &str,
         password: &str
@@ -72,6 +75,7 @@ impl User {
         Ok(user)
     }
 
+    #[tracing::instrument]
     pub async fn find_by_internal_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -82,6 +86,7 @@ impl User {
         Ok(user)
     }
 
+    #[tracing::instrument]
     pub async fn find_by_auth0_id(id: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -92,6 +97,7 @@ impl User {
         Ok(user)
     }
 
+    #[tracing::instrument(skip_all)]
     pub async fn create<'a>(user: &UserMessage<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let user =  InsertableUser {
@@ -107,6 +113,7 @@ impl User {
         Ok(user)
     }
 
+    #[tracing::instrument(skip_all)]
     pub async fn update<'a>(id: &Uuid, user: &UserMessage<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -119,6 +126,7 @@ impl User {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -132,11 +140,13 @@ impl User {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         User::delete(self.id).await
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_all() -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 

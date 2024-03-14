@@ -1,3 +1,4 @@
+use std::fmt::Formatter;
 use crate::schema::passthrough_card;
 use chrono::{NaiveDateTime, NaiveDate, Utc};
 use diesel::prelude::*;
@@ -23,7 +24,7 @@ pub struct LithicCard {
     pub exp_year: String
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = passthrough_card)]
 #[diesel(belongs_to(PassthroughCardType))]
 #[diesel(belongs_to(PassThroughCardStatus))]
@@ -68,6 +69,7 @@ pub struct PassthroughCardStatusUpdate {
 
 
 impl PassthroughCard {
+    #[tracing::instrument]
     pub async fn create(card: LithicCard, user: &User) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -80,6 +82,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
+    #[tracing::instrument]
     pub async fn create_from_api_card(card: &Card, user: &User) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -92,6 +95,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
+    #[tracing::instrument]
     pub async fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let update = PassthroughCardStatusUpdate {
@@ -106,6 +110,7 @@ impl PassthroughCard {
         Ok(update)
     }
 
+    #[tracing::instrument]
     pub async fn get(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -115,6 +120,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
+    #[tracing::instrument]
     pub async fn get_by_token(token: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -124,6 +130,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
+    #[tracing::instrument]
     pub async fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
 
@@ -133,6 +140,7 @@ impl PassthroughCard {
         Ok(cards)
     }
 
+    #[tracing::instrument]
     pub async fn find_card_for_user_in_status(
         user_id: i32,
         status: PassthroughCardStatus
@@ -152,6 +160,7 @@ impl PassthroughCard {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -164,6 +173,7 @@ impl PassthroughCard {
     }
 
     #[cfg(test)]
+    #[tracing::instrument]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         PassthroughCard::delete(self.id).await
     }

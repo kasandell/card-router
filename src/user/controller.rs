@@ -17,7 +17,7 @@ async fn find(
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
     let id = user_id.into_inner();
-    info!("Finding user by public id {}", id.clone());
+    tracing::info!("Finding user by public id {}", id.clone());
     let user = services.user_dao.clone().find(&id).await?;
     Ok(HttpResponse::Ok().json(
         UserResponse::from(&user)
@@ -31,9 +31,9 @@ async fn list(
     // This shouldn't even exist
     Ok(HttpResponse::Ok().finish())
     /*
-    info!("Listing users");
+    tracing::info!("Listing users");
     let users = services.user_dao.clone().find_all().await?;
-    info!("Found {} users", users.len());
+    tracing::info!("Found {} users", users.len());
     Ok(HttpResponse::Ok().json(users))
 
      */
@@ -45,7 +45,7 @@ async fn create(
     claims: Claims,
     services: web::Data<Services>
 ) -> Result<HttpResponse, ApiError> {
-    info!("Get or Creating user");
+    tracing::info!("Get or Creating user");
     let Some(auth0) = claims.sub else {return Err(ApiError::new(ErrorType::Unauthorized, "unauthorized"));};
     let request = request.into_inner();
     let user = services.user_service.clone().get_or_create(

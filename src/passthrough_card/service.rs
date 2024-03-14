@@ -22,12 +22,14 @@ pub struct PassthroughCardService {
 }
 
 impl PassthroughCardService {
+    #[tracing::instrument(skip_all)]
     pub fn new() -> Self {
         Self {
             lithic_service: Arc::new(LithicService::new()),
             passthrough_card_dao: Arc::new(PassthroughCardDao::new())
         }
     }
+    #[tracing::instrument(skip_all)]
     pub fn new_with_services(
         lithic_service: Arc<dyn LithicServiceTrait>,
         passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
@@ -37,6 +39,7 @@ impl PassthroughCardService {
             passthrough_card_dao
         }
     }
+    #[tracing::instrument(skip(self))]
     pub async fn issue_card_to_user(
         self: Arc<Self>,
         user: &User,
@@ -61,18 +64,16 @@ impl PassthroughCardService {
                 return Ok(card)
             }
             Err(e) => {
-                println!("{}", e.message);
+                tracing::info!("{}", e.message);
                 let closed = self.clone().close_lithic_card(&lithic_card.token.to_string()).await;
-                println!("Closed card");
+                tracing::info!("Closed card");
                 match closed {
                     Ok(card) => {
-                        info!("Rolled back lithic card successfully");
-                        println!("Rolled back lithic card successfully");
+                        tracing::info!("Rolled back lithic card successfully");
                     },
                     Err(err) => {
-                        error!("Unable to close lithic card");
-                        println!("Unable to close lithic card");
-                        println!("{}", err.message);
+                        tracing::error!("Unable to close lithic card");
+                        tracing::info!("{}", err.message);
                         return Err(err);
                     }
                 }
@@ -82,25 +83,26 @@ impl PassthroughCardService {
     }
 
     // really lets rewrite this to be atomic
+    #[tracing::instrument(skip(self))]
     pub async fn update_card_status(
         self: Arc<Self>,
         user: &User,
         status: PassthroughCardStatus
     ) -> Result<(), ServiceError> {
-        info!("Searching for cards for userId={} to go to status={}", user.id, &status);
+        tracing::info!("Searching for cards for userId={} to go to status={}", user.id, &status);
         let card = self.clone().find_card_for_user_in_status(
             &user,
             &status
         ).await?;
         let previous_status = card.passthrough_card_status;
-        info!("Found card={} for userId={}", card.id, user.id);
+        tracing::info!("Found card={} for userId={}", card.id, user.id);
 
         let updated = self.passthrough_card_dao.clone().update_status(
             card.id,
             status
         ).await?;
 
-        info!("Updated card={} for userId={}", card.id, user.id);
+        tracing::info!("Updated card={} for userId={}", card.id, user.id);
 
         let lithic_result = match &status {
             PassthroughCardStatus::Closed => self.clone().close_lithic_card(&updated.token).await,
@@ -111,15 +113,13 @@ impl PassthroughCardService {
 
         return match lithic_result {
             Ok(card) => {
-                info!("Successfully updated lithic status for cardId={} token={}", updated.id, updated.token);
-                println!("Successfully updated lithic status for cardId={} token={}", updated.id, updated.token);
+                tracing::info!("Successfully updated lithic status for cardId={} token={}", updated.id, updated.token);
                 Ok(())
             },
             Err(e) => {
                 // we really want to rollback here
                 // will figure out later. for now logs
-                error!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
-                println!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
+                tracing::error!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
                 // TODO: don't call direct
                 let rollback = self.passthrough_card_dao.clone().update_status(
                     updated.id,
@@ -128,13 +128,10 @@ impl PassthroughCardService {
 
                 match rollback {
                     Ok(card) => {
-                        info!("Rolled back internal status successfully");
-                        println!("Rolled back internal status successfully");
-
+                        tracing::info!("Rolled back internal status successfully");
                     },
                     Err(e) => {
-                        error!("Error rolling back internal status");
-                        println!("Error rolling back internal status");
+                        tracing::error!("Error rolling back internal status");
                     }
                 }
                 Err(e)
@@ -143,6 +140,7 @@ impl PassthroughCardService {
         //Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn find_card_for_user_in_status(
         self: Arc<Self>,
         user: &User,
@@ -179,6 +177,7 @@ impl PassthroughCardService {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_active_card_for_user(
         self: Arc<Self>,
         user: &User
@@ -204,6 +203,7 @@ impl PassthroughCardService {
         Ok(None)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn user_has_active_card(
         self: Arc<Self>,
         user: &User
@@ -231,6 +231,7 @@ impl PassthroughCardService {
         )?)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn close_lithic_card(
         self: Arc<Self>,
         token: &str

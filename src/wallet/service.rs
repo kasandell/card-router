@@ -1,6 +1,7 @@
+use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::adyen::checkout::service::{AdyenChargeServiceTrait, ChargeService};
+use crate::adyen::checkout::service::{AdyenChargeServiceTrait, AdyenCheckoutService};
 use crate::error::api_error::ApiError;
 use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
 use crate::error::service_error::ServiceError;
@@ -22,17 +23,18 @@ pub struct WalletService {
     pub adyen_service: Arc<dyn AdyenChargeServiceTrait>
 }
 
-
 impl WalletService {
+    #[tracing::instrument(skip_all)]
     pub fn new() -> Self {
         Self {
             credit_card_dao: Arc::new(CreditCardDao::new()),
             wallet_card_attempt_dao: Arc::new(WalletCardAttemptDao::new()),
             wallet_dao: Arc::new(WalletDao::new()),
-            adyen_service: Arc::new(ChargeService::new())
+            adyen_service: Arc::new(AdyenCheckoutService::new())
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn new_with_services(
         credit_card_dao: Arc<dyn CreditCardDaoTrait>,
         wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
@@ -47,16 +49,17 @@ impl WalletService {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn register_attempt_and_send_card_to_adyen(
         self: Arc<Self>,
         user: &User,
         request: &AddCardRequest
     ) -> Result<(WalletCardAttempt, PaymentResponse), ServiceError> {
 
-        println!("registering new attempt");
+        tracing::info!("registering new attempt");
         let expected_reference_id = Uuid::new_v4();
         let credit_card = self.credit_card_dao.clone().find_by_public_id(&request.credit_card_type_public_id).await?;
-        println!("found credit card id");
+        tracing::info!("found credit card id");
         let wca = self.wallet_card_attempt_dao.clone().insert(
             &InsertableCardAttempt {
                 user_id: user.id,
@@ -64,18 +67,19 @@ impl WalletService {
                 expected_reference_id: &expected_reference_id.to_string()
             }
         ).await?;
-        println!("CREATED WALLET CARED");
+        tracing::info!("CREATED WALLET CARED");
         let card_resp = self.adyen_service.clone().add_card(
             &Uuid::new_v4().to_string(),
             &user,
             &expected_reference_id.to_string(),
             &AdyenPaymentMethod::from(request.payment_method.clone())
         ).await?;
-        println!("GOT CARD RESPONSE");
-        println!("{:?}", card_resp);
+        tracing::info!("GOT CARD RESPONSE");
+        tracing::info!("{:?}", card_resp);
         Ok((wca, card_resp))
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn attempt_match_from_response(
         self: Arc<Self>,
         payment_response: &PaymentResponse
@@ -100,6 +104,7 @@ impl WalletService {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn attempt_register_new_attempt(
         self: Arc<Self>,
         user: &User,
@@ -116,6 +121,7 @@ impl WalletService {
         Ok(wca)
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn attempt_match(
         self: Arc<Self>,
         request: &MatchAttemptRequest
@@ -123,7 +129,7 @@ impl WalletService {
         let card_attempt = self.wallet_card_attempt_dao.clone().find_by_reference_id(
             &request.merchant_reference_id
         ).await?;
-        info!("Found wallet card attempt id {}", card_attempt.id);
+        tracing::info!("Found wallet card attempt id {}", card_attempt.id);
 
         if card_attempt.status.eq(&WalletCardAttemptStatus::Matched) {
             return Err(ServiceError::new(ErrorType::Conflict, "Card already matched"));
@@ -134,7 +140,7 @@ impl WalletService {
             psp_id: &request.original_psp_reference,
             status: WalletCardAttemptStatus::Matched
         }).await?;
-        info!("Updated to matched: {}", &update.status);
+        tracing::info!("Updated to matched: {}", &update.status);
 
         let created_card = self.wallet_dao.clone().insert_card(
             &NewCard {
@@ -144,7 +150,7 @@ impl WalletService {
                 wallet_card_attempt_id: update.id,
             }
         ).await?;
-        info!("Created card: {}", &created_card.public_id);
+        tracing::info!("Created card: {}", &created_card.public_id);
 
         Ok(created_card)
     }

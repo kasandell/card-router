@@ -26,7 +26,7 @@ use crate::error::service_error::ServiceError;
 use crate::user::entity::User;
 use super::request::ChargeCardRequest;
 
-pub struct ChargeService {
+pub struct AdyenCheckoutService {
     configuration: Configuration
 }
 
@@ -55,7 +55,8 @@ pub trait AdyenChargeServiceTrait {
     ) -> Result<PaymentResponse, ServiceError>;
 }
 
-impl ChargeService {
+impl AdyenCheckoutService {
+    #[tracing::instrument]
     pub fn new() -> Self {
         Self {
             configuration: Configuration {
@@ -73,7 +74,8 @@ impl ChargeService {
 
 
 #[async_trait(?Send)]
-impl AdyenChargeServiceTrait for ChargeService {
+impl AdyenChargeServiceTrait for AdyenCheckoutService {
+    #[tracing::instrument(skip(self))]
     async fn charge_card_on_file<'a>(
         self: Arc<Self>,
         request: &ChargeCardRequest<'a>
@@ -177,17 +179,18 @@ impl AdyenChargeServiceTrait for ChargeService {
             three_ds_authentication_only: None,
             trusted_shopper: None
         });
-        println!("Creating body took {:?}", start.elapsed());
+        tracing::info!("Creating body took {:?}", start.elapsed());
         start = Instant::now();
         let resp = post_payments(
             &self.configuration.clone(),
             Some(to_value(request.idempotency_key)?),
             body
         ).await?;
-        println!("ACTUAL CALL TOOK {:?}", start.elapsed());
+        tracing::info!("ACTUAL CALL TOOK {:?}", start.elapsed());
         Ok(resp)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn cancel_transaction(
         self: Arc<Self>,
         psp_reference: &str,
@@ -208,6 +211,7 @@ impl AdyenChargeServiceTrait for ChargeService {
         )
     }
 
+    #[tracing::instrument(skip(self))]
     async fn add_card(
         self: Arc<Self>,
         idempotency_key: &str,
@@ -215,7 +219,7 @@ impl AdyenChargeServiceTrait for ChargeService {
         reference_id: &str,
         request: &PaymentRequestPaymentMethod,
     ) -> Result<PaymentResponse, ServiceError> {
-        println!("IN ADD CARD REQUEST");
+        tracing::info!("IN ADD CARD REQUEST");
         let additional_data: HashMap<String, String> =
             [("allow3DS2".to_string(), "true".to_string())].iter().cloned().collect();
 
@@ -294,7 +298,7 @@ impl AdyenChargeServiceTrait for ChargeService {
             three_ds_authentication_only: None,
             trusted_shopper: None,
         };
-        println!("{}", serde_json::to_string_pretty(&obj).unwrap());
+        tracing::info!("{}", serde_json::to_string_pretty(&obj).unwrap());
         Ok(
             post_payments(
                 &self.configuration.clone(),
