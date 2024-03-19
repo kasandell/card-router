@@ -1,6 +1,8 @@
 use std::ops::Add;
+use footprint::models::CreateClientTokenRequest;
 use crate::footprint::r#enum::CardPart;
 use crate::error::service_error::ServiceError;
+use crate::footprint::constant::Constant::TTL;
 
 pub fn card_request_parts_for_card_id(card_id: &str) -> Result<Vec<String>, ServiceError> {
     // given card, return
@@ -45,4 +47,12 @@ pub fn individual_request_part_for_customer_with_suffix_template(customer_id: &s
 
 pub fn get_scopes_for_request() -> Vec<String> {
     vec!["vault".to_string()]
+}
+
+pub fn create_get_token_request(customer_id: &str, card_id: &str) -> Result<CreateClientTokenRequest, ServiceError> {
+    Ok(CreateClientTokenRequest {
+        ttl: TTL,
+        scopes: get_scopes_for_request(),
+        fields: card_request_parts_for_card_id(card_id)?,
+    })
 }

@@ -42,6 +42,7 @@ impl AdyenHandler {
 
     #[tracing::instrument(skip(self))]
     pub async fn handle_item(self: Arc<Self>, item: RecurringContractNotificationRequestItemWrapper) -> Result<(), ApiError> {
+        /*
         if let Some(inner_item) = item.notification_request_item {
             if inner_item.event_code == EventCode::RecurringContract && inner_item.success == "true" {
                 let psp_reference = inner_item.psp_reference; // new card psp
@@ -59,6 +60,7 @@ impl AdyenHandler {
                 tracing::info!("Added card {} for user id {} with id {}", card.id, card.user_id, psp_reference);
             }
         }
+         */
         Ok(())
     }
 }

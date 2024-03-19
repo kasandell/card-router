@@ -187,11 +187,7 @@ diesel::table! {
         #[max_length = 255]
         expected_reference_id -> Varchar,
         #[max_length = 255]
-        psp_id -> Nullable<Varchar>,
-        #[max_length = 255]
         status -> Varchar,
-        #[max_length = 255]
-        recurring_detail_reference -> Nullable<Varchar>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }

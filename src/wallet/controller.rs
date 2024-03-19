@@ -4,13 +4,14 @@ use actix_web::{
     post,
     HttpResponse,
 };
+use uuid::Uuid;
 
 use crate::error::api_error::ApiError;
 use crate::middleware::services::Services;
 use crate::user::entity::User;
 use crate::wallet::service::WalletService;
 use crate::wallet::entity::DisplayableCardInfo;
-use crate::wallet::response::WalletCardAttemptResponse;
+use crate::wallet::response::{WalletAddCardSuccessResponse, WalletCardAttemptResponse};
 use super::{
     request, 
     entity::{
@@ -31,6 +32,7 @@ async fn add_card(
     tracing::info!("GOT USER");
     let info = info.into_inner();
     tracing::info!("GOT ENGINE");
+    /*
     let (wca, payment_response) = services.wallet_service.clone().register_attempt_and_send_card_to_adyen(
         &user,
         &info
@@ -38,11 +40,14 @@ async fn add_card(
     tracing::info!("registered attempt");
     let match_from_response = services.wallet_service.clone().attempt_match_from_response(&payment_response).await;
     tracing::info!("done registering");
-    Ok(HttpResponse::Ok().json(
+     */
+    Ok(HttpResponse::Ok().finish())
+        /*
         WalletCardAttemptResponse {
-            public_id: wca.public_id
+            public_id: Uuid::new_v4().to_string()//wca.public_id
         }
-    ))
+
+         */
 }
 
 #[post("/register-card-attempt/")]
@@ -53,13 +58,31 @@ async fn register_new_card_attempt(
 ) -> Result<HttpResponse, ApiError> {
     let user = user.into_inner();
     let info = info.into_inner();
-    let wca = services.wallet_service.clone().attempt_register_new_attempt(
+    let wca = services.wallet_service.clone().register_new_attempt(
         &user,
         &info
     ).await?;
     Ok(HttpResponse::Ok().json(
-        WalletCardAttemptResponse {
-            public_id: wca.public_id
+        wca
+    ))
+}
+
+#[post("/match-card/")]
+async fn match_card(
+    user: web::ReqData<User>,
+    info: web::Json<request::MatchRequest>,
+    services: web::Data<Services>
+) -> Result<HttpResponse, ApiError> {
+    let user = user.into_inner();
+    let info = info.into_inner();
+    tracing::info!("{:?}", &info);
+    let wca = services.wallet_service.clone().match_card(
+        &user,
+        &info
+    ).await?;
+    Ok(HttpResponse::Ok().json(
+        WalletAddCardSuccessResponse {
+            public_id: wca.public_id.to_string()
         }
     ))
 }

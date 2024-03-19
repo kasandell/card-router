@@ -27,9 +27,7 @@ pub struct WalletCardAttempt {
     pub user_id: i32,
     pub credit_card_id: i32,
     pub expected_reference_id: String,
-    pub psp_id: Option<String>,
     pub status: WalletCardAttemptStatus,
-    pub recurring_detail_reference: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -46,9 +44,7 @@ pub struct InsertableCardAttempt<'a> {
 
 #[derive(Serialize, Deserialize, AsChangeset, Clone, Debug)]
 #[diesel(table_name = wallet_card_attempt)]
-pub struct UpdateCardAttempt<'a> {
-    pub recurring_detail_reference: &'a str,
-    pub psp_id: &'a str,
+pub struct UpdateCardAttempt {
     pub status: WalletCardAttemptStatus
 }
 
@@ -241,7 +237,7 @@ impl WalletCardAttempt {
     }
 
     #[tracing::instrument]
-    pub async fn update_card<'a>(id: i32, card: &UpdateCardAttempt<'a>) -> Result<Self, DataError> {
+    pub async fn update_card(id: i32, card: &UpdateCardAttempt) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let wallet = diesel::update(wallet_card_attempt::table)

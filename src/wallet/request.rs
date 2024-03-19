@@ -3,8 +3,12 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterAttemptRequest {
-    pub expected_reference_id: String,
     pub credit_card_type_public_id: Uuid,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MatchRequest {
+    pub reference_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

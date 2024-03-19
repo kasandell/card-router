@@ -41,9 +41,7 @@ pub fn create_mock_wallet_attempt() -> WalletCardAttempt {
         user_id: 1,
         credit_card_id: 1,
         expected_reference_id: "".to_string(),
-        psp_id: None,
         status: WalletCardAttemptStatus::Pending,
-        recurring_detail_reference: None,
         created_at: Default::default(),
         updated_at: Default::default(),
     }

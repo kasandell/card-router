@@ -21,7 +21,7 @@ pub trait WalletDaoTrait {
 pub trait WalletCardAttemtDaoTrait {
     async fn insert<'a>(self: Arc<Self>, card_attempt: &InsertableCardAttempt<'a>) -> Result<WalletCardAttempt, DataError>;
     async fn find_by_reference_id(self: Arc<Self>, reference: &str) -> Result<WalletCardAttempt, DataError>;
-    async fn update_card<'a>(self: Arc<Self>, id: i32, card: &UpdateCardAttempt<'a>) -> Result<WalletCardAttempt, DataError>;
+    async fn update_card(self: Arc<Self>, id: i32, card: &UpdateCardAttempt) -> Result<WalletCardAttempt, DataError>;
 
 
 }
@@ -66,7 +66,7 @@ impl WalletCardAttemtDaoTrait for WalletCardAttemptDao {
         WalletCardAttempt::find_by_reference_id(reference).await
     }
 
-    async fn update_card<'a>(self: Arc<Self>, id: i32, card: &UpdateCardAttempt<'a>) -> Result<WalletCardAttempt, DataError> {
+    async fn update_card(self: Arc<Self>, id: i32, card: &UpdateCardAttempt) -> Result<WalletCardAttempt, DataError> {
         WalletCardAttempt::update_card(id, card).await
     }
 }

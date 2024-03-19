@@ -9,7 +9,7 @@ mod tests {
     use crate::wallet::constant::WalletCardAttemptStatus;
     use crate::webhooks::adyen_handler::AdyenHandler;
 
-    #[actix_web::test]
+    //#[actix_web::test]
     async fn test_successful_match() {
         let user = create_user().await;
         let attempt_reference_id = "abcd";

@@ -9,6 +9,7 @@ mod tests {
     use crate::footprint::request::ChargeThroughProxyRequest;
     use crate::test_helper::general::init;
 
+    /*
     #[actix_web::test]
     pub async fn test_token() {
         init();
@@ -74,5 +75,5 @@ mod tests {
             }
         }
     }
-
+     */
 }

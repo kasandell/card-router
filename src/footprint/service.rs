@@ -11,10 +11,11 @@ use mockall::automock;
 use serde_json::to_value;
 use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_SECRET_KEY, FOOTPRINT_VAULT_PROXY_ID};
 use crate::environment::ENVIRONMENT;
-use crate::footprint::helper::{individual_request_part_for_customer_template, individual_request_part_for_customer_with_prefix_template, individual_request_part_for_customer_with_suffix_template};
+use crate::footprint::helper::{card_request_parts_for_card_id, get_scopes_for_request, individual_request_part_for_customer_template, individual_request_part_for_customer_with_prefix_template, individual_request_part_for_customer_with_suffix_template};
 use crate::footprint::r#enum::CardPart;
 use crate::footprint::request::ChargeThroughProxyRequest;
 use crate::constant::financial_constant;
+use crate::footprint::constant::Constant::{CONTENT_TYPE, PROXY_ACCESS_REASON, PROXY_METHOD, PROXY_URL, TTL};
 use crate::user::entity::User;
 
 #[automock]
@@ -22,7 +23,7 @@ use crate::user::entity::User;
 pub trait FootprintServiceTrait {
     async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, ServiceError>;
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError>;
-    async fn create_client_token(self: Arc<Self>, user: &User, create_client_token_request: CreateClientTokenRequest) -> Result<CreateClientTokenResponse, ServiceError>;
+    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, ServiceError>;
     async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError>;
 }
 
@@ -192,10 +193,10 @@ impl FootprintServiceTrait for FootprintService {
 
         let response = post_vault_proxy_jit(
             &self.configuration,
-            "application/json",
-            "https://checkout-test.adyen.com/v71/payments",
-            "POST",
-            "charging",
+            CONTENT_TYPE,
+            PROXY_URL,
+            PROXY_METHOD,
+            PROXY_ACCESS_REASON,
             &self.adyen_api_key,
             Some(
                 to_value(payment_request)?
@@ -207,12 +208,16 @@ impl FootprintServiceTrait for FootprintService {
     }
 
     #[tracing::instrument(skip(self))]
-    async fn create_client_token(self: Arc<Self>, user: &User, create_client_token_request: CreateClientTokenRequest) -> Result<CreateClientTokenResponse, ServiceError> {
+    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, ServiceError> {
         Ok(
             create_client_token(
                 &self.configuration,
                 &user.footprint_vault_id,
-                create_client_token_request
+                CreateClientTokenRequest {
+                    ttl: TTL,
+                    scopes: get_scopes_for_request(),
+                    fields: card_request_parts_for_card_id(card_id)?,
+                }
             ).await?
         )
     }
