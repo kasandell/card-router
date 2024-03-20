@@ -127,7 +127,13 @@ impl<'de> Deserialize<'de> for AvsResponseResult {
 
 impl From<String> for AvsResponseResult {
     fn from(value: String) -> Self {
-        match &*value {
+        AvsResponseResult::from(value.as_str())
+    }
+}
+
+impl From<&str> for AvsResponseResult {
+    fn from(value: &str) -> Self {
+        match value {
             "FAIL" => AvsResponseResult::Fail,
             "MATCH" => AvsResponseResult::Match,
             "MATCH_ADDRESS_ONLY" => AvsResponseResult::MatchAddressOnly,

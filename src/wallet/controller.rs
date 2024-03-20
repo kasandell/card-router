@@ -20,36 +20,6 @@ use super::{
     }
 };
 
-
-#[post("/add-card/")]
-async fn add_card(
-    user: web::ReqData<User>,
-    info: web::Json<request::AddCardRequest>,
-    services: web::Data<Services>
-) -> Result<HttpResponse, ApiError> {
-    tracing::info!("IN REQUEST");
-    let user = user.into_inner();
-    tracing::info!("GOT USER");
-    let info = info.into_inner();
-    tracing::info!("GOT ENGINE");
-    /*
-    let (wca, payment_response) = services.wallet_service.clone().register_attempt_and_send_card_to_adyen(
-        &user,
-        &info
-    ).await?;
-    tracing::info!("registered attempt");
-    let match_from_response = services.wallet_service.clone().attempt_match_from_response(&payment_response).await;
-    tracing::info!("done registering");
-     */
-    Ok(HttpResponse::Ok().finish())
-        /*
-        WalletCardAttemptResponse {
-            public_id: Uuid::new_v4().to_string()//wca.public_id
-        }
-
-         */
-}
-
 #[post("/register-card-attempt/")]
 async fn register_new_card_attempt(
     user: web::ReqData<User>,

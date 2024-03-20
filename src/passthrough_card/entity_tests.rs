@@ -187,7 +187,7 @@ mod tests {
         let user2 = User::create(
             &UserMessage {
                 email: "kyle2@gmail.com",
-                auth0_user_id: "1234",
+                auth0_user_id: "12345",
                 footprint_vault_id: "test_vault_2"
             }
         ).await.expect("User should be created");

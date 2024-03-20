@@ -7,3 +7,4 @@ pub mod helper_tests;
 pub mod enum_tests;
 pub mod constant;
 pub mod tests;
+mod constant_tests;

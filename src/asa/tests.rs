@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::asa::response::AsaResponseResult;
+    use crate::asa::response::{AsaResponseResult, AvsResponseResult};
     use serde_json;
     use crate::charge::entity::ChargeEngineResult;
 
@@ -50,6 +50,22 @@ mod tests {
         assert_eq!(AsaResponseResult::InsufficientFunds, AsaResponseResult::from(ChargeEngineResult::InsufficientFunds));
         assert_eq!(AsaResponseResult::Approved, AsaResponseResult::from(ChargeEngineResult::Approved));
 
+    }
+
+    #[test]
+    fn test_avs_from_string() {
+        assert_eq!(AvsResponseResult::Fail, AvsResponseResult::from("FAIL".to_string()));
+        assert_eq!(AvsResponseResult::Match, AvsResponseResult::from("MATCH".to_string()));
+        assert_eq!(AvsResponseResult::MatchAddressOnly, AvsResponseResult::from("MATCH_ADDRESS_ONLY".to_string()));
+        assert_eq!(AvsResponseResult::MatchZipOnly, AvsResponseResult::from("MATCH_ZIP_ONLY".to_string()));
+    }
+
+    #[test]
+    fn test_avs_to_string() {
+        assert_eq!(String::from(AvsResponseResult::Fail), "FAIL");
+        assert_eq!(String::from(AvsResponseResult::Match), "MATCH");
+        assert_eq!(String::from(AvsResponseResult::MatchAddressOnly), "MATCH_ADDRESS_ONLY");
+        assert_eq!(String::from(AvsResponseResult::MatchZipOnly), "MATCH_ZIP_ONLY");
     }
 
     #[test]

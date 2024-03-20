@@ -1,21 +1,16 @@
-use std::fmt::Formatter;
 use std::sync::Arc;
 use std::time::Instant;
-use chrono::Utc;
 use crate::adyen::checkout::service::AdyenChargeServiceTrait;
 
 use crate::error::api_error::ApiError;
 use crate::charge::service::ChargeService;
 use crate::asa::request::AsaRequest;
 use crate::rule::service::RuleService;
-use crate::user::entity::User;
 use crate::rule::service::RuleServiceTrait;
-
 use crate::asa::response::{AsaResponse, AsaResponseResult};
 use crate::error::error_type::ErrorType;
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
-use crate::passthrough_card::entity::PassthroughCard;
 use crate::error::service_error::ServiceError;
 use crate::ledger::service::LedgerServiceTrait;
 use crate::user::dao::{UserDao, UserDaoTrait};

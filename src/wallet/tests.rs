@@ -348,13 +348,8 @@ mod tests {
         let footprint_service = MockFootprintServiceTrait::new();
 
         let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-
         let user = create_mock_user();
-
         let expected_reference_id = Uuid::new_v4().to_string();
-
-        let new_card_id = Uuid::new_v4().to_string();
-        let psp_id = Uuid::new_v4().to_string();
 
         let mut matched = create_mock_wallet_attempt();
         matched.id = 1;
@@ -404,13 +399,8 @@ mod tests {
         let footprint_service = MockFootprintServiceTrait::new();
 
         let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-
         let user = create_mock_user();
-
         let expected_reference_id = Uuid::new_v4().to_string();
-
-        let new_card_id = Uuid::new_v4().to_string();
-        let psp_id = Uuid::new_v4().to_string();
 
         let mut matched = create_mock_wallet_attempt();
         matched.id = 1;

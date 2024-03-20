@@ -9,12 +9,10 @@ use mockall::{automock, predicate::*};
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UserDaoTrait {
-    async fn find_all(&self) -> Result<Vec<User>, DataError>;
     async fn find(&self, id: &Uuid) -> Result<User, DataError>;
-    async fn find_by_email_password(
+    async fn find_by_email(
         &self,
         email: &str,
-        password: &str
     ) -> Result<User, DataError>;
     async fn find_by_internal_id(&self, id: i32) -> Result<User, DataError>;
     async fn find_by_auth0_id(&self, auth0_id: &str) -> Result<User, DataError>;
@@ -32,10 +30,6 @@ impl UserDao {
 
 #[async_trait]
 impl UserDaoTrait for UserDao {
-    async fn find_all(&self) -> Result<Vec<User>, DataError> {
-        User::find_all().await
-    }
-
     async fn find(&self, id: &Uuid) -> Result<User, DataError> {
         User::find(id).await
     }
@@ -44,12 +38,11 @@ impl UserDaoTrait for UserDao {
         User::find_by_auth0_id(auth0_id).await
     }
 
-    async fn find_by_email_password(
+    async fn find_by_email(
         &self,
         email: &str,
-        password: &str
     ) -> Result<User, DataError> {
-        User::find_by_email_password(email, password).await
+        User::find_by_email(email).await
     }
 
     async fn find_by_internal_id(&self, id: i32) -> Result<User, DataError> {

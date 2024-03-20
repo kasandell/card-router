@@ -17,8 +17,8 @@ mod entity_tests {
         InsertableMccMapping
     };
 
-    //#[actix_web::test]
     // TODO: disabled while we can't insert category in db
+    //#[actix_web::test]
     async fn test_create_rule_in_db() {
         crate::test_helper::general::init();
         let user = create_user().await;

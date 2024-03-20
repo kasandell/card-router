@@ -1,4 +1,3 @@
-use std::time::Instant;
 use actix_web::{
     web,
     post,
@@ -6,31 +5,7 @@ use actix_web::{
 };
 use crate::error::api_error::ApiError;
 use crate::asa::request::AsaRequest;
-use adyen_webhooks::models::{
-    RecurringContractNotificationRequest,
-    NotificationResponse,
-    AuthorisationNotificationRequest
-};
-use crate::webhooks::adyen_handler::AdyenHandler;
-use crate::webhooks::lithic_handler::LithicHandler;
 use crate::middleware::services::Services;
-
-
-// TODO: create a special error here that always unwraps to 200
-#[post("/adyen-webhook/")]
-async fn adyen_webhook(
-    notification: web::Json<AuthorisationNotificationRequest>,
-    services: web::Data<Services>
-) -> Result<HttpResponse, ApiError> {
-    //services.adyen_handler.clone().handle(notification.into_inner()).await?;
-    Ok(
-        HttpResponse::Ok().json(
-            NotificationResponse {
-                notification_response: Some("[accepted]".to_string())
-            }
-        )
-    )
-}
 
 #[post("/lithic-asa-webhook/")]
 async fn lithic_asa_webhook(
@@ -44,22 +19,3 @@ async fn lithic_asa_webhook(
         )
     )
 }
-
-
-/*
-#[post("/lithic-asa-webhook/")]
-async fn lithic_asa_webhook(asa: Bytes) -> Result<HttpResponse, ApiError> {
-    match String::from_utf8(asa.to_vec()) {
-        Ok(text) => {
-            tracing::info!("{}", text);
-        }
-        Err(_) => {
-            tracing::info!("COULD NOT DESERIALIZE");
-        }
-    }
-
-    Ok(
-        HttpResponse::Ok().finish()
-    )
-}
- */

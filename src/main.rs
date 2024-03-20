@@ -60,28 +60,16 @@ async fn manual_hello(claims: Claims) -> impl Responder {
 // TODO: why does tokio vs actix cause inner requests not to hang
 #[tokio::main(flavor = "multi_thread", worker_threads = 32)]
 async fn main() -> std::io::Result<()> {
-    //std::env::set_var("RUST_LOG", "info");
-    //console_subscriber::init();
     LogTracer::init().expect("Failed to set logger");
-    /*
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-    util::db::init().await;
-
-     */
 
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info"));
-    // The `with` method is provided by `SubscriberExt`, an extension
-    // trait for `Subscriber` exposed by `tracing_subscriber`
     let stdout_log = tracing_subscriber::fmt::layer()
         .with_span_events(FmtSpan::CLOSE)
         .compact();
-        //.pretty();
     let subscriber = Registry::default()
         .with(env_filter)
         .with(stdout_log);
-    // `set_global_default` can be used by applications to specify
-    // what subscriber should be used to process spans.
     set_global_default(subscriber).expect("Failed to set subscriber");
     tracing::warn!("TEST");
 

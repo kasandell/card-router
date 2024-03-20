@@ -16,10 +16,7 @@ impl From<PaymentMethod> for AdyenPaymentMethod {
             },
             recurring_detail_reference: None,
             stored_payment_method_id: None,
-            r#type: Some(Some(AdyenType::Scheme)),/*match value.r#type {
-                Some(r#type) => Some(AdyenType::from(r#type)),
-                None => None
-            },*/
+            r#type: Some(Some(AdyenType::Scheme)),
             funding_source: None,
             holder_name: None,
             brand: match value.brand {

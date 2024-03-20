@@ -3,6 +3,5 @@ use super::controller;
 
 pub fn config(cfg: &mut web::ServiceConfig) -> () {
     cfg
-        .service(controller::adyen_webhook)
         .service(controller::lithic_asa_webhook);
 }

@@ -19,17 +19,14 @@ use crate::wallet::{
     dao::{WalletDao, WalletCardAttemptDao},
     service::WalletService
 };
-use crate::webhooks::adyen_handler::AdyenHandler;
 use crate::webhooks::lithic_handler::LithicHandler;
 
 #[derive(Clone)]
 pub struct Services {
     // TODO: no dao's should be present in services layer
     pub passthrough_card_service: Arc<PassthroughCardService>,
-    //lithic: Arc<LithicService>,
     pub charge_service: Arc<ChargeService>,
     pub wallet_service: Arc<WalletService>,
-    pub adyen_handler: Arc<AdyenHandler>,
     pub lithic_handler: Arc<LithicHandler>,
     pub user_dao: Arc<UserDao>,
     pub credit_card_dao: Arc<CreditCardDao>,
@@ -80,9 +77,6 @@ impl Services {
             )),
             charge_service: charge_engine.clone(),
             wallet_service: wallet_engine.clone(),
-            adyen_handler: Arc::new(AdyenHandler::new_with_service(
-                wallet_engine.clone()
-            )),
             lithic_handler: Arc::new(LithicHandler::new_with_services(
                 charge_engine.clone(),
                 rule_engine.clone(),

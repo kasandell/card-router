@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::error::data_error::DataError;
 
-#[derive(Serialize, Deserialize, AsChangeset)]
+#[derive(Serialize, Deserialize, AsChangeset, PartialEq, Debug, Clone)]
 #[diesel(table_name = users)]
 pub struct UserMessage<'a> {
     pub email: &'a str,
@@ -15,7 +15,7 @@ pub struct UserMessage<'a> {
     pub footprint_vault_id: &'a str,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Clone, PartialEq)]
 #[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
@@ -38,16 +38,6 @@ pub struct InsertableUser<'a> {
 
 impl User {
     #[tracing::instrument]
-    pub async fn find_all() -> Result<Vec<Self>, DataError> {
-        let mut conn = db::connection().await?;
-
-        let users = users::table
-            .load::<User>(&mut conn).await?;
-
-        Ok(users)
-    }
-
-    #[tracing::instrument]
     pub async fn find(id: &Uuid) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -59,16 +49,14 @@ impl User {
     }
 
     #[tracing::instrument]
-    pub async fn find_by_email_password(
+    pub async fn find_by_email(
         email: &str,
-        password: &str
     ) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let user = users::table
             .filter(
                 users::email.eq(email)
-                    //.and(users::password.eq(password))
             )
             .first(&mut conn).await?;
 
