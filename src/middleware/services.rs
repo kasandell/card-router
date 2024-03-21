@@ -9,7 +9,7 @@ use crate::category::dao::MccMappingDao;
 use crate::credit_card_type::dao::{
     CreditCardDao,
 };
-use crate::footprint::service::FootprintService;
+use crate::footprint::service::{FakeFootprintService, FootprintService};
 use crate::passthrough_card::dao::PassthroughCardDao;
 use crate::rule::service::RuleService;
 use crate::schema::registered_transactions::mcc;
@@ -32,7 +32,7 @@ pub struct Services {
     pub credit_card_dao: Arc<CreditCardDao>,
     pub rule_service: Arc<RuleService>,
     pub user_service: Arc<UserService>,
-    pub footprint_service: Arc<FootprintService>
+    pub footprint_service: Arc<FakeFootprintService>
 }
 
 impl Services {
@@ -44,7 +44,7 @@ impl Services {
         let credit_card_dao = Arc::new(CreditCardDao::new());
         let wallet_dao = Arc::new(WalletDao::new());
         let wallet_card_attempt_dao = Arc::new(WalletCardAttemptDao::new());
-        let footprint_service = Arc::new(FootprintService::new());
+        let footprint_service = Arc::new(FakeFootprintService::new());
         let wallet_engine = Arc::new(WalletService::new_with_services(
             credit_card_dao.clone(),
             wallet_card_attempt_dao.clone(),

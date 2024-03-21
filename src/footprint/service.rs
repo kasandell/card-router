@@ -1,6 +1,8 @@
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 use adyen_checkout::models::{Amount, PaymentCancelResponse, PaymentRequest, PaymentRequestPaymentMethod, PaymentResponse};
+use adyen_checkout::models::payment_response::ResultCode;
 use async_trait::async_trait;
 use crate::error::error_type::ErrorType;
 use crate::error::service_error::ServiceError;
@@ -8,6 +10,7 @@ use footprint::apis::configuration::{ApiKey, BasicAuth, Configuration};
 use footprint::apis::default_api::{post_vault_proxy, create_user_vault, create_client_token, post_vault_proxy_jit};
 use footprint::models::{CreateClientTokenRequest, CreateClientTokenResponse, CreateUserVaultResponse};
 use mockall::automock;
+use rand::Rng;
 use serde_json::to_value;
 use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_SECRET_KEY, FOOTPRINT_VAULT_PROXY_ID};
 use crate::environment::ENVIRONMENT;
@@ -17,6 +20,8 @@ use crate::footprint::request::ChargeThroughProxyRequest;
 use crate::constant::financial_constant;
 use crate::footprint::constant::Constant::{CONTENT_TYPE, PROXY_ACCESS_REASON, PROXY_METHOD, PROXY_URL, TTL};
 use crate::user::entity::User;
+use tokio::time::sleep;
+
 
 #[automock]
 #[async_trait(?Send)]
@@ -229,5 +234,66 @@ impl FootprintServiceTrait for FootprintService {
                 ErrorType::InternalServerError, "Not implemented"
             )
         )
+    }
+}
+
+
+pub struct FakeFootprintService {}
+
+impl FakeFootprintService {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+#[async_trait(?Send)]
+impl FootprintServiceTrait for FakeFootprintService {
+    #[tracing::instrument(skip(self))]
+    async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, ServiceError> {
+        Err(ServiceError::new(
+            ErrorType::InternalServerError, "Not implemented"
+        ))
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError> {
+        sleep(Duration::from_millis(rand::thread_rng().gen_range(0..10)));
+        let mut result_code = ResultCode::Authorised;
+        if rand::thread_rng().gen_range(0..10) > 8 {
+            result_code = ResultCode::Refused
+        }
+        Ok(
+            PaymentResponse {
+                action: None,
+                additional_data: None,
+                amount: None,
+                donation_token: None,
+                fraud_result: None,
+                merchant_reference: None,
+                order: None,
+                payment_method: None,
+                psp_reference: None,
+                refusal_reason: None,
+                refusal_reason_code: None,
+                result_code: Some(result_code),
+                three_ds2_response_data: None,
+                three_ds2_result: None,
+                three_ds_payment_data: None,
+            }
+        )
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, ServiceError> {
+        Err(ServiceError::new(
+            ErrorType::InternalServerError, "Not implemented"
+        ))
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError> {
+        Err(ServiceError::new(
+            ErrorType::InternalServerError, "Not implemented"
+        ))
     }
 }

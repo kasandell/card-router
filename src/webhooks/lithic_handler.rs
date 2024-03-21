@@ -100,16 +100,12 @@ impl LithicHandler {
         tracing::info!("Got {} cards for userId={}", cards.len(), user.id);
         tracing::info!("Attempting to charge userId={}", user.id);
 
-        start = Instant::now();
         let (result, ledger) = self.charge_service.clone().charge_from_asa_request(
             &request,
             &cards,
             &passthrough_card,
             &user
         ).await?;
-        tracing::info!("Charge engine from asa request took {:?}", start.elapsed());
-        tracing::info!("Done");
-        tracing::info!("Charging success {:?} for userId={}", &result, user.id);
 
         Ok(
             AsaResponse {

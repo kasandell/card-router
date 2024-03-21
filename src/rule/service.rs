@@ -135,12 +135,10 @@ impl RuleService {
     }
 
     // TODO: async?
-    #[tracing::instrument(skip(self))]
     pub async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest, mapping: &MccMapping) -> bool {
         self.clone().filter_rule_by_merchant(rule, asa_request, mapping).await && self.clone().filter_rule_by_date(rule).await
     }
 
-    #[tracing::instrument(skip(self))]
     pub async fn filter_rule_by_merchant(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest, mapping: &MccMapping) -> bool {
         let Some(merchant) = asa_request.merchant.clone() else { return false; };
         // TODO: this might need to be coupled with mcc
@@ -156,7 +154,6 @@ impl RuleService {
         }
     }
 
-    #[tracing::instrument(skip(self))]
     pub async fn filter_rule_by_date(self: Arc<Self>, rule: &Rule) -> bool{
         let today = Utc::now().naive_utc().date();
         if rule.recurring_day_of_month.is_some() {

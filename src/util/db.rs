@@ -29,7 +29,7 @@ pub async fn init_db() -> Pool<AsyncPgConnection>{
    let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(db_url);
    let pool_size = match cfg!(test) {
        true => 1,
-       false => 10,
+       false => 30,
    };
    let mut builder = Pool::builder();
     if cfg!(test) {
