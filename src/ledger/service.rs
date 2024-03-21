@@ -5,7 +5,7 @@ use mockall::automock;
 
 use uuid::Uuid;
 use crate::passthrough_card::entity::PassthroughCard;
-use crate::error::service_error::ServiceError;
+use super::error::LedgerError;
 use crate::ledger::constant::ChargeStatus;
 use crate::ledger::dao::{LedgerDao, LedgerDaoTrait};
 use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
@@ -19,42 +19,42 @@ pub trait LedgerServiceTrait {
         self: Arc<Self>,
         user: &User,
         metadata: &TransactionMetadata,
-    ) -> Result<RegisteredTransaction, ServiceError>;
+    ) -> Result<RegisteredTransaction, LedgerError>;
 
     async fn register_failed_inner_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, ServiceError>;
+    ) -> Result<InnerChargeLedger, LedgerError>;
 
     async fn register_successful_inner_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, ServiceError>;
+    ) -> Result<InnerChargeLedger, LedgerError>;
 
     async fn register_failed_outer_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, ServiceError>;
+    ) -> Result<OuterChargeLedger, LedgerError>;
 
     async fn register_successful_outer_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, ServiceError>;
+    ) -> Result<OuterChargeLedger, LedgerError>;
 
     async fn register_full_transaction(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransaction,
         successful_inner_charge: &InnerChargeLedger,
         successful_outer_charge: &OuterChargeLedger
-    ) -> Result<TransactionLedger, ServiceError>;
+    ) -> Result<TransactionLedger, LedgerError>;
 }
 
 pub struct LedgerService {
@@ -75,7 +75,7 @@ impl LedgerServiceTrait for LedgerService {
         self: Arc<Self>,
         user: &User,
         metadata: &TransactionMetadata,
-    ) -> Result<RegisteredTransaction, ServiceError> {
+    ) -> Result<RegisteredTransaction, LedgerError> {
         // TODO: this call takes a long time
         let res = self.dao.clone().insert_registered_transaction(
             &InsertableRegisteredTransaction {
@@ -94,7 +94,7 @@ impl LedgerServiceTrait for LedgerService {
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, ServiceError> {
+    ) -> Result<InnerChargeLedger, LedgerError> {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
@@ -115,7 +115,7 @@ impl LedgerServiceTrait for LedgerService {
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, ServiceError> {
+    ) -> Result<InnerChargeLedger, LedgerError> {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
@@ -136,7 +136,7 @@ impl LedgerServiceTrait for LedgerService {
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, ServiceError> {
+    ) -> Result<OuterChargeLedger, LedgerError> {
         // TODO: do some assertions that everything is associated
         Ok(
             self.dao.clone().insert_outer_charge(
@@ -157,7 +157,7 @@ impl LedgerServiceTrait for LedgerService {
         registered_transaction: &RegisteredTransaction,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, ServiceError> {
+    ) -> Result<OuterChargeLedger, LedgerError> {
         // TODO: do some assertions that everything is associated
         Ok(
             self.dao.clone().insert_outer_charge(
@@ -178,7 +178,7 @@ impl LedgerServiceTrait for LedgerService {
         registered_transaction: &RegisteredTransaction,
         successful_inner_charge: &InnerChargeLedger,
         successful_outer_charge: &OuterChargeLedger
-    ) -> Result<TransactionLedger, ServiceError> {
+    ) -> Result<TransactionLedger, LedgerError> {
         Ok(
             self.dao.clone().insert_transaction_ledger(
                 &InsertableTransactionLedger {

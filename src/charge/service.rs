@@ -1,11 +1,8 @@
 use std::collections::HashSet;
 use std::sync::Arc;
-use std::time::Instant;
 use adyen_checkout::models::payment_response::ResultCode;
-use chrono::Utc;
 use lazy_static::lazy_static;
 use uuid::Uuid;
-use crate::adyen::checkout::request::ChargeCardRequest;
 use crate::adyen::checkout::service::{
     AdyenCheckoutService,
     AdyenChargeServiceTrait
@@ -15,13 +12,12 @@ use crate::charge::entity::{
     ChargeEngineResult,
     ChargeCardAttemptResult
 };
-use crate::error::error_type::ErrorType;
+use crate::charge::error::ChargeError;
+
 use crate::footprint::request::ChargeThroughProxyRequest;
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::entity::PassthroughCard;
-use crate::schema::registered_transactions::transaction_id;
-use crate::error::service_error::ServiceError;
 use crate::ledger::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
 use crate::user::entity::User;
 use crate::wallet::entity::Wallet;
@@ -89,13 +85,11 @@ impl ChargeService {
         wallet: &Vec<Wallet>,
         passthrough_card: &PassthroughCard,
         user: &User,
-    ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ServiceError> {
+    ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ChargeError> {
         tracing::info!("Starting charge");
         let metadata = TransactionMetadata::convert(&request)?;
-        let card = request.card.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect card"))?;
-        let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token"))?;
-        //let passthrough_card = self.passthrough_card_dao.clone().get_by_token(token).await?;
-        //let user = self.user_dao.clone().find_by_internal_id(passthrough_card.user_id).await?;
+        let card = request.card.clone().ok_or(ChargeError::NoCardInRequest)?;
+        let token = card.token.clone().ok_or(ChargeError::NoCardInRequest)?;
         tracing::info!("Registering txn");
         let rtx = self.ledger.clone().register_transaction_for_user(
             &user,
@@ -132,7 +126,11 @@ impl ChargeService {
                         &metadata,
                         &passthrough_card
                     ).await?;
-                    Err(ServiceError::new(ErrorType::InternalServerError, "Approved inner charge with no ledger entry, should not be possible"))
+                    Err(
+                        ChargeError::Unexpected(
+                            Box::new("Approved inner charge with no ledger entry, should not be possible".to_string())
+                        )
+                    )
                 }
             },
             _ => {
@@ -153,7 +151,7 @@ impl ChargeService {
         wallet: &Vec<Wallet>,
         transaction_metadata: &TransactionMetadata,
         registered_transaction: &RegisteredTransaction
-    ) -> Result<(ChargeEngineResult, Option<InnerChargeLedger>), ServiceError> {
+    ) -> Result<(ChargeEngineResult, Option<InnerChargeLedger>), ChargeError> {
         // iterate through the users wallet, charging one and ONLY ONE card
         let idempotency_key = Uuid::new_v4();
         let mut success_charge = false;
@@ -192,7 +190,7 @@ impl ChargeService {
         user: &User,
         transaction_metadata: &TransactionMetadata,
         registered_transaction: &RegisteredTransaction
-    ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ServiceError> {
+    ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ChargeError> {
         /*
         let resp = self.charge_service.clone().charge_card_on_file(
             &ChargeCardRequest {

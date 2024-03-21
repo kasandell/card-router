@@ -6,7 +6,7 @@ use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
-use crate::error::data_error::DataError;
+use crate::error::error::ServiceError;
 use crate::util::math::{
     get_cents_of_cashback,
     get_number_of_points
@@ -48,7 +48,7 @@ pub struct Rule {
 
 impl Rule {
     #[tracing::instrument]
-    pub async fn create(new_rule: &CreateRuleRequest) -> Result<Self, DataError> {
+    pub async fn create(new_rule: &CreateRuleRequest) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
         let rule = diesel::insert_into(rule::table)
             .values(InsertableRule::from(new_rule))
@@ -57,7 +57,7 @@ impl Rule {
     }
 
     #[tracing::instrument]
-    pub async fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, DataError> {
+    pub async fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, ServiceError> {
         let mut conn = db::connection().await?;
 
         let rules = rule::table
@@ -122,7 +122,7 @@ impl Rule {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
+    pub async fn delete(id: i32) -> Result<usize, ServiceError> {
         let mut conn = db::connection().await?;
 
         let res = diesel::delete(
@@ -135,7 +135,7 @@ impl Rule {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, ServiceError> {
         Rule::delete(self.id).await
     }
 }

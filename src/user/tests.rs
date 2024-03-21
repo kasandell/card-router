@@ -11,7 +11,6 @@ mod tests {
     use mockall::predicate::eq;
     use serde_json::json;
     use crate::error::data_error::DataError;
-    use crate::error::error_type::ErrorType;
     use crate::footprint::service::{FootprintService, MockFootprintServiceTrait};
     use crate::test_helper::user::{create_mock_user, create_user};
     use crate::user::dao::MockUserDaoTrait;

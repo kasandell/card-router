@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod entity_tests {
     use diesel::query_builder::QueryFragment;
-    use crate::error::error_type::ErrorType;
     use crate::schema::wallet_card_attempt::expected_reference_id;
     use crate::wallet::entity::{Wallet, NewCard, WalletCardAttempt, InsertableCardAttempt};
     use crate::test_helper::user::create_user;

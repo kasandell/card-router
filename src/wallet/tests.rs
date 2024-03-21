@@ -11,7 +11,6 @@ mod tests {
     use crate::error::api_error::ApiError;
     use crate::credit_card_type::dao::MockCreditCardDaoTrait;
     use crate::error::data_error::DataError;
-    use crate::error::error_type::ErrorType;
     use crate::error::service_error::ServiceError;
     use crate::footprint::service::MockFootprintServiceTrait;
     use crate::test_helper::{

@@ -11,22 +11,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use diesel_async::RunQueryDsl;
-
-#[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Clone)]
-#[diesel(table_name = category)]
-pub struct InsertableCategory<'a> {
-    pub name: &'a str
-}
-
-#[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Clone)]
-#[diesel(belongs_to(Category))]
-#[diesel(table_name = mcc_mapping)]
-pub struct InsertableMccMapping<'a> {
-    pub mcc_code: &'a str,
-    pub category_id: i32
-}
-
-
+use crate::error::data_error::DataError;
 
 #[derive(Identifiable, Serialize, Deserialize, Queryable, Debug)]
 #[diesel(table_name = category)]
@@ -53,44 +38,16 @@ pub struct MccMapping {
 
 impl Category {
     #[tracing::instrument]
-    pub async fn create<'a>(category: &InsertableCategory<'a>) -> Result<Self, DataError> {
+    pub async fn get_by_name(name: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-        let cat = diesel::insert_into(category::table)
-        .values(category)
-        .get_result(&mut conn).await?;
+        let cat = category::table.filter(
+            category::name.eq(name)
+        ).first(&mut conn).await?;
         Ok(cat)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-                category::table
-                    .filter(category::id.eq(id))
-            )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
-        Category::delete(self.id).await
     }
 }
 
 impl MccMapping {
-    #[tracing::instrument]
-    pub async fn create<'a>(mapping: &InsertableMccMapping<'a>) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let map = diesel::insert_into(mcc_mapping::table)
-        .values(mapping)
-        .get_result(&mut conn).await?;
-        Ok(map)
-    }
-
     #[tracing::instrument]
     pub async fn get_by_mcc(mcc: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
@@ -98,24 +55,5 @@ impl MccMapping {
             mcc_mapping::mcc_code.eq(mcc)
         ).first(&mut conn).await?;
         Ok(mapping)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-                mcc_mapping::table
-                    .filter(mcc_mapping::id.eq(id))
-            )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
-        MccMapping::delete(self.id).await
     }
 }

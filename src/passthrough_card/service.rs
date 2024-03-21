@@ -3,12 +3,12 @@ use async_trait::async_trait;
 use base64::Engine as base64Engine;
 use uuid::Uuid;
 use crate::user::entity::User;
-use crate::error::service_error::ServiceError;
+use crate::error::error::ServiceError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::PassthroughCard;
 use base64::engine::general_purpose;
 use lithic_client::models::card::Card;
-use crate::error::error_type::ErrorType;
+
 use crate::lithic::{
     service::LithicService,
     service::LithicServiceTrait,
@@ -47,7 +47,7 @@ impl PassthroughCardService {
     ) -> Result<PassthroughCard, ServiceError> {
         let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
-            return Err(ServiceError::new(ErrorType::Conflict, "User has active card already"))
+            return Err(ServiceError::Conflict(Box::new("User has active card already")))
         }
         let idempotency_key = Uuid::new_v4();
         let pin_encoded = encrypt_pin(pin);
@@ -64,7 +64,7 @@ impl PassthroughCardService {
                 return Ok(card)
             }
             Err(e) => {
-                tracing::info!("{}", e.message);
+                tracing::info!("{:?}", &e);
                 let closed = self.clone().close_lithic_card(&lithic_card.token.to_string()).await;
                 tracing::info!("Closed card");
                 match closed {
@@ -73,11 +73,10 @@ impl PassthroughCardService {
                     },
                     Err(err) => {
                         tracing::error!("Unable to close lithic card");
-                        tracing::info!("{}", err.message);
                         return Err(err);
                     }
                 }
-                return Err(ServiceError::new(ErrorType::InternalServerError, "unable to issue card"));
+                return Err(ServiceError::Unexpected(Box::new("unable to issue card")));
             }
         }
     }
@@ -108,7 +107,7 @@ impl PassthroughCardService {
             PassthroughCardStatus::Closed => self.clone().close_lithic_card(&updated.token).await,
             PassthroughCardStatus::Open => self.clone().activate_lithic_card(&updated.token).await,
             PassthroughCardStatus::Paused =>  self.clone().pause_lithic_card(&updated.token).await,
-            _ => Err(ServiceError::new(ErrorType::InternalServerError, "Invalid state transition from engine"))
+            _ => Err(ServiceError::Unexpected(Box::new("Invalid state transition from engine")))
         };
 
         return match lithic_result {
@@ -173,7 +172,7 @@ impl PassthroughCardService {
                     }
                 ).cloned()
             },
-            _ => return Err(ServiceError::new(ErrorType::NotFound, "Invalid state transition from engine"))
+            _ => return Err(ServiceError::NotFound(Box::new("Invalid state transition from engine")))
         }
     }
 
@@ -227,7 +226,7 @@ impl PassthroughCardService {
             .collect();
         // TODO: this scares me
         Ok(v.get(0).ok_or(
-            ServiceError::new(ErrorType::NotFound, "card to transition not found")
+            ServiceError::NotFound(Box::new("card to transition not found"))
         )?)
     }
 

@@ -8,3 +8,5 @@ pub mod enum_tests;
 pub mod constant;
 pub mod tests;
 mod constant_tests;
+mod error;
+mod from_client_error;

@@ -1,21 +1,21 @@
 use std::fmt::Formatter;
 use std::sync::Arc;
-use crate::category::entity::{Category, InsertableCategory, InsertableMccMapping, MccMapping};
+use crate::category::entity::{Category, MccMapping};
 use crate::error::data_error::DataError;
 use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait CategoryDaoTrait {
-    async fn create<'a>(self: Arc<Self>, category: &InsertableCategory<'a>) -> Result<Category, DataError>;
+    async fn get_by_name(self: Arc<Self>, name: &str) -> Result<Category, DataError>;
 }
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait MccMappingDaoTrait {
-    async fn create<'a>(self: Arc<Self>, mapping: &InsertableMccMapping<'a>) -> Result<MccMapping, DataError>;
     async fn get_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, DataError>;
 }
 
@@ -35,8 +35,8 @@ impl CategoryDao {
 #[async_trait(?Send)]
 impl CategoryDaoTrait for CategoryDao {
     #[tracing::instrument(skip(self))]
-    async fn create<'a>(self: Arc<Self>, category: &InsertableCategory<'a>) -> Result<Category, DataError> {
-        Category::create(category).await
+    async fn get_by_name(self: Arc<Self>, name: &str) -> Result<Category, DataError> {
+        Category::get_by_name(name)?
     }
 }
 
@@ -49,10 +49,6 @@ impl MccMappingDao {
 
 #[async_trait(?Send)]
 impl MccMappingDaoTrait for MccMappingDao {
-    #[tracing::instrument(skip(self))]
-    async fn create<'a>(self: Arc<Self>, mapping: &InsertableMccMapping<'a>) -> Result<MccMapping, DataError> {
-        MccMapping::create(mapping).await
-    }
 
     #[tracing::instrument(skip(self))]
     async fn get_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, DataError> {

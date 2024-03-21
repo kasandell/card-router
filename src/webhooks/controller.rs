@@ -3,7 +3,7 @@ use actix_web::{
     post,
     HttpResponse,
 };
-use crate::error::api_error::ApiError;
+use crate::error::error::ServiceError;
 use crate::asa::request::AsaRequest;
 use crate::middleware::services::Services;
 
@@ -11,7 +11,7 @@ use crate::middleware::services::Services;
 async fn lithic_asa_webhook(
     asa: web::Json<AsaRequest>,
     services: web::Data<Services>
-) -> Result<HttpResponse, ApiError> {
+) -> Result<HttpResponse, ServiceError> {
     let resp = services.lithic_handler.clone().handle(asa.into_inner()).await?;
     Ok(
         HttpResponse::Ok().json(

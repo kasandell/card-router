@@ -1,8 +1,7 @@
 use crate::rule::constant::DayOfMonth;
 use chrono::{NaiveDate, Duration, Datelike};
-use crate::error::api_error::ApiError;
-use crate::error::data_error::DataError;
-use crate::error::error_type::ErrorType;
+use crate::error::error::ServiceError;
+
 
 pub fn first_of_month(date: NaiveDate) -> NaiveDate {
     NaiveDate::from_ymd_opt(date.year(), date.month(), 1).expect("should create date")
@@ -23,12 +22,12 @@ pub fn adjust_recurring_to_date(date: NaiveDate, day_of_month: &DayOfMonth) -> N
     }
 }
 
-pub fn expiration_date_from_str_parts(year: &str, month: &str) -> Result<NaiveDate, DataError> {
+pub fn expiration_date_from_str_parts(year: &str, month: &str) -> Result<NaiveDate, ServiceError> {
     let month_val = month.parse::<u32>()?;
     let year_val = year.parse::<i32>()?;
     Ok(
         NaiveDate::from_ymd_opt(year_val, month_val, 1).ok_or(
-            DataError::new(ErrorType::InternalServerError, "Parse error")
+            ServiceError::Unexpected(Box::new("Parse error"))
         )?
     )
 

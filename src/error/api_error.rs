@@ -1,105 +1,101 @@
+use std::fmt::Debug;
 use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
-use adyen_checkout::apis::Error as AdyenCheckoutError;
-use adyen::checkout::error::Error as AdyenServiceError;
-use crate::lithic::error::Error as LithicServiceError;
-use crate::charge::error::Error as ChargeEngineError;
-use crate::ledger::error::{Error as LedgerError, Error};
-use diesel::result::Error as DieselError;
-use serde::Deserialize;
-use r2d2::Error as R2D2Error;
-use serde_json::{json, Error as SerdeError};
-use std::fmt;
-use std::num::ParseIntError;
-use crate::adyen;
-use crate::error::data_error::DataError;
-use crate::error::error_type::ErrorType;
-use crate::error::service_error::ServiceError;
+use serde_json::Error as SerdeError;
+use std::error::Error as StdErr;
+#[derive(thiserror::Error, Debug)]
+pub enum ApiError {
+    #[error("Unauthorized")]
+    Unauthorized(#[source] Box<dyn std::error::Error>),
 
-#[derive(Debug, Clone)]
-pub struct ApiError {
-    pub error_type: ErrorType,
-    pub message: String,
+    #[error("Not found")]
+    NotFound(#[source] Box<dyn std::error::Error>),
+
+    #[error("BadRequest")]
+    BadRequest(#[source] Box<dyn std::error::Error>),
+
+    #[error("Conflict")]
+    Conflict(#[source] Box<dyn std::error::Error>),
+
+    #[error("Internal Server error")]
+    InternalServerError(#[source] Box<dyn std::error::Error>),
+
+
+    #[error("Timeout")]
+    Timeout(#[source] Box<dyn std::error::Error>),
+
+    #[error("Unexpected API Error")]
+    Unexpected(#[source] Box<dyn std::error::Error>),
 }
 
-impl ApiError {
-    pub fn new(error_type: ErrorType, message: &str) -> ApiError {
-        ApiError { error_type, message: message.to_string() }
+fn api_error_for_status_code(status: StatusCode, error: Box<dyn std::error::Error>) -> ApiError {
+    match status {
+        StatusCode::CONFLICT => ApiError::Conflict(error),
+        StatusCode::BAD_REQUEST => ApiError::BadRequest(error),
+        StatusCode::NOT_FOUND => ApiError::NotFound(error),
+        StatusCode::UNAUTHORIZED => ApiError::Unauthorized(error),
+        StatusCode(_) => ApiError::Unexpected(error)
     }
 }
 
-impl fmt::Display for ApiError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.message.as_str())
-    }
-}
 
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
-        tracing::info!("Converting from serde error");
-        tracing::info!("SERDE ERROR");
-        match error {
-            err => ApiError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
+        match &error {
+            err => ApiError::Unexpected(Box::new(error))
         }
     }
 }
 
 
-
-impl From<ChargeEngineError> for ApiError {
-    fn from(_: ChargeEngineError) -> Self {
-        tracing::info!("Converting from charge engine error");
-        ApiError::new(ErrorType::InternalServerError, "Service error")
-
+impl From<reqwest::Error> for ApiError {
+    fn from(error: reqwest::Error) -> ApiError {
+        if error.is_status() {
+            match error.status() {
+                Some(status) => {
+                    api_error_for_status_code(status, Box::new(error))
+                }
+                None => ApiError::Unexpected(Box::new(error))
+            }
+        } else if error.is_timeout() {
+            ApiError::Timeout(Box::new(error))
+        } else {
+            ApiError::Unexpected(Box::new(error))
+        }
     }
 }
 
-impl From<LedgerError> for ApiError {
-    fn from(_: LedgerError) -> Self {
-        tracing::info!("Converting from ledger error");
-        ApiError::new(ErrorType::InternalServerError, "Service error")
 
+impl From<std::io::Error> for ApiError {
+    fn from(error: std::io::Error) -> ApiError {
+        ApiError::Unexpected(Box::new(error))
     }
 }
 
 
-impl ResponseError for ApiError {
-    fn error_response(&self) -> HttpResponse {
-        let status_code = match self.error_type {
-
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        let message = match status_code.as_u16() < 500 {
-            true => {
-                tracing::warn!("{}: {}", self.error_type, self.message);
-                self.message.clone()
+impl From<(Option<i32>, dyn StdErr)> for ApiError {
+    fn from(value: Box<(Option<i32>, dyn StdErr)>) -> Self {
+        match value.0 {
+            Some(code) => {
+                let cast = u16::try_from(code);
+                match cast {
+                    Ok(code) => {
+                        match StatusCode::from_u16(code) {
+                            Ok(status_code) => {
+                                api_error_for_status_code(status_code, Box::new(value.1))
+                            }
+                            Err(_) => {
+                                ApiError::Unexpected(Box::new(value.1))
+                            }
+                        }
+                    },
+                    Err(_) => {
+                        ApiError::Unexpected(Box::new(value.1))
+                    }
+                }
             },
-            false => {
-                tracing::error!("{}: {}", self.error_type, self.message);
-                "Internal server error".to_string()
-            },
-        };
-
-        HttpResponse::build(status_code)
-            .json(json!({ "message": message }))
+            None => ApiError::Unexpected(Box::new(value.1))
+        }
     }
 }
 
-impl From<R2D2Error> for ApiError {
-    fn from(_: R2D2Error) -> ApiError {
-        ApiError::new(ErrorType::InternalServerError, "R2D2 error")
-    }
-}
 
-impl From<DataError> for ApiError {
-    fn from(error: DataError) -> ApiError {
-        ApiError::new(error.error_type, &error.message)
-    }
-}
-
-impl From<ServiceError> for ApiError {
-    fn from(error: ServiceError) -> ApiError {
-        ApiError::new(error.error_type, &error.message)
-    }
-}

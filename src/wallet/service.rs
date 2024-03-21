@@ -2,15 +2,14 @@ use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use uuid::Uuid;
 use crate::adyen::checkout::service::{AdyenChargeServiceTrait, AdyenCheckoutService};
-use crate::error::api_error::ApiError;
 use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
-use crate::error::service_error::ServiceError;
+use crate::error::error::ServiceError;
 use crate::user::entity::User;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
 use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, Wallet, WalletCardAttempt};
 use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
-use crate::error::error_type::ErrorType;
+
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::wallet::response::WalletCardAttemptResponse;
 
@@ -58,7 +57,7 @@ impl WalletService {
         self: Arc<Self>,
         user: &User,
         request: &RegisterAttemptRequest
-    ) -> Result<WalletCardAttemptResponse, ApiError> {
+    ) -> Result<WalletCardAttemptResponse, ServiceError> {
         let credit_card = self.credit_card_dao.clone().find_by_public_id(&request.credit_card_type_public_id).await?;
         let wca = self.wallet_card_attempt_dao.clone().insert(
             &InsertableCardAttempt {
@@ -92,10 +91,10 @@ impl WalletService {
         tracing::info!("Found wallet card attempt id {}", card_attempt.id);
 
         if card_attempt.status.eq(&WalletCardAttemptStatus::Matched) {
-            return Err(ServiceError::new(ErrorType::Conflict, "Card already matched"));
+            return Err(ServiceError::Conflict(Box::new("Card already matched")));
         }
         if user.id != card_attempt.user_id {
-            return Err(ServiceError::new(ErrorType::Unauthorized, "User not owner of attempt"));
+            return Err(ServiceError::Unauthorized(Box::new("User not owner of attempt")));
         }
 
         let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {

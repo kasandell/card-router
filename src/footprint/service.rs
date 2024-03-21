@@ -4,8 +4,8 @@ use std::time::Duration;
 use adyen_checkout::models::{Amount, PaymentCancelResponse, PaymentRequest, PaymentRequestPaymentMethod, PaymentResponse};
 use adyen_checkout::models::payment_response::ResultCode;
 use async_trait::async_trait;
-use crate::error::error_type::ErrorType;
-use crate::error::service_error::ServiceError;
+
+use super::error::FootprintError;
 use footprint::apis::configuration::{ApiKey, BasicAuth, Configuration};
 use footprint::apis::default_api::{post_vault_proxy, create_user_vault, create_client_token, post_vault_proxy_jit};
 use footprint::models::{CreateClientTokenRequest, CreateClientTokenResponse, CreateUserVaultResponse};
@@ -26,10 +26,10 @@ use tokio::time::sleep;
 #[automock]
 #[async_trait(?Send)]
 pub trait FootprintServiceTrait {
-    async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, ServiceError>;
-    async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError>;
-    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, ServiceError>;
-    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError>;
+    async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, FootprintError>;
+    async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError>;
+    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, FootprintError>;
+    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, FootprintError>;
 }
 
 pub struct FootprintService {
@@ -59,7 +59,7 @@ impl FootprintService {
 #[async_trait(?Send)]
 impl FootprintServiceTrait for FootprintService {
     #[tracing::instrument(skip(self))]
-    async fn add_vault_for_user(self: Arc<Self>) ->  Result<CreateUserVaultResponse, ServiceError> {
+    async fn add_vault_for_user(self: Arc<Self>) ->  Result<CreateUserVaultResponse, FootprintError> {
         tracing::info!("Creating user vault");
         Ok(create_user_vault(
             &self.configuration
@@ -67,7 +67,7 @@ impl FootprintServiceTrait for FootprintService {
     }
 
     #[tracing::instrument(skip(self))]
-    async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError> {
+    async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError> {
         let number = Some(
             to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::CardNumber))?
         );
@@ -213,7 +213,7 @@ impl FootprintServiceTrait for FootprintService {
     }
 
     #[tracing::instrument(skip(self))]
-    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, ServiceError> {
+    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, FootprintError> {
         Ok(
             create_client_token(
                 &self.configuration,
@@ -228,12 +228,8 @@ impl FootprintServiceTrait for FootprintService {
     }
 
     #[tracing::instrument(skip(self))]
-    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError> {
-        Err(
-            ServiceError::new(
-                ErrorType::InternalServerError, "Not implemented"
-            )
-        )
+    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, FootprintError> {
+        Err(FootprintError::Unexpected(Box::new("Not implemented")))
     }
 }
 
@@ -249,14 +245,12 @@ impl FakeFootprintService {
 #[async_trait(?Send)]
 impl FootprintServiceTrait for FakeFootprintService {
     #[tracing::instrument(skip(self))]
-    async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, ServiceError> {
-        Err(ServiceError::new(
-            ErrorType::InternalServerError, "Not implemented"
-        ))
+    async fn add_vault_for_user(self: Arc<Self>) -> Result<CreateUserVaultResponse, FootprintError> {
+        Err(FootprintError::NotImplemented)
     }
 
     #[tracing::instrument(skip(self))]
-    async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, ServiceError> {
+    async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError> {
         sleep(Duration::from_millis(rand::thread_rng().gen_range(0..10)));
         let mut result_code = ResultCode::Authorised;
         if rand::thread_rng().gen_range(0..10) > 8 {
@@ -284,16 +278,12 @@ impl FootprintServiceTrait for FakeFootprintService {
     }
 
     #[tracing::instrument(skip(self))]
-    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, ServiceError> {
-        Err(ServiceError::new(
-            ErrorType::InternalServerError, "Not implemented"
-        ))
+    async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, FootprintError> {
+        Err(FootprintError::NotImplemented)
     }
 
     #[tracing::instrument(skip(self))]
-    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, ServiceError> {
-        Err(ServiceError::new(
-            ErrorType::InternalServerError, "Not implemented"
-        ))
+    async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, FootprintError> {
+        Err(FootprintError::NotImplemented)
     }
 }

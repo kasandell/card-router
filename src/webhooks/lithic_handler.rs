@@ -2,16 +2,15 @@ use std::sync::Arc;
 use std::time::Instant;
 use crate::adyen::checkout::service::AdyenChargeServiceTrait;
 
-use crate::error::api_error::ApiError;
+use crate::error::error::ServiceError;
 use crate::charge::service::ChargeService;
 use crate::asa::request::AsaRequest;
 use crate::rule::service::RuleService;
 use crate::rule::service::RuleServiceTrait;
 use crate::asa::response::{AsaResponse, AsaResponseResult};
-use crate::error::error_type::ErrorType;
+
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
-use crate::error::service_error::ServiceError;
 use crate::ledger::service::LedgerServiceTrait;
 use crate::user::dao::{UserDao, UserDaoTrait};
 
@@ -72,15 +71,15 @@ impl LithicHandler {
         }
     }
     #[tracing::instrument(skip(self))]
-    pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, ApiError>{
+    pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, ServiceError>{
         // TODO: do a reverse lookup based on the card token to get the user
         tracing::info!("{:?}", &request);
         tracing::info!("Identifying user by card");
         let mut start = Instant::now();
-        let card = request.card.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect card"))?;
+        let card = request.card.clone().ok_or(ServiceError::Format(Box::new("expect card")))?;
         tracing::info!("card from request took {:?}", start.elapsed());
         start = Instant::now();
-        let token = card.token.clone().ok_or(ServiceError::new(ErrorType::BadRequest, "expect token"))?;
+        let token = card.token.clone().ok_or(ServiceError::Format(Box::new("expect token")))?;
         tracing::info!("token from request took {:?}", start.elapsed());
         start = Instant::now();
         let passthrough_card = self.passthrough_card_dao.clone().get_by_token(&token).await?;

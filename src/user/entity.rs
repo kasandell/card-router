@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::error::data_error::DataError;
+use crate::error::error::ServiceError;
 
 #[derive(Serialize, Deserialize, AsChangeset, PartialEq, Debug, Clone)]
 #[diesel(table_name = users)]
@@ -38,7 +38,7 @@ pub struct InsertableUser<'a> {
 
 impl User {
     #[tracing::instrument]
-    pub async fn find(id: &Uuid) -> Result<Self, DataError> {
+    pub async fn find(id: &Uuid) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let user = users::table
@@ -51,7 +51,7 @@ impl User {
     #[tracing::instrument]
     pub async fn find_by_email(
         email: &str,
-    ) -> Result<Self, DataError> {
+    ) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let user = users::table
@@ -64,7 +64,7 @@ impl User {
     }
 
     #[tracing::instrument]
-    pub async fn find_by_internal_id(id: i32) -> Result<Self, DataError> {
+    pub async fn find_by_internal_id(id: i32) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let user = users::table
@@ -75,7 +75,7 @@ impl User {
     }
 
     #[tracing::instrument]
-    pub async fn find_by_auth0_id(id: &str) -> Result<Self, DataError> {
+    pub async fn find_by_auth0_id(id: &str) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let user = users::table
@@ -86,7 +86,7 @@ impl User {
     }
 
     #[tracing::instrument(skip_all)]
-    pub async fn create<'a>(user: &UserMessage<'a>) -> Result<Self, DataError> {
+    pub async fn create<'a>(user: &UserMessage<'a>) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
         let user =  InsertableUser {
             public_id: &Uuid::new_v4(),
@@ -102,7 +102,7 @@ impl User {
     }
 
     #[tracing::instrument(skip_all)]
-    pub async fn update<'a>(id: &Uuid, user: &UserMessage<'a>) -> Result<Self, DataError> {
+    pub async fn update<'a>(id: &Uuid, user: &UserMessage<'a>) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let user = diesel::update(users::table)
@@ -115,7 +115,7 @@ impl User {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
+    pub async fn delete(id: i32) -> Result<usize, ServiceError> {
         let mut conn = db::connection().await?;
 
         let res = diesel::delete(
@@ -129,13 +129,13 @@ impl User {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, ServiceError> {
         User::delete(self.id).await
     }
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete_all() -> Result<usize, DataError> {
+    pub async fn delete_all() -> Result<usize, ServiceError> {
         let mut conn = db::connection().await?;
 
         let res = diesel::delete(

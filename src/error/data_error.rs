@@ -1,51 +1,42 @@
-use std::fmt;
+use actix_web::http::StatusCode;
+use actix_web::ResponseError;
 use std::num::ParseIntError;
-use serde::Deserialize;
-use diesel::result::Error as DieselError;
 use diesel_async::pooled_connection::bb8::RunError;
+use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use r2d2::Error as R2D2Error;
 use serde_json::{json, Error as SerdeError};
-use crate::error::api_error::ApiError;
-use crate::error::error_type::ErrorType;
+use thiserror;
 
-#[derive(Debug, Clone)]
-pub struct DataError {
-    pub error_type: ErrorType,
-    pub message: String
-}
 
-impl DataError {
-    pub fn new(error_type: ErrorType, message: &str) -> DataError {
-        DataError { error_type, message: message.to_string() }
-    }
-}
-
-impl fmt::Display for DataError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.message.as_str())
-    }
+#[derive(thiserror::Error, Debug)]
+pub enum DataError {
+    #[error("Conflict")]
+    Conflict(#[source] Box<dyn std::error::Error>),
+    #[error("Not Found")]
+    NotFound(#[source] Box<dyn std::error::Error>),
+    #[error("Format")]
+    Format(#[source] Box<dyn std::error::Error>),
+    #[error("Unexpected error")]
+    Unexpected(#[source] Box<dyn std::error::Error>),
 }
 
 impl From<R2D2Error> for DataError {
-    fn from(_: R2D2Error) -> DataError {
-        DataError::new(ErrorType::InternalServerError, "R2D2 error")
+    fn from(e: R2D2Error) -> DataError {
+        DataError::Unexpected(Box::new(e))
     }
-
 }
 
 impl From<RunError> for DataError {
     fn from(error: RunError) -> DataError {
-        tracing::info!("{}", error.to_string());
-        DataError::new(ErrorType::InternalServerError, &format!("Data Error").as_str())
+        // TODO: this can also encapsulate duplicate, etc
+        DataError::Unexpected(Box::new(error))
     }
 
 }
 
 impl From<DieselError> for DataError {
     fn from(error: DieselError) -> DataError {
-        tracing::info!("Converting from diesel error");
-        tracing::info!("{}", error.to_string());
-        match error {
+        match &error {
             DieselError::DatabaseError(kind, err) => {
                 /*
                     ForeignKeyViolation,
@@ -57,31 +48,26 @@ impl From<DieselError> for DataError {
                     ClosedConnection,
                  */
                 match kind {
-                    _UniqueViolation => DataError::new(ErrorType::Conflict, err.message()),
-                    _ => DataError::new(ErrorType::InternalServerError, err.message())
+                    DatabaseErrorKind::UniqueViolation => DataError::Conflict(Box::new(err)),
+                    DatabaseErrorKind::SerializationFailure => DataError::Format(Box::new(err)),
+                    _ => DataError::Unexpected(Box::new(err))
                 }
-
             },
-            DieselError::NotFound => DataError::new(ErrorType::NotFound, "Record not found"),
-            err => DataError::new(ErrorType::InternalServerError, &format!("Diesel error: {}", err)),
+            DieselError::NotFound => DataError::NotFound(Box::new(error)),
+            err => DataError::Unexpected(Box::new(err))
         }
     }
 }
 
 impl From<SerdeError> for DataError {
     fn from(error: SerdeError) -> DataError {
-        tracing::info!("Converting from serde error");
-        tracing::info!("{}", error.to_string());
-        match error {
-            err => DataError::new(ErrorType::InternalServerError, &format!("Serde Error error: {}", err)),
-        }
+        DataError::Format(Box::new(error))
     }
 }
 
 impl From<ParseIntError> for DataError {
     fn from(error: ParseIntError) -> Self {
-        tracing::info!("{}", error.to_string());
-        DataError::new(ErrorType::InternalServerError, "Parse error")
+        DataError::Format(Box::new(error))
     }
 }
 

@@ -1,10 +1,9 @@
 use std::ops::Add;
 use footprint::models::CreateClientTokenRequest;
 use crate::footprint::r#enum::CardPart;
-use crate::error::service_error::ServiceError;
 use crate::footprint::constant::Constant::TTL;
 
-pub fn card_request_parts_for_card_id(card_id: &str) -> Result<Vec<String>, ServiceError> {
+pub fn card_request_parts_for_card_id(card_id: &str) -> Vec<String> {
     // given card, return
     /*
             "card.{card_id}.number",
@@ -12,12 +11,10 @@ pub fn card_request_parts_for_card_id(card_id: &str) -> Result<Vec<String>, Serv
             "card.{card_id}.expiration",
             "card.{card_id}.name"
      */
-    Ok(
-        CardPart::all_parts()
-            .iter()
-            .map(|part| individual_request_part(card_id, part))
-            .collect()
-    )
+    CardPart::all_parts()
+        .iter()
+        .map(|part| individual_request_part(card_id, part))
+        .collect()
 }
 
 pub fn individual_request_part(card_id: &str, part: &CardPart) -> String {

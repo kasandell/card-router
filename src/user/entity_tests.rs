@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod test {
     use uuid::Uuid;
-    use crate::error::error_type::ErrorType;
     use crate::user::dao::{UserDao, UserDaoTrait};
     use crate::user::entity::{User, UserMessage};
 

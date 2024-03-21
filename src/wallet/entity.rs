@@ -6,7 +6,7 @@ use crate::{schema::{
     credit_card_type
 }, credit_card_type::entity::{CreditCardType,CreditCard,CreditCardIssuer}};
 use crate::util::db;
-use crate::error::data_error::DataError;
+use crate::error::error::ServiceError;
 use crate::user::entity::User;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
@@ -99,7 +99,7 @@ pub struct DisplayableCardInfo {
 
 impl Wallet {
     #[tracing::instrument]
-    pub async fn find_all_for_user(user: &User) -> Result<Vec<Self>, DataError> {
+    pub async fn find_all_for_user(user: &User) -> Result<Vec<Self>, ServiceError> {
         let mut conn = db::connection().await?;
         //let cards = Wallet::belonging_to(&user).load::<Wallet>(&mut conn).await?;
         let cards = wallet::table.filter(
@@ -109,7 +109,7 @@ impl Wallet {
     }
 
     #[tracing::instrument]
-    pub async fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, DataError> {
+    pub async fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<(Self, CreditCard, CreditCardType, CreditCardIssuer)>, ServiceError> {
         let mut conn = db::connection().await?;
         let cards = wallet::table
         .inner_join(
@@ -127,7 +127,7 @@ impl Wallet {
 
     // TODO: from consumes
     #[tracing::instrument]
-    pub async fn insert_card<'a>(card: &NewCard<'a>) -> Result<Self, DataError> {
+    pub async fn insert_card<'a>(card: &NewCard<'a>) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
         let insertable_card = InsertableCard::from(card);
         let inserted_card = diesel::insert_into(wallet::table)
@@ -139,7 +139,7 @@ impl Wallet {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
+    pub async fn delete(id: i32) -> Result<usize, ServiceError> {
         let mut conn = db::connection().await?;
 
         let res = diesel::delete(
@@ -152,7 +152,7 @@ impl Wallet {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, ServiceError> {
         Wallet::delete(self.id).await
     }
 }
@@ -193,7 +193,7 @@ impl Wallet {
     pub async fn create_test_wallet_in_db(
         user_id: i32,
         credit_card_id: i32
-    ) -> Result<(Self, WalletCardAttempt), DataError> {
+    ) -> Result<(Self, WalletCardAttempt), ServiceError> {
         let ca = WalletCardAttempt::insert(
             &InsertableCardAttempt {
                 user_id: user_id,
@@ -216,7 +216,7 @@ impl Wallet {
 
 impl WalletCardAttempt {
     #[tracing::instrument]
-    pub async fn insert<'a>(card_attempt: &InsertableCardAttempt<'a>) -> Result<Self, DataError> {
+    pub async fn insert<'a>(card_attempt: &InsertableCardAttempt<'a>) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let wallet = diesel::insert_into(wallet_card_attempt::table)
@@ -226,7 +226,7 @@ impl WalletCardAttempt {
     }
 
     #[tracing::instrument]
-    pub async fn find_by_reference_id(reference: &str) -> Result<Self, DataError> {
+    pub async fn find_by_reference_id(reference: &str) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let card_attempt = wallet_card_attempt::table
@@ -237,7 +237,7 @@ impl WalletCardAttempt {
     }
 
     #[tracing::instrument]
-    pub async fn update_card(id: i32, card: &UpdateCardAttempt) -> Result<Self, DataError> {
+    pub async fn update_card(id: i32, card: &UpdateCardAttempt) -> Result<Self, ServiceError> {
         let mut conn = db::connection().await?;
 
         let wallet = diesel::update(wallet_card_attempt::table)
@@ -249,7 +249,7 @@ impl WalletCardAttempt {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
+    pub async fn delete(id: i32) -> Result<usize, ServiceError> {
         let mut conn = db::connection().await?;
 
         let res = diesel::delete(
@@ -262,7 +262,7 @@ impl WalletCardAttempt {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
+    pub async fn delete_self(&self) -> Result<usize, ServiceError> {
         WalletCardAttempt::delete(self.id).await
     }
 }

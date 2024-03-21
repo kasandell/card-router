@@ -3,7 +3,6 @@ mod tests {
     use std::sync::Arc;
     use lithic_client::models::card::State;
     use mockall::Sequence;
-    use crate::error::error_type::ErrorType;
     use crate::passthrough_card::constant::PassthroughCardStatus;
     use crate::test_helper::user::{create_mock_user, create_user};
     use crate::passthrough_card::entity::PassthroughCard;

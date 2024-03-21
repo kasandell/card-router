@@ -22,7 +22,7 @@ use serde_json::to_value;
 use uuid::Uuid;
 use crate::constant::financial_constant;
 use crate::environment::ENVIRONMENT;
-use crate::error::service_error::ServiceError;
+use super::error::CheckoutError;
 use crate::user::entity::User;
 use super::request::ChargeCardRequest;
 
@@ -37,12 +37,12 @@ pub trait AdyenChargeServiceTrait {
     async fn charge_card_on_file<'a>(
         self: Arc<Self>,
         request: &ChargeCardRequest<'a>
-    ) -> Result<PaymentResponse, ServiceError>;
+    ) -> Result<PaymentResponse, CheckoutError>;
 
     async fn cancel_transaction(
         self: Arc<Self>,
         psp_reference: &str,
-    ) -> Result<PaymentCancelResponse, ServiceError>;
+    ) -> Result<PaymentCancelResponse, CheckoutError>;
 
     // this is going to take a request in from the frontend, preformatted by adyen libraries
     // and pass it along
@@ -52,7 +52,7 @@ pub trait AdyenChargeServiceTrait {
         user: &User,
         reference_id: &str,
         request: &PaymentRequestPaymentMethod
-    ) -> Result<PaymentResponse, ServiceError>;
+    ) -> Result<PaymentResponse, CheckoutError>;
 }
 
 impl AdyenCheckoutService {
@@ -79,7 +79,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
     async fn charge_card_on_file<'a>(
         self: Arc<Self>,
         request: &ChargeCardRequest<'a>
-    ) -> Result<PaymentResponse, ServiceError> {
+    ) -> Result<PaymentResponse, CheckoutError> {
         let mut start = Instant::now();
         let body = Some(PaymentRequest {
             account_info: None,
@@ -194,7 +194,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
     async fn cancel_transaction(
         self: Arc<Self>,
         psp_reference: &str,
-    ) -> Result<PaymentCancelResponse, ServiceError> {
+    ) -> Result<PaymentCancelResponse, CheckoutError> {
         Ok(
             post_payments_payment_psp_reference_cancels(
                 &self.configuration.clone(),
@@ -218,7 +218,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
         user: &User,
         reference_id: &str,
         request: &PaymentRequestPaymentMethod,
-    ) -> Result<PaymentResponse, ServiceError> {
+    ) -> Result<PaymentResponse, CheckoutError> {
         tracing::info!("IN ADD CARD REQUEST");
         let additional_data: HashMap<String, String> =
             [("allow3DS2".to_string(), "true".to_string())].iter().cloned().collect();

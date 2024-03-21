@@ -1,7 +1,6 @@
 use actix_web::{web, get, post, HttpResponse, services};
 use uuid::Uuid;
-use crate::error::api_error::ApiError;
-use crate::error::error_type::ErrorType;
+use crate::error::error::ServiceError;
 use crate::auth::entity::Claims;
 use crate::middleware::services::Services;
 use crate::user::dao::{UserDao, UserDaoTrait};
@@ -15,7 +14,7 @@ use super::entity::{User, UserMessage};
 async fn find(
     user_id: web::Path<Uuid>,
     services: web::Data<Services>
-) -> Result<HttpResponse, ApiError> {
+) -> Result<HttpResponse, ServiceError> {
     let id = user_id.into_inner();
     tracing::info!("Finding user by public id {}", id.clone());
     let user = services.user_dao.clone().find(&id).await?;
@@ -27,7 +26,7 @@ async fn find(
 #[get("/list/")]
 async fn list(
     services: web::Data<Services>
-) -> Result<HttpResponse, ApiError> {
+) -> Result<HttpResponse, ServiceError> {
     // This shouldn't even exist
     Ok(HttpResponse::Ok().finish())
     /*
@@ -44,9 +43,9 @@ async fn create(
     request: web::Json<CreateUserRequest>,
     claims: Claims,
     services: web::Data<Services>
-) -> Result<HttpResponse, ApiError> {
+) -> Result<HttpResponse, ServiceError> {
     tracing::info!("Get or Creating user");
-    let Some(auth0) = claims.sub else {return Err(ApiError::new(ErrorType::Unauthorized, "unauthorized"));};
+    let Some(auth0) = claims.sub else {return Err(ServiceError::Unauthorized(Box::new("unauthorized".to_string())));};
     let request = request.into_inner();
     let user = services.user_service.clone().get_or_create(
         &auth0,

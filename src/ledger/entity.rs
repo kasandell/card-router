@@ -9,7 +9,7 @@ use crate::wallet::entity::Wallet;
 use diesel::prelude::*;
 use crate::asa::request::AsaRequest;
 use crate::error::data_error::DataError;
-use crate::error::error_type::ErrorType;
+
 use crate::ledger::constant::ChargeStatus;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -390,7 +390,7 @@ impl TransactionLedger {
 
 impl TransactionMetadata {
     pub fn convert(request: &AsaRequest) -> Result<Self, DataError> {
-        let error = DataError::new(ErrorType::BadRequest, "missing field");
+        let error = DataError::Format(Box::new("missing field"));
         let merchant = request.merchant.clone().ok_or(error.clone())?;
         let descriptor = merchant.descriptor.clone().ok_or(error.clone())?;
         let mcc = merchant.mcc.clone().ok_or(error.clone())?;

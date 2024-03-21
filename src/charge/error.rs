@@ -1,26 +1,18 @@
-use std::fmt;
-use serde::Deserialize;
-use crate::ledger::error::Error as LedgerError;
+use thiserror;
+use crate::ledger::error::LedgerError;
 
-#[derive(Debug, Deserialize)]
-pub struct Error {
-    pub message: String,
+#[derive(thiserror::Error, Debug)]
+pub enum ChargeError<'a> {
+    #[error("No card present to charge in the request")]
+    NoCardInRequest,
+    #[error("Unexpected charge error")]
+    Unexpected(#[source] Box<dyn std::error::Error>)
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.message.as_str())
+impl From<LedgerError> for ChargeError {
+    fn from(value: LedgerError) -> Self {
+        ChargeError::Unexpected(Box::new(value))
     }
 }
 
-impl Error {
-    pub fn new(message: String) -> Error {
-        Error { message }
-    }
-}
 
-impl From<LedgerError> for Error {
-    fn from(error: LedgerError) -> Error {
-        Error::new(error.message)
-    }
-}
