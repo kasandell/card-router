@@ -1,9 +1,13 @@
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::user::entity::User;
+use crate::user::model::UserModel as User;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::PassthroughCard;
 use lithic_client::models::card::Card;
+#[cfg(test)]
+use mockall::automock;
+
+use async_trait::async_trait;
 use super::error::PassthroughCardError;
 
 use crate::lithic::{
@@ -12,36 +16,39 @@ use crate::lithic::{
 };
 use crate::passthrough_card::crypto::encrypt_pin;
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
+use crate::passthrough_card::model::PassthroughCardModel;
+
+#[cfg_attr(test, automock)]
+#[async_trait(?Send)]
+pub trait PassthroughCardServiceTrait {
+    async fn issue_card_to_user(
+        self: Arc<Self>,
+        user: &User,
+        pin: &str
+    ) -> Result<PassthroughCardModel, PassthroughCardError>;
+
+
+    async fn update_card_status(
+        self: Arc<Self>,
+        user: &User,
+        status: PassthroughCardStatus
+    ) -> Result<(), PassthroughCardError>;
+
+
+}
 
 pub struct PassthroughCardService {
     pub lithic_service: Arc<dyn LithicServiceTrait>,
     pub passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>
 }
 
-impl PassthroughCardService {
-    #[tracing::instrument(skip_all)]
-    pub fn new() -> Self {
-        Self {
-            lithic_service: Arc::new(LithicService::new()),
-            passthrough_card_dao: Arc::new(PassthroughCardDao::new())
-        }
-    }
-    #[tracing::instrument(skip_all)]
-    pub fn new_with_services(
-        lithic_service: Arc<dyn LithicServiceTrait>,
-        passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
-    ) -> Self {
-        Self {
-            lithic_service,
-            passthrough_card_dao
-        }
-    }
+impl PassthroughCardServiceTrait for PassthroughCardService {
     #[tracing::instrument(skip(self))]
-    pub async fn issue_card_to_user(
+    async fn issue_card_to_user(
         self: Arc<Self>,
         user: &User,
         pin: &str
-    ) -> Result<PassthroughCard, PassthroughCardError> {
+    ) -> Result<PassthroughCardModel, PassthroughCardError> {
         let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
             return Err(PassthroughCardError::ActiveCardExists("User has active card already".into()))
@@ -80,7 +87,7 @@ impl PassthroughCardService {
 
     // really lets rewrite this to be atomic
     #[tracing::instrument(skip(self))]
-    pub async fn update_card_status(
+    async fn update_card_status(
         self: Arc<Self>,
         user: &User,
         status: PassthroughCardStatus
@@ -136,8 +143,29 @@ impl PassthroughCardService {
         //Ok(())
     }
 
+}
+
+impl PassthroughCardService {
+    #[tracing::instrument(skip_all)]
+    pub fn new() -> Self {
+        Self {
+            lithic_service: Arc::new(LithicService::new()),
+            passthrough_card_dao: Arc::new(PassthroughCardDao::new())
+        }
+    }
+    #[tracing::instrument(skip_all)]
+    pub fn new_with_services(
+        lithic_service: Arc<dyn LithicServiceTrait>,
+    ) -> Self {
+        Self {
+            lithic_service,
+            passthrough_card_dao: Arc::new(PassthroughCardDao::new())
+        }
+    }
+
+
     #[tracing::instrument(skip(self))]
-    pub async fn find_card_for_user_in_status(
+    pub(super) async fn find_card_for_user_in_status(
         self: Arc<Self>,
         user: &User,
         status: &PassthroughCardStatus
@@ -174,7 +202,7 @@ impl PassthroughCardService {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn get_active_card_for_user(
+    pub(super) async fn get_active_card_for_user(
         self: Arc<Self>,
         user: &User
     ) -> Result<Option<PassthroughCard>, PassthroughCardError> {
@@ -200,7 +228,7 @@ impl PassthroughCardService {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn user_has_active_card(
+    pub(super) async fn user_has_active_card(
         self: Arc<Self>,
         user: &User
     ) -> Result<bool, PassthroughCardError> {

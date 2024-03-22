@@ -46,6 +46,7 @@ mod footprint;
 mod error;
 #[cfg(test)]
 mod test_helper;
+mod common;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {

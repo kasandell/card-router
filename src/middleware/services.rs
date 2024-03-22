@@ -1,19 +1,18 @@
 use std::sync::Arc;
 use actix_web::web;
-use crate::passthrough_card::service::PassthroughCardService;
 use crate::lithic::service::LithicService as LithicService;
 use crate::charge::service::ChargeService;
-use crate::user::dao::UserDao;
+use crate::user::service::{UserService, UserServiceTrait};
 use crate::adyen::checkout::service::AdyenCheckoutService as AdyenChargeService;
-use crate::category::dao::MccMappingDao;
-use crate::credit_card_type::dao::{
-    CreditCardDao,
+use crate::category::service::{CategoryService, CategoryServiceTrait};
+use crate::credit_card_type::service::{
+    CreditCardServiceTrait,
+    CreditCardService
 };
 use crate::footprint::service::{FakeFootprintService, FootprintService};
-use crate::passthrough_card::dao::PassthroughCardDao;
+use crate::passthrough_card::service::{PassthroughCardService, PassthroughCardServiceTrait};
 use crate::rule::service::RuleService;
 use crate::ledger::service::LedgerService as LedgerEngine;
-use crate::user::service::UserService;
 use crate::wallet::{
     dao::{WalletDao, WalletCardAttemptDao},
     service::WalletService
@@ -27,10 +26,9 @@ pub struct Services {
     pub charge_service: Arc<ChargeService>,
     pub wallet_service: Arc<WalletService>,
     pub lithic_handler: Arc<LithicHandler>,
-    pub user_dao: Arc<UserDao>,
-    pub credit_card_dao: Arc<CreditCardDao>,
-    pub rule_service: Arc<RuleService>,
     pub user_service: Arc<UserService>,
+    pub credit_card_service: Arc<CreditCardService>,
+    pub rule_service: Arc<RuleService>,
     pub footprint_service: Arc<FakeFootprintService>
 }
 
@@ -40,7 +38,7 @@ impl Services {
         // TODO: these might need to be initialized in main
         let lithic_service = Arc::new(LithicService::new());
         let adyen_service = Arc::new(AdyenChargeService::new());
-        let credit_card_dao = Arc::new(CreditCardDao::new());
+        let credit_card_service = Arc::new(CreditCardService::new());
         let wallet_dao = Arc::new(WalletDao::new());
         let wallet_card_attempt_dao = Arc::new(WalletCardAttemptDao::new());
         let footprint_service = Arc::new(FakeFootprintService::new());
@@ -51,39 +49,36 @@ impl Services {
             adyen_service.clone(),
             footprint_service.clone()
         ));
-        let passthrough_card_dao = Arc::new(PassthroughCardDao::new());
-        let user_dao = Arc::new(UserDao::new());
+        let passthrough_card_service = Arc::new(PassthroughCardService::new());
+        let user_service = Arc::new(UserService::new());
         let ledger = Arc::new(LedgerEngine::new());
         let charge_engine = Arc::new(ChargeService::new_with_service(
-            adyen_service.clone(),
-            passthrough_card_dao.clone(),
-            user_dao.clone(),
+            passthrough_card_service.clone(),
+            user_service.clone(),
             ledger.clone(),
             footprint_service.clone()
         ));
-        let mcc_mapping_dao = Arc::new(MccMappingDao::new());
+        let category_service = Arc::new(CategoryService::new());
         let rule_engine = Arc::new(RuleService::new_with_services(
             mcc_mapping_dao.clone()
         ));
         let user_service = Arc::new(UserService::new_with_services(
-            user_dao.clone(),
             footprint_service.clone()
         ));
         Self {
             passthrough_card_service: Arc::new(PassthroughCardService::new_with_services(
                 lithic_service.clone(),
-                passthrough_card_dao.clone()
             )),
             charge_service: charge_engine.clone(),
             wallet_service: wallet_engine.clone(),
             lithic_handler: Arc::new(LithicHandler::new_with_services(
                 charge_engine.clone(),
                 rule_engine.clone(),
-                passthrough_card_dao.clone(),
-                user_dao.clone()
+                passthrough_card_service.clone(),
+                user_service.clone()
             )),
-            user_dao: user_dao.clone(),
-            credit_card_dao: credit_card_dao.clone(),
+            user_service: user_service.clone(),
+            credit_card_service: credit_card_service.clone(),
             rule_service: rule_engine.clone(),
             user_service: user_service.clone(),
             footprint_service: footprint_service.clone()

@@ -1,15 +1,20 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
-
-use uuid::Uuid;
-use crate::passthrough_card::entity::PassthroughCard;
+use crate::common::model::TransactionMetadata;
+use crate::passthrough_card::model::PassthroughCardModel as PassthroughCard;
 use super::error::LedgerError;
 use crate::ledger::constant::ChargeStatus;
 use crate::ledger::dao::{LedgerDao, LedgerDaoTrait};
-use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
-use crate::user::entity::User;
+use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
+use crate::ledger::model::{
+    InnerChargeLedgerModel,
+    OuterChargeLedgerModel,
+    RegisteredTransactionModel,
+    TransactionLedgerModel
+};
+use crate::user::model::UserModel as User;
 use crate::wallet::entity::Wallet;
 
 #[cfg_attr(test, automock)]
@@ -19,42 +24,42 @@ pub trait LedgerServiceTrait {
         self: Arc<Self>,
         user: &User,
         metadata: &TransactionMetadata,
-    ) -> Result<RegisteredTransaction, LedgerError>;
+    ) -> Result<RegisteredTransactionModel, LedgerError>;
 
     async fn register_failed_inner_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, LedgerError>;
+    ) -> Result<InnerChargeLedgerModel, LedgerError>;
 
     async fn register_successful_inner_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, LedgerError>;
+    ) -> Result<InnerChargeLedgerModel, LedgerError>;
 
     async fn register_failed_outer_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, LedgerError>;
+    ) -> Result<OuterChargeLedgerModel, LedgerError>;
 
     async fn register_successful_outer_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, LedgerError>;
+    ) -> Result<OuterChargeLedgerModel, LedgerError>;
 
     async fn register_full_transaction(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
-        successful_inner_charge: &InnerChargeLedger,
-        successful_outer_charge: &OuterChargeLedger
-    ) -> Result<TransactionLedger, LedgerError>;
+        registered_transaction: &RegisteredTransactionModel,
+        successful_inner_charge: &InnerChargeLedgerModel,
+        successful_outer_charge: &OuterChargeLedgerModel
+    ) -> Result<TransactionLedgerModel, LedgerError>;
 }
 
 pub struct LedgerService {
@@ -80,18 +85,17 @@ impl LedgerServiceTrait for LedgerService {
         let res = self.dao.clone().insert_registered_transaction(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
-                //transaction_id: Uuid::new_v4(),
                 memo: &metadata.memo,
                 amount_cents: metadata.amount_cents,
                 mcc: &metadata.mcc
             }
-        ).await?;
+        ).await?.into();
         Ok(res)
     }
 
     async fn register_failed_inner_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &Wallet
     ) -> Result<InnerChargeLedger, LedgerError> {
@@ -106,13 +110,13 @@ impl LedgerServiceTrait for LedgerService {
                     status: ChargeStatus::Fail,
                     is_success: None,
                 }
-            ).await?
+            ).await?.into()
         )
     }
 
     async fn register_successful_inner_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &Wallet
     ) -> Result<InnerChargeLedger, LedgerError> {
@@ -127,13 +131,13 @@ impl LedgerServiceTrait for LedgerService {
                     status: ChargeStatus::Success,
                     is_success: Some(true),
                 }
-            ).await?
+            ).await?.into()
         )
     }
 
     async fn register_failed_outer_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
     ) -> Result<OuterChargeLedger, LedgerError> {
@@ -148,13 +152,13 @@ impl LedgerServiceTrait for LedgerService {
                     status: ChargeStatus::Fail,
                     is_success: None,
                 }
-            ).await?
+            ).await?.into()
         )
     }
 
     async fn register_successful_outer_charge(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
+        registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
     ) -> Result<OuterChargeLedger, LedgerError> {
@@ -169,15 +173,15 @@ impl LedgerServiceTrait for LedgerService {
                     status: ChargeStatus::Success,
                     is_success: Some(true),
                 }
-            ).await?
+            ).await?.into()
         )
     }
 
     async fn register_full_transaction(
         self: Arc<Self>,
-        registered_transaction: &RegisteredTransaction,
-        successful_inner_charge: &InnerChargeLedger,
-        successful_outer_charge: &OuterChargeLedger
+        registered_transaction: &RegisteredTransactionModel,
+        successful_inner_charge: &InnerChargeLedgerModel,
+        successful_outer_charge: &OuterChargeLedgerModel
     ) -> Result<TransactionLedger, LedgerError> {
         Ok(
             self.dao.clone().insert_transaction_ledger(
@@ -186,7 +190,7 @@ impl LedgerServiceTrait for LedgerService {
                     inner_charge_ledger_id: successful_inner_charge.id,
                     outer_charge_ledger_id: successful_outer_charge.id
                 }
-            ).await?
+            ).await?.into()
         )
     }
 }

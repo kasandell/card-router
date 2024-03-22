@@ -1,13 +1,15 @@
 pub mod config;
-pub mod controller;
-pub mod entity;
-pub mod request;
-pub mod entity_tests;
-pub mod constant;
-pub mod dao;
 pub mod service;
 pub mod response;
-pub mod tests;
-pub mod converter;
-mod constant_tests;
+pub mod request;
+pub mod constant;
 pub mod error;
+pub mod model;
+
+mod controller;
+mod entity;
+mod entity_tests;
+mod dao;
+mod tests;
+mod converter;
+mod constant_tests;

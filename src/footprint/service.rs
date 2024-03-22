@@ -19,7 +19,7 @@ use crate::footprint::r#enum::CardPart;
 use crate::footprint::request::ChargeThroughProxyRequest;
 use crate::constant::financial_constant;
 use crate::footprint::constant::Constant::{CONTENT_TYPE, PROXY_ACCESS_REASON, PROXY_METHOD, PROXY_URL, TTL};
-use crate::user::entity::User;
+use crate::user::model::UserModel as User;
 use tokio::time::sleep;
 use crate::util::api_call::wrap_api_call;
 

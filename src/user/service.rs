@@ -27,11 +27,10 @@ impl UserService {
 
     #[tracing::instrument(skip_all)]
     pub fn new_with_services(
-        user_dao: Arc<dyn UserDaoTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
         Self {
-            user_dao,
+            user_dao: Arc::new(UserDao::new()),
             footprint_service
         }
     }

@@ -78,31 +78,3 @@ impl From<(StatusCode, Box<dyn std::error::Error>)> for ApiError {
         api_error_for_status_code(code, error)
     }
 }
-/*
-impl From<(StatusCode, ErrorWrapper)> for ApiError {
-    fn from(value: (StatusCode, ErrorWrapper)) -> Self {
-        let code = value.0;
-        let error = value.1;
-        api_error_for_status_code(code, Box::new(error))
-    }
-}
-
-
-impl From<(StatusCode, ErrorMessage<'_>)> for ApiError {
-    fn from(value: (StatusCode, ErrorMessage<'_>)) -> Self {
-        let code = value.0;
-        let error = value.1;
-        api_error_for_status_code(code, Box::new(error))
-    }
-}
-
-impl From<(StatusCode, String)> for ApiError {
-    fn from(value: (StatusCode, String)) -> Self {
-        let code = value.0;
-        let error = value.1;
-        api_error_for_status_code(code, error.into())
-    }
-}
-
-
- */

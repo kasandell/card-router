@@ -1,7 +1,7 @@
 use actix_web::{put, post, get, HttpResponse, web};
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::response::{HasActiveResponse, PassthroughCardResposnse};
-use crate::user::entity::User;
+use crate::user::model::UserModel as User;
 use crate::middleware::services::Services;
 use super::error::PassthroughCardError;
 

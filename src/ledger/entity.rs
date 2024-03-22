@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use crate::schema::{registered_transactions, outer_charge_ledger, inner_charge_ledger, transaction_ledger};
+use crate::schema::{inner_charge_ledger, outer_charge_ledger, registered_transactions, transaction_ledger};
 use diesel::{BoolExpressionMethods, Identifiable, Insertable, Queryable, Selectable};
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
@@ -7,18 +7,10 @@ use uuid::Uuid;
 use crate::util::db;
 use crate::wallet::entity::Wallet;
 use diesel::prelude::*;
-use crate::asa::request::AsaRequest;
 use crate::error::data_error::DataError;
 use crate::ledger::constant::ChargeStatus;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TransactionMetadata {
-    pub memo: String,
-    pub amount_cents: i32,
-    pub mcc: String
-}
-
-#[derive(Clone, Debug, Insertable, Serialize, Deserialize)]
+#[derive(Debug, Insertable, Serialize, Deserialize)]
 #[diesel(belongs_to(User))]
 #[diesel(table_name = registered_transactions)]
 pub struct InsertableRegisteredTransaction<'a> {
@@ -29,7 +21,7 @@ pub struct InsertableRegisteredTransaction<'a> {
     pub mcc: &'a str
 }
 
-#[derive(Clone, Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
+#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(belongs_to(User))]
 #[diesel(table_name = registered_transactions)]
 pub struct RegisteredTransaction {
@@ -42,7 +34,7 @@ pub struct RegisteredTransaction {
 }
 
 
-#[derive(Clone, Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
+#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(belongs_to(RegisteredTransaction))]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(PassthroughCard))]
@@ -59,7 +51,7 @@ pub struct OuterChargeLedger {
     pub updated_at: NaiveDateTime
 }
 
-#[derive(Clone, Debug, Insertable)]
+#[derive(Debug, Insertable)]
 #[diesel(belongs_to(RegisteredTransaction))]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(PassthroughCard))]
@@ -73,7 +65,7 @@ pub struct InsertableOuterChargeLedger {
     pub is_success: Option<bool>,
 }
 
-#[derive(Clone, Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
+#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(belongs_to(RegisteredTransaction))]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Wallet))]
@@ -90,7 +82,7 @@ pub struct InnerChargeLedger {
     pub updated_at: NaiveDateTime
 }
 
-#[derive(Clone, Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
+#[derive(Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(belongs_to(RegisteredTransaction))]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Wallet))]
@@ -104,7 +96,7 @@ pub struct InsertableInnerChargeLedger {
     pub is_success: Option<bool>,
 }
 
-#[derive(Clone, Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
+#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(belongs_to(RegisteredTransaction))]
 #[diesel(belongs_to(InnerChargeLedger))]
 #[diesel(belongs_to(OuterChargeLedger))]
@@ -116,7 +108,7 @@ pub struct TransactionLedger {
     pub outer_charge_ledger_id: i32
 }
 
-#[derive(Clone, Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
+#[derive(Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(belongs_to(RegisteredTransaction))]
 #[diesel(belongs_to(InnerChargeLedger))]
 #[diesel(belongs_to(OuterChargeLedger))]
@@ -384,21 +376,4 @@ impl TransactionLedger {
         TransactionLedger::delete(self.id).await
     }
 
-}
-
-
-impl TransactionMetadata {
-    pub fn convert(request: &AsaRequest) -> Result<Self, DataError> {
-        let merchant = request.merchant.clone().ok_or(DataError::Format("missing field".into()))?;
-        let descriptor = merchant.descriptor.clone().ok_or(DataError::Format("missing field".into()))?;
-        let mcc = merchant.mcc.clone().ok_or(DataError::Format("missing field".into()))?;
-        let amount = request.amount.ok_or(DataError::Format("missing field".into()))?;
-        Ok(
-            TransactionMetadata {
-                memo: descriptor,
-                amount_cents: amount,
-                mcc: mcc
-            }
-        )
-    }
 }

@@ -1,20 +1,19 @@
-use std::fmt::Formatter;
 use std::sync::Arc;
 use lithic_client::models::Card;
 use crate::error::data_error::DataError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
-use crate::passthrough_card::entity::{LithicCard, PassthroughCard};
+use crate::passthrough_card::entity::{InsertablePassthroughCard, PassthroughCard};
 use crate::user::entity::User;
 use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+use crate::passthrough_card::request::LithicCard;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait PassthroughCardDaoTrait {
-    async fn create(self: Arc<Self>, card: LithicCard, user: &User) -> Result<PassthroughCard, DataError>;
-    async fn create_from_api_card(self: Arc<Self>, card: &Card, user: &User) -> Result<PassthroughCard, DataError>;
+    async fn create(self: Arc<Self>, card: InsertablePassthroughCard) -> Result<PassthroughCard, DataError>;
     async fn get(self: Arc<Self>, id: i32) -> Result<PassthroughCard, DataError>;
     async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCard, DataError>;
     async fn find_cards_for_user(self: Arc<Self>, user_id: i32) -> Result<Vec<PassthroughCard>, DataError>;
@@ -38,13 +37,8 @@ impl PassthroughCardDao {
 #[async_trait(?Send)]
 impl PassthroughCardDaoTrait for PassthroughCardDao {
     #[tracing::instrument(skip(self))]
-    async fn create(self: Arc<Self>, card: LithicCard, user: &User) -> Result<PassthroughCard, DataError> {
-        PassthroughCard::create(card, user).await
-    }
-
-    #[tracing::instrument(skip(self))]
-    async fn create_from_api_card(self: Arc<Self>, card: &Card, user: &User) -> Result<PassthroughCard, DataError> {
-        PassthroughCard::create_from_api_card(card, user).await
+    async fn create(self: Arc<Self>, card: InsertablePassthroughCard) -> Result<PassthroughCard, DataError> {
+        PassthroughCard::create(card).await
     }
 
     #[tracing::instrument(skip(self))]

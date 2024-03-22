@@ -2,72 +2,39 @@ use std::sync::Arc;
 use std::time::Instant;
 use crate::adyen::checkout::service::AdyenChargeServiceTrait;
 
-use crate::charge::service::ChargeService;
+use crate::charge::service::{ChargeService, ChargeServiceTrait};
 use crate::asa::request::AsaRequest;
 use crate::rule::service::RuleService;
 use crate::rule::service::RuleServiceTrait;
 use crate::asa::response::{AsaResponse, AsaResponseResult};
 
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
-use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::ledger::service::LedgerServiceTrait;
-use crate::user::dao::{UserDao, UserDaoTrait};
+use crate::passthrough_card::service::PassthroughCardServiceTrait;
+use crate::user::service::UserServiceTrait;
 use super::error::LithicHandlerError;
 
 pub struct LithicHandler {
-    pub charge_service: Arc<ChargeService>,
+    pub charge_service: Arc<dyn ChargeServiceTrait>,
     pub rule_service: Arc<dyn RuleServiceTrait>,
-    pub passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
-    pub user_dao: Arc<dyn UserDaoTrait>,
+    pub passthrough_card_service: Arc<dyn PassthroughCardServiceTrait>,
+    pub user_service: Arc<dyn UserServiceTrait>,
 }
 
 impl LithicHandler {
-    #[tracing::instrument(skip_all)]
-    pub fn new() -> Self {
-        Self {
-            charge_service: Arc::new(ChargeService::new()),
-            rule_service: Arc::new(RuleService::new()),
-            passthrough_card_dao: Arc::new(PassthroughCardDao::new()),
-            user_dao: Arc::new(UserDao::new())
-        }
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument(skip_all)]
-    pub fn new_with_engines(
-        charge_service: Arc<dyn AdyenChargeServiceTrait>,
-        passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
-        user_dao: Arc<dyn UserDaoTrait>,
-        ledger: Arc<dyn LedgerServiceTrait>,
-        rule_engine: Arc<dyn RuleServiceTrait>,
-        footprint_service: Arc<dyn FootprintServiceTrait>
-    ) -> Self {
-        Self {
-            charge_service: Arc::new(ChargeService::new_with_service(
-                charge_service.clone(),
-                passthrough_card_dao.clone(),
-                user_dao.clone(),
-                ledger.clone(),
-                footprint_service.clone()
-            )),
-            rule_service: rule_engine.clone(),
-            passthrough_card_dao: passthrough_card_dao.clone(),
-            user_dao: user_dao.clone()
-        }
-    }
 
     #[tracing::instrument(skip_all)]
     pub fn new_with_services(
-        charge_service: Arc<ChargeService>,
+        charge_service: Arc<dyn ChargeServiceTrait>,
         rule_service: Arc<RuleService>,
-        passthrough_card_dao: Arc<PassthroughCardDao>,
-        user_dao: Arc<UserDao>,
+        passthrough_card_service: Arc<dyn PassthroughCardServiceTrait>,
+        user_service: Arc<dyn UserServiceTrait>,
     ) -> Self {
         Self {
-            charge_service: charge_service,
-            rule_service: rule_service,
-            passthrough_card_dao,
-            user_dao
+            charge_service,
+            rule_service,
+            passthrough_card_service,
+            user_service
         }
     }
     #[tracing::instrument(skip(self))]
@@ -80,9 +47,9 @@ impl LithicHandler {
         let token = card.token.clone().ok_or(
             LithicHandlerError::Unexpected("expect token on card".into())
         )?;
-        let passthrough_card = self.passthrough_card_dao.clone().get_by_token(&token).await
+        let passthrough_card = self.passthrough_card_service.clone().get_by_token(&token).await
             .map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
-        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id).await
+        let user = self.user_service.clone().find_by_internal_id(passthrough_card.user_id).await
             .map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
 
         tracing::info!("Getting user cards for userId={}", user.id);

@@ -1,7 +1,7 @@
 use chrono::Utc;
+use crate::common::model::TransactionMetadata;
 use crate::ledger::constant::ChargeStatus;
-use crate::ledger::entity::{InnerChargeLedger, InsertableRegisteredTransaction, OuterChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
-use crate::user::entity::User;
+use crate::ledger::entity::{InnerChargeLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
 
 pub fn create_mock_registered_transaction(
     metadata: &TransactionMetadata

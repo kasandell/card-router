@@ -10,12 +10,6 @@ pub enum UtilityError {
 }
 
 // TODO: REMOVE THIS
-impl From<UtilityError> for DataError {
-    fn from(value: UtilityError) -> Self {
-        DataError::Unexpected(Box::new(value))
-    }
-}
-
 impl From<ParseIntError> for UtilityError {
     fn from(value: ParseIntError) -> Self {
         UtilityError::Unexpected(Box::new(value))

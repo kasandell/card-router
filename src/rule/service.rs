@@ -7,14 +7,18 @@ use async_trait::async_trait;
 use chrono::Utc;
 
 use crate::asa::request::AsaRequest;
-use crate::category::dao::{MccMappingDao, MccMappingDaoTrait};
-use crate::category::entity::MccMapping;
-use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
+use crate::category::service::{CategoryServiceTrait, CategoryService};
+use crate::category::model::MccMappingModel as MccMapping;
+use crate::credit_card_type::model::{
+    CreditCardModel as CreditCard,
+    CreditCardIssuerModel as CreditCardIssuer,
+    CreditCardTypeModel as CreditCardType
+};
 use crate::rule::error::RuleError;
 
-use crate::user::entity::User;
+use crate::user::model::UserModel as User;
 use crate::util::date::adjust_recurring_to_date;
-use crate::wallet::entity::Wallet;
+use crate::wallet::model::WalletModel as Wallet;
 
 use super::entity::Rule;
 

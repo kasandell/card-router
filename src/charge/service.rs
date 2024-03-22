@@ -1,34 +1,46 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 use adyen_checkout::models::payment_response::ResultCode;
+use async_trait::async_trait;
 use lazy_static::lazy_static;
+use mockall::automock;
 use uuid::Uuid;
-use crate::adyen::checkout::service::{
-    AdyenCheckoutService,
-    AdyenChargeServiceTrait
-};
 use crate::asa::request::AsaRequest;
 use crate::charge::entity::{
-    ChargeEngineResult,
-    ChargeCardAttemptResult
+    ChargeCardAttemptResult,
+    ChargeEngineResult
 };
 use crate::charge::error::ChargeError;
+use crate::common::model::TransactionMetadata;
 
 use crate::footprint::request::ChargeThroughProxyRequest;
-use crate::footprint::service::{FootprintService, FootprintServiceTrait};
-use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
-use crate::passthrough_card::entity::PassthroughCard;
-use crate::ledger::entity::{InnerChargeLedger, RegisteredTransaction, TransactionLedger, TransactionMetadata};
-use crate::user::entity::User;
+use crate::footprint::service::FootprintServiceTrait;
+use crate::passthrough_card::model::PassthroughCardModel as PassthroughCard;
+use crate::ledger::model::{
+    InnerChargeLedgerModel as InnerChargeLedger,
+    RegisteredTransactionModel as RegisteredTransaction,
+    TransactionLedgerModel as TransactionLedger,
+};
+use crate::user::model::UserModel as User;
 use crate::wallet::entity::Wallet;
-use crate::ledger::service::{LedgerService as Ledger, LedgerServiceTrait};
-use crate::user::dao::{UserDao, UserDaoTrait};
+use crate::ledger::service::LedgerServiceTrait;
+use crate::user::service::UserServiceTrait;
+
+#[cfg_attr(test, automock)]
+#[async_trait(?Send)]
+pub trait ChargeServiceTrait {
+    async fn charge_from_asa_request(
+        self: Arc<Self>,
+        request: &AsaRequest,
+        wallet: &Vec<Wallet>,
+        passthrough_card: &PassthroughCard,
+        user: &User,
+    ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ChargeError>;
+}
 
 pub struct ChargeService {
-    charge_service: Arc<dyn AdyenChargeServiceTrait>,
-    passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
-    user_dao: Arc<dyn UserDaoTrait>,
-    ledger: Arc<dyn LedgerServiceTrait>,
+    user_service: Arc<dyn UserServiceTrait>,
+    ledger_service: Arc<dyn LedgerServiceTrait>,
     footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
@@ -47,39 +59,12 @@ lazy_static! {
     );
 }
 
-// TODO: probably need this to be a threadsafe singleton to avoid reinit everywhere
-impl ChargeService {
 
-    #[tracing::instrument]
-    pub fn new() -> Self {
-       Self {
-           charge_service: Arc::new(AdyenCheckoutService::new()),
-           passthrough_card_dao: Arc::new(PassthroughCardDao{}),
-           user_dao: Arc::new(UserDao{}),
-           ledger: Arc::new(Ledger::new()),
-           footprint_service: Arc::new(FootprintService::new())
-       }
-    }
 
-    #[tracing::instrument(skip_all)]
-    pub fn new_with_service(
-        charge_service: Arc<dyn AdyenChargeServiceTrait>,
-        passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>,
-        user_dao: Arc<dyn UserDaoTrait>,
-        ledger: Arc<dyn LedgerServiceTrait>,
-        footprint_service: Arc<dyn FootprintServiceTrait>
-    ) -> Self {
-        Self {
-            charge_service,
-            passthrough_card_dao,
-            user_dao,
-            ledger,
-            footprint_service
-        }
-    }
-
+#[async_trait(?Send)]
+impl ChargeServiceTrait for ChargeService {
     #[tracing::instrument(skip(self))]
-    pub async fn charge_from_asa_request(
+    async fn charge_from_asa_request(
         self: Arc<Self>,
         request: &AsaRequest,
         wallet: &Vec<Wallet>,
@@ -92,7 +77,7 @@ impl ChargeService {
         let card = request.card.clone().ok_or(ChargeError::NoCardInRequest)?;
         let token = card.token.clone().ok_or(ChargeError::NoCardInRequest)?;
         tracing::info!("Registering txn");
-        let rtx = self.ledger.clone().register_transaction_for_user(
+        let rtx = self.ledger_service.clone().register_transaction_for_user(
             &user,
             &metadata
         ).await?;
@@ -108,13 +93,13 @@ impl ChargeService {
             ChargeEngineResult::Approved => {
                 if let Some(ledger) = ledger {
                     // TODO: should verify that this is success
-                    let outer_successs = self.ledger.clone().register_successful_outer_charge(
+                    let outer_successs = self.ledger_service.clone().register_successful_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
                     ).await?;
 
-                    let full_txn = self.ledger.clone().register_full_transaction(
+                    let full_txn = self.ledger_service.clone().register_full_transaction(
                         &rtx,
                         &ledger,
                         &outer_successs
@@ -122,7 +107,7 @@ impl ChargeService {
                     Ok((charge_result, Some(full_txn)))
 
                 } else {
-                    self.ledger.clone().register_failed_outer_charge(
+                    self.ledger_service.clone().register_failed_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
@@ -135,13 +120,30 @@ impl ChargeService {
                 }
             },
             _ => {
-                self.ledger.clone().register_failed_outer_charge(
+                self.ledger_service.clone().register_failed_outer_charge(
                     &rtx,
                     &metadata,
                     &passthrough_card
                 ).await?;
                 Ok((charge_result, None))
             }
+        }
+    }
+}
+
+// TODO: probably need this to be a threadsafe singleton to avoid reinit everywhere
+impl ChargeService {
+
+    #[tracing::instrument(skip_all)]
+    pub fn new(
+        user_service: Arc<dyn UserServiceTrait>,
+        ledger_service: Arc<dyn LedgerServiceTrait>,
+        footprint_service: Arc<dyn FootprintServiceTrait>
+    ) -> Self {
+        Self {
+            user_service,
+            ledger_service,
+            footprint_service
         }
     }
 
@@ -223,7 +225,7 @@ impl ChargeService {
                 tracing::info!("Checkout returned code={:?} for card={} user={}", code, card.id, user.id);
                 if ACCEPTABLE_STATUSES.contains(&code) {
                     tracing::info!("Charged card={} for user={}", card.id, user.id);
-                    let ledger_entry = self.ledger.clone().register_successful_inner_charge(
+                    let ledger_entry = self.ledger_service.clone().register_successful_inner_charge(
                         registered_transaction,
                         transaction_metadata,
                         card
@@ -234,7 +236,7 @@ impl ChargeService {
                     //add to ledger
                 } else if FINAL_STATE_ERROR_CODES.contains(&code) {
                     tracing::warn!("Error charging card={} for user={}", card.id, user.id);
-                    let ledger_entry = self.ledger.clone().register_failed_inner_charge(
+                    let ledger_entry = self.ledger_service.clone().register_failed_inner_charge(
                         registered_transaction,
                         transaction_metadata,
                         card
@@ -245,12 +247,12 @@ impl ChargeService {
                     tracing::warn!("Intermediate state needs cleanup for card={} for user={}", card.id, user.id);
                     if let Some(psp) = response.psp_reference {
                         // TODO: move this call to proxy
-                        let cancel = self.charge_service.clone().cancel_transaction(
+                        let cancel = self.footprint_service.clone().proxy_adyen_cancel_request(
                             &psp
                         ).await;
                         if let Ok(cancel) = cancel {
                             tracing::info!("Cancelled with status: {:?}", cancel.status);
-                            let ledger_entry = self.ledger.clone().register_failed_inner_charge(
+                            let ledger_entry = self.ledger_service.clone().register_failed_inner_charge(
                                 registered_transaction,
                                 transaction_metadata,
                                 card
@@ -259,7 +261,7 @@ impl ChargeService {
                             //cancel received. block on webhook response?
                         } else {
                             tracing::error!("Error cancelling unsuccessful payment with psp={}", psp);
-                            let ledger_entry = self.ledger.clone().register_failed_inner_charge(
+                            let ledger_entry = self.ledger_service.clone().register_failed_inner_charge(
                                 registered_transaction,
                                 transaction_metadata,
                                 card
@@ -271,7 +273,7 @@ impl ChargeService {
                 }
             }
         }
-        let ledger_entry = self.ledger.clone().register_failed_inner_charge(
+        let ledger_entry = self.ledger_service.clone().register_failed_inner_charge(
             registered_transaction,
             transaction_metadata,
             card

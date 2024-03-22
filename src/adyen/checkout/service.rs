@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::env;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -23,7 +22,7 @@ use uuid::Uuid;
 use crate::constant::financial_constant;
 use crate::environment::ENVIRONMENT;
 use super::error::CheckoutError;
-use crate::user::entity::User;
+use crate::user::model::UserModel as User;
 use crate::util::api_call::wrap_api_call;
 use super::request::ChargeCardRequest;
 

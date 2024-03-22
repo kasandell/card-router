@@ -1,9 +1,9 @@
-pub mod entity;
 pub mod service;
 pub mod constant;
-pub mod entity_tests;
-pub mod tests;
 pub mod request;
-pub mod dao;
+pub mod error;
+mod entity;
+mod entity_tests;
+mod tests;
+mod dao;
 mod consant_tests;
-mod error;

@@ -1,27 +1,15 @@
-use std::fmt::Formatter;
 use crate::schema::passthrough_card;
-use chrono::{NaiveDateTime, NaiveDate, Utc};
+use chrono::{NaiveDate, NaiveDateTime};
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use lithic_client::models::{Card, FundingAccount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::error::data_error::DataError;
-use crate::user::entity::User;
-use crate::util::date::expiration_date_from_str_parts;
 use crate::util::db;
 use super::constant::{
     PassthroughCardStatus,
     PassthroughCardType
 };
-
-#[derive(Clone, Debug)]
-pub struct LithicCard {
-    pub token: String,
-    pub last_four: String,
-    pub exp_month: String,
-    pub exp_year: String
-}
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = passthrough_card)]
@@ -69,31 +57,14 @@ pub struct PassthroughCardStatusUpdate {
 
 impl PassthroughCard {
     #[tracing::instrument]
-    pub async fn create(card: LithicCard, user: &User) -> Result<Self, DataError> {
+    pub async fn create(card: InsertablePassthroughCard) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
-        let mut card = InsertablePassthroughCard::convert_from_lithic_card(&card)?;
-        card.user_id = user.id;
-        //TODO: populate with user_id
         let card = diesel::insert_into(passthrough_card::table)
             .values(card)
             .get_result(&mut conn).await?;
         Ok(card)
     }
-
-    #[tracing::instrument]
-    pub async fn create_from_api_card(card: &Card, user: &User) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-
-        let mut card = InsertablePassthroughCard::convert_from_card(&card)?;
-        card.user_id = user.id;
-        //TODO: populate with user_id
-        let card = diesel::insert_into(passthrough_card::table)
-            .values(card)
-            .get_result(&mut conn).await?;
-        Ok(card)
-    }
-
 
     #[tracing::instrument]
     pub async fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
@@ -180,36 +151,3 @@ impl PassthroughCard {
 
 }
 
-impl InsertablePassthroughCard {
-    pub fn convert_from_card(card: &Card) -> Result<Self, DataError> {
-        let exp_year = card.exp_year.clone().ok_or(
-            DataError::Unexpected("Cannot find expiration year".into())
-        )?;
-        let exp_month = card.exp_month.clone().ok_or(
-            DataError::Unexpected("Cannot find expiration month".into())
-        )?;
-        let expiration = expiration_date_from_str_parts(&exp_year, &exp_month)?;
-        Ok(InsertablePassthroughCard {
-            passthrough_card_status: PassthroughCardStatus::Open,
-            public_id: Uuid::new_v4(),
-            user_id: 0,
-            token: card.token.to_string(),
-            expiration: expiration,
-            last_four: card.last_four.clone(),
-            passthrough_card_type: PassthroughCardType::Virtual,
-            is_active: true
-        })
-    }
-    pub fn convert_from_lithic_card(card: &LithicCard) -> Result<Self, DataError> {
-        Ok(InsertablePassthroughCard {
-            passthrough_card_status: PassthroughCardStatus::Open,
-            public_id: Uuid::new_v4(),
-            user_id: 0,
-            token: card.token.to_string(),
-            expiration: expiration_date_from_str_parts(&card.exp_year, &card.exp_month)?,
-            last_four: card.last_four.to_string(),
-            passthrough_card_type: PassthroughCardType::Virtual,
-            is_active: true
-        })
-    }
-}

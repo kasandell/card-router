@@ -1,6 +1,10 @@
-pub mod entity;
 pub mod config;
 pub mod response;
-pub mod controller;
-pub mod dao;
-mod error;
+pub mod error;
+pub mod model;
+
+pub mod service;
+mod controller;
+mod dao;
+mod entity;
+mod typedef;

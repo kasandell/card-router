@@ -4,10 +4,14 @@ use crate::{schema::{
     credit_card,
     credit_card_issuer,
     credit_card_type
-}, credit_card_type::entity::{CreditCardType,CreditCard,CreditCardIssuer}};
+}, credit_card_type::model::{
+    CreditCardTypeModel as CreditCardType,
+    CreditCardModel as CreditCard,
+    CreditCardIssuerModel as CreditCardIssuer
+}};
 use crate::util::db;
 use crate::error::data_error::DataError;
-use crate::user::entity::User;
+use crate::user::model::UserModel as User;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
@@ -16,6 +20,7 @@ use uuid::Uuid;
 use uuidv7;
 use crate::wallet::constant::WalletCardAttemptStatus;
 
+// TODO: this needs to be shortened down
 pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
 
 #[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
@@ -110,6 +115,7 @@ impl Wallet {
     }
 
     #[tracing::instrument]
+    //TODO: This is going to break violently
     pub async fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<WalletDetail>, DataError> {
         let mut conn = db::connection().await?;
         let cards = wallet::table
