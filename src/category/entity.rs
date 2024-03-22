@@ -11,7 +11,6 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use diesel_async::RunQueryDsl;
-use crate::error::data_error::DataError;
 
 #[derive(Identifiable, Serialize, Deserialize, Queryable, Debug)]
 #[diesel(table_name = category)]

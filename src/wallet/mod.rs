@@ -10,3 +10,4 @@ pub mod response;
 pub mod tests;
 pub mod converter;
 mod constant_tests;
+mod error;

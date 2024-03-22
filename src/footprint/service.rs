@@ -229,7 +229,7 @@ impl FootprintServiceTrait for FootprintService {
 
     #[tracing::instrument(skip(self))]
     async fn proxy_adyen_cancel_request<'a>(self: Arc<Self>, psp_reference: &str) -> Result<PaymentCancelResponse, FootprintError> {
-        Err(FootprintError::Unexpected(Box::new("Not implemented")))
+        Err(FootprintError::NotImplemented)
     }
 }
 

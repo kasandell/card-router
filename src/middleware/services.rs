@@ -12,7 +12,6 @@ use crate::credit_card_type::dao::{
 use crate::footprint::service::{FakeFootprintService, FootprintService};
 use crate::passthrough_card::dao::PassthroughCardDao;
 use crate::rule::service::RuleService;
-use crate::schema::registered_transactions::mcc;
 use crate::ledger::service::LedgerService as LedgerEngine;
 use crate::user::service::UserService;
 use crate::wallet::{

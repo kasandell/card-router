@@ -11,6 +11,7 @@ use crate::asa::request::AsaRequest;
 use crate::category::dao::{MccMappingDao, MccMappingDaoTrait};
 use crate::category::entity::MccMapping;
 use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
+use crate::rule::error::RuleError;
 
 use crate::user::entity::User;
 use crate::util::date::adjust_recurring_to_date;
@@ -43,28 +44,17 @@ impl RuleServiceTrait for RuleService {
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
-        let amount = request.amount.ok_or(ServiceError::Format(Box::new("expect amount")))?;
-        // TODO: not from dao
-        let mut start = Instant::now();
+        let amount = request.amount.ok_or(RuleError::NoAmount("No amount supplied"))?;
+        // TODO: move this to service level call
         let cards = Wallet::find_all_for_user_with_card_info(user).await?;
-        tracing::info!("Find cards for user with info took {:?}", start.elapsed());
-        start = Instant::now();
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
-        tracing::info!("card type id get took {:?}", start.elapsed());
-        start = Instant::now();
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
-        tracing::info!("find and filter rules took {:?}", start.elapsed());
         tracing::info!("Using {} rules", rules.len());
-        tracing::info!("Using {} rules", rules.len());
-        start = Instant::now();
         let ordered_cards = self.clone().get_card_order_from_rules(&cards, &rules, amount).await?;
-        tracing::info!("Order cards took {:?}", start.elapsed());
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
 
 }
-
-// TODO: create as a self reference?
 
 impl RuleService {
     #[tracing::instrument]
@@ -134,7 +124,6 @@ impl RuleService {
         Ok( filtered_rules )
     }
 
-    // TODO: async?
     pub async fn filter_rule_for_request(self: Arc<Self>, rule: &Rule, asa_request: &AsaRequest, mapping: &MccMapping) -> bool {
         self.clone().filter_rule_by_merchant(rule, asa_request, mapping).await && self.clone().filter_rule_by_date(rule).await
     }
@@ -149,7 +138,6 @@ impl RuleService {
         } else {
             //let Some(mcc) = rule.rule_category_id.as_ref() else { return false; };
             let Some(category_id) = rule.rule_category_id else { return false; };
-            // TODO: we need to join this earlier
             category_id == mapping.category_id
         }
     }

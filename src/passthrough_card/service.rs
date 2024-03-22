@@ -1,13 +1,10 @@
 use std::sync::Arc;
-use async_trait::async_trait;
-use base64::Engine as base64Engine;
 use uuid::Uuid;
 use crate::user::entity::User;
-use crate::error::error::ServiceError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::PassthroughCard;
-use base64::engine::general_purpose;
 use lithic_client::models::card::Card;
+use super::error::PassthroughCardError;
 
 use crate::lithic::{
     service::LithicService,
@@ -44,10 +41,10 @@ impl PassthroughCardService {
         self: Arc<Self>,
         user: &User,
         pin: &str
-    ) -> Result<PassthroughCard, ServiceError> {
+    ) -> Result<PassthroughCard, PassthroughCardError> {
         let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
-            return Err(ServiceError::Conflict(Box::new("User has active card already")))
+            return Err(PassthroughCardError::ActiveCardExists(Box::new("User has active card already".to_string())))
         }
         let idempotency_key = Uuid::new_v4();
         let pin_encoded = encrypt_pin(pin);
@@ -76,7 +73,7 @@ impl PassthroughCardService {
                         return Err(err);
                     }
                 }
-                return Err(ServiceError::Unexpected(Box::new("unable to issue card")));
+                return Err(PassthroughCardError::Unexpected(Box::new("unable to issue card")));
             }
         }
     }
@@ -87,7 +84,7 @@ impl PassthroughCardService {
         self: Arc<Self>,
         user: &User,
         status: PassthroughCardStatus
-    ) -> Result<(), ServiceError> {
+    ) -> Result<(), PassthroughCardError> {
         tracing::info!("Searching for cards for userId={} to go to status={}", user.id, &status);
         let card = self.clone().find_card_for_user_in_status(
             &user,
@@ -107,7 +104,7 @@ impl PassthroughCardService {
             PassthroughCardStatus::Closed => self.clone().close_lithic_card(&updated.token).await,
             PassthroughCardStatus::Open => self.clone().activate_lithic_card(&updated.token).await,
             PassthroughCardStatus::Paused =>  self.clone().pause_lithic_card(&updated.token).await,
-            _ => Err(ServiceError::Unexpected(Box::new("Invalid state transition from engine")))
+            _ => Err(PassthroughCardError::Unexpected(Box::new("Invalid state transition from engine")))
         };
 
         return match lithic_result {
@@ -144,7 +141,7 @@ impl PassthroughCardService {
         self: Arc<Self>,
         user: &User,
         status: &PassthroughCardStatus
-    ) -> Result<PassthroughCard, ServiceError> {
+    ) -> Result<PassthroughCard, PassthroughCardError> {
         // TODO: don't call db direct
         let cards: Vec<PassthroughCard> = self.passthrough_card_dao.clone().find_cards_for_user(user.id).await?;
         return match status {
@@ -172,7 +169,7 @@ impl PassthroughCardService {
                     }
                 ).cloned()
             },
-            _ => return Err(ServiceError::NotFound(Box::new("Invalid state transition from engine")))
+            _ => return Err(PassthroughCardError::StatusUpdate(Box::new("Invalid state transition from engine".to_string())))
         }
     }
 
@@ -180,7 +177,7 @@ impl PassthroughCardService {
     pub async fn get_active_card_for_user(
         self: Arc<Self>,
         user: &User
-    ) -> Result<Option<PassthroughCard>, ServiceError> {
+    ) -> Result<Option<PassthroughCard>, PassthroughCardError> {
         let cards: Vec<PassthroughCard> = self.passthrough_card_dao.clone().find_cards_for_user(user.id).await?;
         if cards.len() == 0 {
             return Ok(None);
@@ -206,7 +203,7 @@ impl PassthroughCardService {
     pub async fn user_has_active_card(
         self: Arc<Self>,
         user: &User
-    ) -> Result<bool, ServiceError> {
+    ) -> Result<bool, PassthroughCardError> {
         if let Some(card) = self.clone().get_active_card_for_user(&user).await? {
             return Ok(true)
         }
@@ -218,7 +215,7 @@ impl PassthroughCardService {
         &'a self,
         cards: &'a Vec<PassthroughCard>,
         filter: fn(&PassthroughCard) -> bool
-    ) -> Result<&PassthroughCard, ServiceError> {
+    ) -> Result<&PassthroughCard, PassthroughCardError> {
         let v: Vec<&PassthroughCard> = cards
             .iter()
             .filter(|item| filter(item))
@@ -226,7 +223,7 @@ impl PassthroughCardService {
             .collect();
         // TODO: this scares me
         Ok(v.get(0).ok_or(
-            ServiceError::NotFound(Box::new("card to transition not found"))
+            PassthroughCardError::CardNotFound(Box::new("card to transition not found".to_string()))
         )?)
     }
 
@@ -234,24 +231,27 @@ impl PassthroughCardService {
     async fn close_lithic_card(
         self: Arc<Self>,
         token: &str
-    ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.clone().close_card(token).await?;
+    ) -> Result<Card, PassthroughCardError> {
+        let closed = self.lithic_service.clone().close_card(token)
+            .await.map_err(|e| PassthroughCardError::StatusUpdate(Box::new(e)))?;
         Ok(closed)
     }
 
     async fn pause_lithic_card(
         self: Arc<Self>,
         token: &str
-    ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.clone().pause_card(token).await?;
-        Ok(closed)
+    ) -> Result<Card, PassthroughCardError> {
+        let paused = self.lithic_service.clone().pause_card(token)
+            .await.map_err(|e| PassthroughCardError::StatusUpdate(Box::new(e)))?;
+        Ok(paused)
     }
 
     async fn activate_lithic_card(
         self: Arc<Self>,
         token: &str
-    ) -> Result<Card, ServiceError> {
-        let closed = self.lithic_service.clone().activate_card(token).await?;
-        Ok(closed)
+    ) -> Result<Card, PassthroughCardError> {
+        let active = self.lithic_service.clone().activate_card(token)
+            .await.map_err(|e| PassthroughCardError::StatusUpdate(Box::new(e)))?;
+        Ok(active)
     }
 }

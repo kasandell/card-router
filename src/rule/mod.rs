@@ -6,3 +6,4 @@ pub mod tests;
 pub mod request;
 pub mod dao;
 mod consant_tests;
+mod error;

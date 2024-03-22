@@ -3,7 +3,7 @@ use serde_json::Error as SerdeError;
 use crate::error::api_error::ApiError;
 
 #[derive(thiserror::Error, Debug)]
-pub enum FootprintError {
+pub enum LithicError {
     #[error("Not implemented")]
     NotImplemented,
     #[error("Unauthorized footprint request")]
@@ -18,16 +18,16 @@ pub enum FootprintError {
 }
 
 
-impl From<ApiError> for FootprintError {
+impl From<ApiError> for LithicError {
     fn from(value: ApiError) -> Self {
         match value {
-            ApiError::Unauthorized(e) => FootprintError::Unauthorized(Box::new(e)),
-            ApiError::NotFound(e) => FootprintError::NotFound(Box::new(e)),
-            ApiError::BadRequest(e) => FootprintError::Unexpected(Box::new(e)),
-            ApiError::Conflict(e) => FootprintError::Conflict(e),
-            ApiError::InternalServerError(e) => FootprintError::Unexpected(e),
-            ApiError::Timeout(e) => FootprintError::Unexpected(e),
-            ApiError::Unexpected(e) => FootprintError::Unexpected(e)
+            ApiError::Unauthorized(e) => LithicError::Unauthorized(Box::new(e)),
+            ApiError::NotFound(e) => LithicError::NotFound(Box::new(e)),
+            ApiError::BadRequest(e) => LithicError::Unexpected(Box::new(e)),
+            ApiError::Conflict(e) => LithicError::Conflict(e),
+            ApiError::InternalServerError(e) => LithicError::Unexpected(e),
+            ApiError::Timeout(e) => LithicError::Unexpected(e),
+            ApiError::Unexpected(e) => LithicError::Unexpected(e)
         }
     }
 }

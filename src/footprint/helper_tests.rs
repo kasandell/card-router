@@ -29,7 +29,7 @@ mod helper_tests {
             "card.1234.expiration".to_string(),
             "card.1234.number".to_string()
         ];
-        let parts = card_request_parts_for_card_id(card_id).expect("no error");
+        let parts = card_request_parts_for_card_id(card_id);
         assert_eq!(expected, parts);
     }
 
