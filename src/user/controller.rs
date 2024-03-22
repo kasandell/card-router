@@ -1,41 +1,10 @@
 use actix_web::{web, get, post, HttpResponse, services};
-use uuid::Uuid;
 use crate::auth::entity::Claims;
 use crate::middleware::services::Services;
-use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::request::CreateUserRequest;
 use crate::user::response::UserResponse;
 use crate::user::service::UserServiceTrait;
 use super::error::UserError;
-
-
-#[get("/{user_id}/")]
-async fn find(
-    user_id: web::Path<Uuid>,
-    services: web::Data<Services>
-) -> Result<HttpResponse, UserError> {
-    let id = user_id.into_inner();
-    tracing::info!("Finding user by public id {}", id.clone());
-    let user = services.user_dao.clone().find(&id).await?;
-    Ok(HttpResponse::Ok().json(
-        UserResponse::from(&user)
-    ))
-}
-
-#[get("/list/")]
-async fn list(
-    services: web::Data<Services>
-) -> Result<HttpResponse, UserError> {
-    // This shouldn't even exist
-    Ok(HttpResponse::Ok().finish())
-    /*
-    tracing::info!("Listing users");
-    let users = services.user_dao.clone().find_all().await?;
-    tracing::info!("Found {} users", users.len());
-    Ok(HttpResponse::Ok().json(users))
-
-     */
-}
 
 #[post("/")]
 async fn create(

@@ -3,7 +3,8 @@ use std::future::{Ready, ready};
 use std::sync::Arc;
 use actix_web::{dev::ServiceRequest, Error, FromRequest, HttpMessage, HttpResponse};
 use actix_web::dev::{Service, ServiceResponse, Transform};
-use crate::user::entity::User;
+use crate::user::model::UserModel;
+use crate::user::find_from_auth_middleware_only::find_by_auth0_id;
 
 
 
@@ -63,7 +64,8 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
             let (req, payload)= request.parts_mut();
             let claims = Claims::from_request(req, payload).await?;
             if let Some(auth0_id) = claims.sub {
-                if let Ok(user) = User::find_by_auth0_id(&auth0_id).await {
+                // TODO: can we access services so we don't hit db every time
+                if let Ok(user) = find_by_auth0_id(&auth0_id).await {
                     // insert data into extensions if enabled
                     is_logged_in = true;
                     request.extensions_mut()

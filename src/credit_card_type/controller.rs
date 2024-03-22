@@ -1,7 +1,7 @@
 use actix_web::{get, HttpResponse, web};
-use crate::credit_card_type::dao::CreditCardDaoTrait;
 use crate::credit_card_type::error::CreditCardTypeError;
 use crate::credit_card_type::response::CardTypeResponse;
+use crate::credit_card_type::service::CreditCardServiceTrait;
 use crate::middleware::services::Services;
 
 
@@ -9,15 +9,14 @@ use crate::middleware::services::Services;
 async fn list_cards(
     services: web::Data<Services>
 ) -> Result<HttpResponse, CreditCardTypeError>{
-    tracing::warn!("Hi Im here");
-    let cards: Vec<CardTypeResponse> = services.credit_card_dao.clone().list_all_card_types().await?
-        .iter()
+    let cards: Vec<CardTypeResponse> = services.credit_card_service.clone().list_all_card_types().await?
+        .into_iter()
         .map(|card| CardTypeResponse {
-            public_id: card.0.public_id,
-            card_name: card.0.name.clone(),
-            issuer_name: card.2.name.clone(),
-            card_type: card.1.name.clone(),
-            card_image_url: card.0.card_image_url.clone(),
+            public_id: card.public_id,
+            card_name: card.name,
+            issuer_name: card.credit_card_issuer_name,
+            card_type: card.credit_card_type_name,
+            card_image_url: card.card_image_url
         }).collect();
     Ok(
         HttpResponse::Ok().json(

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use uuid::Uuid;
 use crate::user::model::UserModel as User;
-use crate::passthrough_card::constant::PassthroughCardStatus;
-use crate::passthrough_card::entity::PassthroughCard;
+use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardType};
+use crate::passthrough_card::entity::{InsertablePassthroughCard, PassthroughCard};
 use lithic_client::models::card::Card;
 #[cfg(test)]
 use mockall::automock;
@@ -34,6 +34,8 @@ pub trait PassthroughCardServiceTrait {
         status: PassthroughCardStatus
     ) -> Result<(), PassthroughCardError>;
 
+    async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCardModel, PassthroughCardError>;
+
 
 }
 
@@ -42,6 +44,7 @@ pub struct PassthroughCardService {
     pub passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>
 }
 
+#[async_trait(?Send)]
 impl PassthroughCardServiceTrait for PassthroughCardService {
     #[tracing::instrument(skip(self))]
     async fn issue_card_to_user(
@@ -59,13 +62,23 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
             &pin_encoded,
             &idempotency_key
         ).await.map_err(|e| PassthroughCardError::IssueCard(e.into()))?;
-        let inserted_card = self.passthrough_card_dao.clone().create_from_api_card(
-            &lithic_card,
-            &user
+        // TODO: ERROR HERE
+        let card = InsertablePassthroughCard {
+            passthrough_card_status: PassthroughCardStatus::Closed,
+            public_id: Default::default(),
+            user_id: 0,
+            token: "".to_string(),
+            expiration: Default::default(),
+            last_four: "".to_string(),
+            passthrough_card_type: PassthroughCardType::Virtual,
+            is_active: false,
+        };
+        let inserted_card = self.passthrough_card_dao.clone().create(
+            card
         ).await;
         return match inserted_card {
             Ok(card) => {
-                return Ok(card)
+                return Ok(card.into())
             }
             Err(e) => {
                 tracing::info!("{:?}", &e);
@@ -141,6 +154,11 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
             }
         };
         //Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCardModel, PassthroughCardError> {
+        Ok(self.passthrough_card_dao.clone().get_by_token(token).await?.into())
     }
 
 }

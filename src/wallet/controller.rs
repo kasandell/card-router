@@ -8,14 +8,13 @@ use uuid::Uuid;
 
 use super::error::WalletError;
 use crate::middleware::services::Services;
-use crate::user::entity::User;
-use crate::wallet::service::WalletService;
-use crate::wallet::entity::DisplayableCardInfo;
+use crate::user::model::UserModel as User;
+use crate::wallet::service::{WalletService, WalletServiceTrait};
+use crate::wallet::response::DisplayableCardInfo;
 use crate::wallet::response::{WalletAddCardSuccessResponse, WalletCardAttemptResponse};
 use super::{
     request, 
     entity::{
-        NewCard,
         Wallet
     }
 };
@@ -63,20 +62,11 @@ async fn list_cards(
     services: web::Data<Services>
 ) -> Result<HttpResponse, WalletError> {
     let user = user.into_inner();
-    let cards: Vec<DisplayableCardInfo> = services.wallet_service.wallet_dao.clone().find_all_for_user_with_card_info(
+    let cards: Vec<DisplayableCardInfo> = services.wallet_service.clone().find_all_for_user_with_card_info(
         &user
     ).await?
-        .iter()
-        .map(|card| DisplayableCardInfo {
-            public_id: card.0.public_id,
-            created_at: card.0.created_at,
-            card_name: card.1.name.clone(),
-            issuer_name: card.3.name.clone(),
-            card_type: card.2.name.clone(),
-            card_image_url: card.1.card_image_url.clone(),
-        })
+        .into_iter()
+        .map(|card| card.into())
         .collect();
     Ok(HttpResponse::Ok().json(cards))
 }
-
-// TODO: need a remove card endpoint (mark as deleted)

@@ -4,11 +4,13 @@ use crate::error::data_error::DataError;
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::entity::{User, UserMessage};
+use crate::user::model::UserModel;
 use super::error::UserError;
 
 #[async_trait(?Send)]
 pub trait UserServiceTrait {
-    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<User, UserError>;
+    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<UserModel, UserError>;
+    async fn find_by_internal_id(&self, id: i32) -> Result<UserModel, UserError>;
 }
 
 pub struct UserService {
@@ -17,13 +19,6 @@ pub struct UserService {
 }
 
 impl UserService {
-    #[tracing::instrument]
-    pub fn new() -> Self {
-        Self {
-            user_dao: Arc::new(UserDao::new()),
-            footprint_service: Arc::new(FootprintService::new())
-        }
-    }
 
     #[tracing::instrument(skip_all)]
     pub fn new_with_services(
@@ -39,10 +34,10 @@ impl UserService {
 #[async_trait(?Send)]
 impl UserServiceTrait for UserService {
     #[tracing::instrument(skip(self))]
-    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<User, UserError> {
+    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<UserModel, UserError> {
         let res = self.user_dao.clone().find_by_auth0_id(auth0_user_id).await;
         match res {
-            Ok(user) => Ok(user),
+            Ok(user) => Ok(user.into()),
             Err(error) => {
                 match &error {
                     // not found, can create user
@@ -56,12 +51,18 @@ impl UserServiceTrait for UserService {
                                     auth0_user_id,
                                     footprint_vault_id: &footprint_vault_id.id
                                 }
-                            ).await.map_err(|e| UserError::Unexpected(Box::new(e)))?
+                            ).await.map_err(|e| UserError::Unexpected(Box::new(e)))?.into()
                         )
                     }
                     _ => Err(UserError::Unexpected(Box::new(error)))
                 }
             }
         }
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn find_by_internal_id(&self, id: i32) -> Result<UserModel, UserError> {
+        Ok(self.user_dao.clone().find_by_internal_id(id)
+            .await.map_err(|e| UserError::Unexpected(e.into()))?.into())
     }
 }

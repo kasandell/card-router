@@ -3,6 +3,7 @@ pub mod model;
 pub mod config;
 pub mod request;
 pub mod service;
+pub mod find_from_auth_middleware_only;
 
 mod controller;
 mod entity;

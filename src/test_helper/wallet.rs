@@ -59,7 +59,7 @@ pub async fn create_test_wallet_in_db(
         }
     ).await?;
     let wallet = Wallet::insert_card(
-        &NewCard {
+        &InsertableCardAttempt {
             user_id: user_id,
             payment_method_id: "test",
             credit_card_id: credit_card_id,

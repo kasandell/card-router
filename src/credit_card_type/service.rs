@@ -34,6 +34,7 @@ impl CreditCardService {
     }
 }
 
+#[async_trait(?Send)]
 impl CreditCardServiceTrait for CreditCardService {
     #[tracing::instrument(skip(self))]
     async fn list_all_card_types(self: Arc<Self>) -> Result<Vec<CreditCardDetailModel>, CreditCardTypeError> {
@@ -41,7 +42,8 @@ impl CreditCardServiceTrait for CreditCardService {
         let cards = self.credit_card_dao.clone().list_all_card_types()
             .await.map_err(|e| CreditCardTypeError::Unexpected(e.into()))?;
         tracing::info!("Found {} credit cards", cards.len());
-        cards.into_iter().map(|e| e.into()).collect()
+        let fin_cards: Vec<CreditCardDetailModel>  = cards.into_iter().map(|e| e.into()).collect();
+        Ok(fin_cards)
     }
 
     #[tracing::instrument(skip(self))]
@@ -50,7 +52,7 @@ impl CreditCardServiceTrait for CreditCardService {
         let cards = self.credit_card_dao.clone().search_all_card_types(query)
             .await.map_err(|e| CreditCardTypeError::Unexpected(e.into()))?;
         tracing::info!("Found {} credit cards", cards.len());
-        cards.into_iter().map(|e| e.into()).collect()
+        Ok(cards.into_iter().map(|e| e.into()).collect())
     }
 
     #[tracing::instrument(skip(self))]
@@ -59,6 +61,6 @@ impl CreditCardServiceTrait for CreditCardService {
         let card = self.credit_card_dao.clone().find_by_public_id(public_id)
             .await.map_err(|e| CreditCardTypeError::Unexpected(e.into()))?;
         tracing::info!("Found credit card id={}", &card.id);
-        card.into()
+        Ok(card.into())
     }
 }

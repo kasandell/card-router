@@ -1,14 +1,11 @@
 use std::sync::Arc;
-use lithic_client::models::Card;
 use crate::error::data_error::DataError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::{InsertablePassthroughCard, PassthroughCard};
-use crate::user::entity::User;
 use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
-use crate::passthrough_card::request::LithicCard;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]

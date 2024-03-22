@@ -5,7 +5,7 @@ use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
-use crate::wallet::entity::Wallet;
+use crate::wallet::model::WalletModel as Wallet;
 use diesel::prelude::*;
 use crate::error::data_error::DataError;
 use crate::ledger::constant::ChargeStatus;

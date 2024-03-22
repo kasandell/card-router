@@ -1,13 +1,13 @@
-use crate::{schema::{
-    wallet,
-    wallet_card_attempt,
+use crate::{credit_card_type::model::{
+    CreditCardIssuerModel as CreditCardIssuer,
+    CreditCardModel as CreditCard,
+    CreditCardTypeModel as CreditCardType
+}, schema::{
     credit_card,
     credit_card_issuer,
-    credit_card_type
-}, credit_card_type::model::{
-    CreditCardTypeModel as CreditCardType,
-    CreditCardModel as CreditCard,
-    CreditCardIssuerModel as CreditCardIssuer
+    credit_card_type,
+    wallet,
+    wallet_card_attempt
 }};
 use crate::util::db;
 use crate::error::data_error::DataError;
@@ -74,27 +74,16 @@ pub struct Wallet {
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(CreditCard))]
 #[diesel(table_name = wallet)]
-pub struct InsertableCard {
-    pub public_id: Uuid,
-    pub user_id: i32,
-    pub payment_method_id: String,
-    pub credit_card_id: i32,
-    pub wallet_card_attempt_id: i32,
-}
-
-#[derive(Serialize, Deserialize, AsChangeset, Debug)]
-#[diesel(belongs_to(User))]
-#[diesel(belongs_to(CreditCard))]
-#[diesel(table_name = wallet)]
-pub struct NewCard<'a> {
+pub struct InsertableCard<'a> {
     pub user_id: i32,
     pub payment_method_id: &'a str,
     pub credit_card_id: i32,
     pub wallet_card_attempt_id: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DisplayableCardInfo {
+#[derive(Queryable, Debug)]
+pub struct WalletWithExtraInfo {
+    pub id: i32,
     pub public_id: Uuid,
     pub created_at: NaiveDateTime,
     pub card_name: String,
@@ -116,7 +105,7 @@ impl Wallet {
 
     #[tracing::instrument]
     //TODO: This is going to break violently
-    pub async fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<WalletDetail>, DataError> {
+    pub async fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<WalletWithExtraInfo>, DataError> {
         let mut conn = db::connection().await?;
         let cards = wallet::table
         .inner_join(
@@ -127,18 +116,28 @@ impl Wallet {
         .filter(
             wallet::user_id.eq(user.id)
         )
-        .select((Wallet::as_select(), CreditCard::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
-        .load::<WalletDetail>(&mut conn).await?;
+        .select(
+            (
+                wallet::id,
+                wallet::public_id,
+                wallet::created_at,
+                credit_card::name,
+                credit_card_issuer::name,
+                credit_card_type::name,
+                credit_card::card_image_url
+            )
+        )
+        .load::<WalletWithExtraInfo>(&mut conn).await?;
         Ok(cards)
     }
 
     // TODO: from consumes
     #[tracing::instrument]
-    pub async fn insert_card<'a>(card: &NewCard<'a>) -> Result<Self, DataError> {
+    pub async fn insert_card<'a>(card: &InsertableCard<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-        let insertable_card = InsertableCard::from(card);
+        //let insertable_card = InsertableCard::from(card);
         let inserted_card = diesel::insert_into(wallet::table)
-        .values(insertable_card)
+        .values(card)
         .get_result(&mut conn).await?;
         Ok(inserted_card)
 
@@ -164,62 +163,6 @@ impl Wallet {
     }
 }
 
-impl From<&NewCard<'_>> for InsertableCard {
-    fn from(card: &NewCard) -> Self {
-        InsertableCard {
-            public_id: Uuid::new_v4(),
-            user_id: card.user_id,
-            payment_method_id: card.payment_method_id.to_string(),
-            credit_card_id: card.credit_card_id,
-            wallet_card_attempt_id: card.wallet_card_attempt_id
-        }
-    }
-}
-
-#[cfg(test)]
-impl Wallet {
-    #[tracing::instrument]
-    pub async fn create_test_wallet(
-        id: i32,
-        user_id: i32,
-        credit_card_id: i32
-    ) -> Self {
-        Wallet {
-            id: id,
-            public_id: Uuid::new_v4(),
-            user_id: user_id,
-            payment_method_id: Uuid::new_v4().to_string(),
-            created_at: Utc::now().naive_utc(),
-            updated_at: Utc::now().naive_utc(),
-            credit_card_id: credit_card_id,
-            wallet_card_attempt_id: 0
-        }
-    }
-
-    #[tracing::instrument]
-    pub async fn create_test_wallet_in_db(
-        user_id: i32,
-        credit_card_id: i32
-    ) -> Result<(Self, WalletCardAttempt), DataError> {
-        let ca = WalletCardAttempt::insert(
-            &InsertableCardAttempt {
-                user_id: user_id,
-                credit_card_id: credit_card_id,
-                expected_reference_id: "test",
-            }
-        ).await?;
-        let wallet = Wallet::insert_card(
-            &NewCard {
-                user_id: user_id,
-                payment_method_id: "test",
-                credit_card_id: credit_card_id,
-                wallet_card_attempt_id: ca.id,
-
-            }
-        ).await?;
-        Ok((wallet, ca))
-    }
-}
 
 impl WalletCardAttempt {
     #[tracing::instrument]

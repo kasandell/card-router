@@ -1,22 +1,46 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
+use async_trait::async_trait;
+use mockall::automock;
 use uuid::Uuid;
 use crate::adyen::checkout::service::{AdyenChargeServiceTrait, AdyenCheckoutService};
-use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
-use crate::user::entity::User;
+use crate::credit_card_type::service::CreditCardServiceTrait;
+use crate::error::data_error::DataError;
+use crate::user::model::UserModel as User;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
-use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, Wallet, WalletCardAttempt};
+use crate::wallet::entity::{InsertableCardAttempt, InsertableCard, UpdateCardAttempt, Wallet, WalletCardAttempt, WalletDetail};
 use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
 
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::wallet::error::WalletError;
+use crate::wallet::model::{WalletModel, WalletWithExtraInfoModel};
 use crate::wallet::response::WalletCardAttemptResponse;
+
+
+#[cfg_attr(test, automock)]
+#[async_trait(?Send)]
+pub trait WalletServiceTrait {
+    async fn match_card(
+        self: Arc<Self>,
+        user: &User,
+        request: &MatchRequest
+    ) -> Result<WalletModel, WalletError>;
+
+    async fn register_new_attempt(
+        self: Arc<Self>,
+        user: &User,
+        request: &RegisterAttemptRequest
+    ) -> Result<WalletCardAttemptResponse, WalletError>;
+
+    async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError>;
+    async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError>;
+}
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one
 pub struct WalletService {
-    pub credit_card_dao: Arc<dyn CreditCardDaoTrait>,
+    pub credit_card_service: Arc<dyn CreditCardServiceTrait>,
     pub wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
     pub wallet_dao: Arc<dyn WalletDaoTrait>,
     pub adyen_service: Arc<dyn AdyenChargeServiceTrait>,
@@ -25,40 +49,32 @@ pub struct WalletService {
 
 impl WalletService {
     #[tracing::instrument(skip_all)]
-    pub fn new() -> Self {
-        Self {
-            credit_card_dao: Arc::new(CreditCardDao::new()),
-            wallet_card_attempt_dao: Arc::new(WalletCardAttemptDao::new()),
-            wallet_dao: Arc::new(WalletDao::new()),
-            adyen_service: Arc::new(AdyenCheckoutService::new()),
-            footprint_service: Arc::new(FootprintService::new())
-        }
-    }
-
-    #[tracing::instrument(skip_all)]
     pub fn new_with_services(
-        credit_card_dao: Arc<dyn CreditCardDaoTrait>,
-        wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
-        wallet_dao: Arc<dyn WalletDaoTrait>,
+        credit_card_service: Arc<dyn CreditCardServiceTrait>,
         adyen_service: Arc<dyn AdyenChargeServiceTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
         Self {
-            credit_card_dao,
-            wallet_card_attempt_dao,
-            wallet_dao,
+            credit_card_service,
+            wallet_card_attempt_dao: Arc::new(WalletCardAttemptDao::new()),
+            wallet_dao: Arc::new(WalletDao::new()),
             adyen_service,
             footprint_service
         }
     }
+}
+
+#[async_trait(?Send)]
+impl WalletServiceTrait for WalletService {
 
     #[tracing::instrument(skip(self))]
-    pub async fn register_new_attempt(
+    async fn register_new_attempt(
         self: Arc<Self>,
         user: &User,
         request: &RegisterAttemptRequest
     ) -> Result<WalletCardAttemptResponse, WalletError> {
-        let credit_card = self.credit_card_dao.clone().find_by_public_id(&request.credit_card_type_public_id).await?;
+        let credit_card = self.credit_card_service.clone().find_by_public_id(&request.credit_card_type_public_id)
+            .await.map_err(|e| WalletError::Unexpected(e.into()))?;
         let wca = self.wallet_card_attempt_dao.clone().insert(
             &InsertableCardAttempt {
                 user_id: user.id,
@@ -80,11 +96,11 @@ impl WalletService {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn match_card(
+    async fn match_card(
         self: Arc<Self>,
         user: &User,
         request: &MatchRequest
-    ) -> Result<Wallet, WalletError> {
+    ) -> Result<WalletModel, WalletError> {
         let card_attempt = self.wallet_card_attempt_dao.clone().find_by_reference_id(
             &request.reference_id
         ).await?;
@@ -103,7 +119,7 @@ impl WalletService {
         tracing::info!("Updated to matched: {}", &update.status);
 
         let created_card = self.wallet_dao.clone().insert_card(
-            &NewCard {
+            &InsertableCard {
                 user_id: update.user_id,
                 payment_method_id: &request.reference_id,
                 credit_card_id: update.credit_card_id,
@@ -111,7 +127,25 @@ impl WalletService {
             }
         ).await?;
         tracing::info!("Created card: {}", &created_card.public_id);
-        Ok(created_card)
+        Ok(created_card.into())
+    }
+
+    async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError> {
+        Ok(
+            self.wallet_dao.clone().find_all_for_user(user).await?
+                .into_iter()
+                .map(|e| e.into())
+                .collect()
+        )
+    }
+
+    async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError> {
+        Ok(
+            self.wallet_dao.clone().find_all_for_user_with_card_info(user).await?
+                .into_iter()
+                .map(|e| e.into())
+                .collect()
+        )
     }
 
 }

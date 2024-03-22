@@ -4,6 +4,7 @@ use crate::passthrough_card::response::{HasActiveResponse, PassthroughCardRespos
 use crate::user::model::UserModel as User;
 use crate::middleware::services::Services;
 use super::error::PassthroughCardError;
+use super::service::{PassthroughCardServiceTrait, PassthroughCardService};
 
 #[post("/create-card/")]
 async fn create_card(

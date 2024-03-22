@@ -34,7 +34,8 @@ impl TryFrom<Card> for InsertablePassthroughCard {
         let exp_month = card.exp_month.clone().ok_or(
             PassthroughCardError::Unexpected("Cannot find expiration month".into())
         )?;
-        let expiration = expiration_date_from_str_parts(&exp_year, &exp_month)?;
+        let expiration = expiration_date_from_str_parts(&exp_year, &exp_month)
+            .map_err(|e| PassthroughCardError::Unexpected(e.into()))?;
         Ok(InsertablePassthroughCard {
             passthrough_card_status: PassthroughCardStatus::Open,
             public_id: Uuid::new_v4(),

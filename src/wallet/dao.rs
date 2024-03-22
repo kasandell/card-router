@@ -1,8 +1,7 @@
 use std::sync::Arc;
-use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
 use crate::error::data_error::DataError;
-use crate::user::entity::User;
-use crate::wallet::entity::{InsertableCardAttempt, NewCard, Wallet, WalletCardAttempt, UpdateCardAttempt, WalletDetail};
+use crate::user::model::UserModel as User;
+use crate::wallet::entity::{InsertableCardAttempt, Wallet, WalletCardAttempt, UpdateCardAttempt, WalletDetail, InsertableCard, WalletWithExtraInfo};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
@@ -11,8 +10,8 @@ use mockall::{automock, predicate::*};
 #[async_trait(?Send)]
 pub trait WalletDaoTrait {
     async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<Wallet>, DataError>;
-    async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletDetail>, DataError>;
-    async fn insert_card<'a>(self: Arc<Self>, card: &NewCard<'a>) -> Result<Wallet, DataError>;
+    async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfo>, DataError>;
+    async fn insert_card<'a>(self: Arc<Self>, card: &InsertableCard<'a>) -> Result<Wallet, DataError>;
 }
 
 
@@ -41,11 +40,11 @@ impl WalletDaoTrait for WalletDao {
         Wallet::find_all_for_user(user).await
     }
 
-    async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletDetail>, DataError> {
+    async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfo>, DataError> {
         Wallet::find_all_for_user_with_card_info(user).await
     }
 
-    async fn insert_card<'a>(self: Arc<Self>, card: &NewCard<'a>) -> Result<Wallet, DataError> {
+    async fn insert_card<'a>(self: Arc<Self>, card: &InsertableCard<'a>) -> Result<Wallet, DataError> {
         Wallet::insert_card(card).await
     }
 }

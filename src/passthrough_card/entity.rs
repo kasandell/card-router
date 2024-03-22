@@ -29,7 +29,7 @@ pub struct PassthroughCard {
     pub updated_at: NaiveDateTime
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug)]
 #[diesel(table_name = passthrough_card)]
 #[diesel(belongs_to(PassthroughCardType))]
 #[diesel(belongs_to(PassThroughCardStatus))]

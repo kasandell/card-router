@@ -15,7 +15,7 @@ use crate::ledger::model::{
     TransactionLedgerModel
 };
 use crate::user::model::UserModel as User;
-use crate::wallet::entity::Wallet;
+use crate::wallet::model::WalletModel as Wallet;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
@@ -76,11 +76,12 @@ impl LedgerService {
 
 #[async_trait(?Send)]
 impl LedgerServiceTrait for LedgerService {
+    #[tracing::instrument(skip(self))]
     async fn register_transaction_for_user(
         self: Arc<Self>,
         user: &User,
         metadata: &TransactionMetadata,
-    ) -> Result<RegisteredTransaction, LedgerError> {
+    ) -> Result<RegisteredTransactionModel, LedgerError> {
         // TODO: this call takes a long time
         let res = self.dao.clone().insert_registered_transaction(
             &InsertableRegisteredTransaction {
@@ -93,12 +94,13 @@ impl LedgerServiceTrait for LedgerService {
         Ok(res)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn register_failed_inner_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, LedgerError> {
+    ) -> Result<InnerChargeLedgerModel, LedgerError> {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
@@ -114,12 +116,13 @@ impl LedgerServiceTrait for LedgerService {
         )
     }
 
+    #[tracing::instrument(skip(self))]
     async fn register_successful_inner_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &Wallet
-    ) -> Result<InnerChargeLedger, LedgerError> {
+    ) -> Result<InnerChargeLedgerModel, LedgerError> {
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
@@ -135,12 +138,13 @@ impl LedgerServiceTrait for LedgerService {
         )
     }
 
+    #[tracing::instrument(skip(self))]
     async fn register_failed_outer_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, LedgerError> {
+    ) -> Result<OuterChargeLedgerModel, LedgerError> {
         // TODO: do some assertions that everything is associated
         Ok(
             self.dao.clone().insert_outer_charge(
@@ -156,12 +160,13 @@ impl LedgerServiceTrait for LedgerService {
         )
     }
 
+    #[tracing::instrument(skip(self))]
     async fn register_successful_outer_charge(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransactionModel,
         metadata: &TransactionMetadata,
         card: &PassthroughCard
-    ) -> Result<OuterChargeLedger, LedgerError> {
+    ) -> Result<OuterChargeLedgerModel, LedgerError> {
         // TODO: do some assertions that everything is associated
         Ok(
             self.dao.clone().insert_outer_charge(
@@ -177,12 +182,13 @@ impl LedgerServiceTrait for LedgerService {
         )
     }
 
+    #[tracing::instrument(skip(self))]
     async fn register_full_transaction(
         self: Arc<Self>,
         registered_transaction: &RegisteredTransactionModel,
         successful_inner_charge: &InnerChargeLedgerModel,
         successful_outer_charge: &OuterChargeLedgerModel
-    ) -> Result<TransactionLedger, LedgerError> {
+    ) -> Result<TransactionLedgerModel, LedgerError> {
         Ok(
             self.dao.clone().insert_transaction_ledger(
                 &InsertableTransactionLedger {

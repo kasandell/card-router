@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::user::entity::User;
+use crate::user::model::UserModel as User;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct UserResponse {

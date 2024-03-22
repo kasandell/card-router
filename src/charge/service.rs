@@ -22,7 +22,7 @@ use crate::ledger::model::{
     TransactionLedgerModel as TransactionLedger,
 };
 use crate::user::model::UserModel as User;
-use crate::wallet::entity::Wallet;
+use crate::wallet::model::WalletModel as Wallet;
 use crate::ledger::service::LedgerServiceTrait;
 use crate::user::service::UserServiceTrait;
 
@@ -135,7 +135,7 @@ impl ChargeServiceTrait for ChargeService {
 impl ChargeService {
 
     #[tracing::instrument(skip_all)]
-    pub fn new(
+    pub fn new_with_services(
         user_service: Arc<dyn UserServiceTrait>,
         ledger_service: Arc<dyn LedgerServiceTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>

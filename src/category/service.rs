@@ -12,8 +12,8 @@ use crate::category::model::{CategoryModel, MccMappingModel};
 #[async_trait(?Send)]
 #[cfg_attr(test, automock)]
 pub trait CategoryServiceTrait {
-    async fn get_category_by_name(self: Arc<Self>, name: &str) -> Result<Category, CategoryError>;
-    async fn get_mcc_mapping_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, CategoryError>;
+    async fn get_category_by_name(self: Arc<Self>, name: &str) -> Result<CategoryModel, CategoryError>;
+    async fn get_mcc_mapping_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMappingModel, CategoryError>;
 }
 
 

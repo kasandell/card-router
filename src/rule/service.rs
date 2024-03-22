@@ -14,19 +14,16 @@ use crate::credit_card_type::model::{
     CreditCardIssuerModel as CreditCardIssuer,
     CreditCardTypeModel as CreditCardType
 };
+use crate::rule::dao::{RuleDao, RuleDaoTrait};
 use crate::rule::error::RuleError;
 
 use crate::user::model::UserModel as User;
 use crate::util::date::adjust_recurring_to_date;
-use crate::wallet::model::WalletModel as Wallet;
-
+use crate::wallet::model::{WalletModel as Wallet, WalletModel};
+use crate::wallet::service::{WalletService, WalletServiceTrait};
 use super::entity::Rule;
 
-pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
-pub struct RuleService {
-    mcc_mapping_dao: Arc<dyn MccMappingDaoTrait>,
-}
-
+//pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
 
 #[mockall::automock]
 #[async_trait(?Send)]
@@ -35,6 +32,12 @@ pub trait RuleServiceTrait {
 }
 
 
+
+pub struct RuleService {
+    category_service: Arc<dyn CategoryServiceTrait>,
+    rule_dao: Arc<dyn RuleDaoTrait>,
+    wallet_service: Arc<dyn WalletServiceTrait>,
+}
 
 
 #[async_trait(?Send)]
@@ -48,9 +51,9 @@ impl RuleServiceTrait for RuleService {
         //wallet, credit_card, credit_card_type, credit_card_issuer
         let amount = request.amount.ok_or(RuleError::NoAmount("No amount supplied".into()))?;
         // TODO: move this to service level call
-        let cards = Wallet::find_all_for_user_with_card_info(user)
+        let cards = self.wallet_service.clone().find_all_for_user(user)
             .await.map_err(|e| RuleError::Unexpected(e.into()))?;
-        let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
+        let card_type_ids = cards.iter().map(|card_with_info| card_with_info.credit_card_id).collect();
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
         tracing::info!("Using {} rules", rules.len());
         let ordered_cards = self.clone().get_card_order_from_rules(&cards, &rules, amount).await?;
@@ -60,26 +63,22 @@ impl RuleServiceTrait for RuleService {
 }
 
 impl RuleService {
-    #[tracing::instrument]
-    pub fn new() -> Self {
-        Self {
-            mcc_mapping_dao: Arc::new(MccMappingDao::new())
-        }
-    }
-
     #[tracing::instrument(skip_all)]
     pub fn new_with_services(
-        mcc_mapping_dao: Arc<dyn MccMappingDaoTrait>
+        category_service: Arc<dyn CategoryServiceTrait>,
+        wallet_service: Arc<dyn WalletServiceTrait>
     ) -> Self {
         Self {
-            mcc_mapping_dao
+            category_service: category_service.clone(),
+            rule_dao: Arc::new(RuleDao::new()),
+            wallet_service: wallet_service.clone(),
         }
-    }
 
+    }
 
     // TODO: this lifteime needs to be at class level
     #[tracing::instrument(skip(self))]
-    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
+    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletModel>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
@@ -97,7 +96,7 @@ impl RuleService {
             }
 
         }
-        let mut cards_only: Vec<&Wallet> = cards.iter().map(|card_detail| &card_detail.0).collect();
+        let mut cards_only: Vec<&WalletModel> = cards.iter().map(|card_detail| card_detail).collect();
         cards_only.sort_by(|a_card, b_card| {
             let a_score = match max_reward_map.entry(a_card.credit_card_id) {
                 Entry::Vacant(_) => 0,
@@ -115,11 +114,11 @@ impl RuleService {
     #[tracing::instrument(skip(self))]
     pub async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, RuleError> {
         // TODO: remove direct call
-        let rules = Rule::get_rules_for_card_ids(card_type_ids).await
+        let rules = self.rule_dao.clone().get_rules_for_card_ids(card_type_ids).await
             .map_err(|e| RuleError::Unexpected(e.into()))?;
         let Some(merchant) = request.merchant.clone() else { return Ok(Vec::new()); };
         let Some(request_mcc) = merchant.mcc.clone() else { return Ok(Vec::new()); };
-        let mcc_mapping = self.mcc_mapping_dao.clone().get_by_mcc(&request_mcc).await
+        let mcc_mapping = self.category_service.clone().get_mcc_mapping_by_mcc(&request_mcc).await
             .map_err(|e| RuleError::Unexpected(e.into()))?;
         let mut filtered_rules: Vec<Rule> = Vec::new();
         for rule in rules.into_iter() {
