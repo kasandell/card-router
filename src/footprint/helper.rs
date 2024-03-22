@@ -46,10 +46,10 @@ pub fn get_scopes_for_request() -> Vec<String> {
     vec!["vault".to_string()]
 }
 
-pub fn create_get_token_request(customer_id: &str, card_id: &str) -> Result<CreateClientTokenRequest, ServiceError> {
-    Ok(CreateClientTokenRequest {
+pub fn create_get_token_request(customer_id: &str, card_id: &str) -> CreateClientTokenRequest {
+    CreateClientTokenRequest {
         ttl: TTL,
         scopes: get_scopes_for_request(),
-        fields: card_request_parts_for_card_id(card_id)?,
-    })
+        fields: card_request_parts_for_card_id(card_id),
+    }
 }

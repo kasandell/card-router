@@ -44,14 +44,14 @@ impl PassthroughCardService {
     ) -> Result<PassthroughCard, PassthroughCardError> {
         let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
-            return Err(PassthroughCardError::ActiveCardExists(Box::new("User has active card already".to_string())))
+            return Err(PassthroughCardError::ActiveCardExists("User has active card already".into()))
         }
         let idempotency_key = Uuid::new_v4();
         let pin_encoded = encrypt_pin(pin);
         let lithic_card = self.lithic_service.clone().create_card(
             &pin_encoded,
             &idempotency_key
-        ).await?;
+        ).await.map_err(|e| PassthroughCardError::IssueCard(e.into()))?;
         let inserted_card = self.passthrough_card_dao.clone().create_from_api_card(
             &lithic_card,
             &user
@@ -73,7 +73,7 @@ impl PassthroughCardService {
                         return Err(err);
                     }
                 }
-                return Err(PassthroughCardError::Unexpected(Box::new("unable to issue card")));
+                return Err(PassthroughCardError::Unexpected("unable to issue card".into()));
             }
         }
     }
@@ -104,7 +104,7 @@ impl PassthroughCardService {
             PassthroughCardStatus::Closed => self.clone().close_lithic_card(&updated.token).await,
             PassthroughCardStatus::Open => self.clone().activate_lithic_card(&updated.token).await,
             PassthroughCardStatus::Paused =>  self.clone().pause_lithic_card(&updated.token).await,
-            _ => Err(PassthroughCardError::Unexpected(Box::new("Invalid state transition from engine")))
+            _ => Err(PassthroughCardError::Unexpected("Invalid state transition from engine".into()))
         };
 
         return match lithic_result {
@@ -169,7 +169,7 @@ impl PassthroughCardService {
                     }
                 ).cloned()
             },
-            _ => return Err(PassthroughCardError::StatusUpdate(Box::new("Invalid state transition from engine".to_string())))
+            _ => return Err(PassthroughCardError::StatusUpdate("Invalid state transition from engine".into()))
         }
     }
 
@@ -223,7 +223,7 @@ impl PassthroughCardService {
             .collect();
         // TODO: this scares me
         Ok(v.get(0).ok_or(
-            PassthroughCardError::CardNotFound(Box::new("card to transition not found".to_string()))
+            PassthroughCardError::CardNotFound("card to transition not found".into())
         )?)
     }
 

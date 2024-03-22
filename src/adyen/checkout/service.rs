@@ -24,6 +24,7 @@ use crate::constant::financial_constant;
 use crate::environment::ENVIRONMENT;
 use super::error::CheckoutError;
 use crate::user::entity::User;
+use crate::util::api_call::wrap_api_call;
 use super::request::ChargeCardRequest;
 
 pub struct AdyenCheckoutService {
@@ -181,11 +182,11 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
         });
         tracing::info!("Creating body took {:?}", start.elapsed());
         start = Instant::now();
-        let resp = post_payments(
+        let resp = wrap_api_call(post_payments(
             &self.configuration.clone(),
             Some(to_value(request.idempotency_key)?),
             body
-        ).await?;
+        ).await)?;
         tracing::info!("ACTUAL CALL TOOK {:?}", start.elapsed());
         Ok(resp)
     }
@@ -196,7 +197,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
         psp_reference: &str,
     ) -> Result<PaymentCancelResponse, CheckoutError> {
         Ok(
-            post_payments_payment_psp_reference_cancels(
+            wrap_api_call(post_payments_payment_psp_reference_cancels(
                 &self.configuration.clone(),
                 psp_reference,
                 Some(to_value(Uuid::new_v4().to_string())?),
@@ -207,7 +208,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
                         reference: Some(Uuid::new_v4().to_string()),
                     }
                 )
-            ).await?
+            ).await)?
         )
     }
 
@@ -300,12 +301,12 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
         };
         tracing::info!("{}", serde_json::to_string_pretty(&obj).unwrap());
         Ok(
-            post_payments(
+            wrap_api_call(post_payments(
                 &self.configuration.clone(),
                 None,//Some(to_value(idempotency_key.to_string())?),
                 // TODO: make sure we transform this appropriately to only take in required components from frontend
                 Some(obj)
-            ).await?
+            ).await)?
         )
     }
 }

@@ -3,7 +3,6 @@ use std::sync::Arc;
 use uuid::Uuid;
 use crate::adyen::checkout::service::{AdyenChargeServiceTrait, AdyenCheckoutService};
 use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
-use crate::error::error::ServiceError;
 use crate::user::entity::User;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
@@ -11,6 +10,7 @@ use crate::wallet::entity::{InsertableCardAttempt, NewCard, UpdateCardAttempt, W
 use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
 
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
+use crate::wallet::error::WalletError;
 use crate::wallet::response::WalletCardAttemptResponse;
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
@@ -57,7 +57,7 @@ impl WalletService {
         self: Arc<Self>,
         user: &User,
         request: &RegisterAttemptRequest
-    ) -> Result<WalletCardAttemptResponse, ServiceError> {
+    ) -> Result<WalletCardAttemptResponse, WalletError> {
         let credit_card = self.credit_card_dao.clone().find_by_public_id(&request.credit_card_type_public_id).await?;
         let wca = self.wallet_card_attempt_dao.clone().insert(
             &InsertableCardAttempt {
@@ -70,7 +70,7 @@ impl WalletService {
         let token = self.footprint_service.clone().create_client_token(
             &user,
             &wca.expected_reference_id
-        ).await?;
+        ).await.map_err(|e| WalletError::Unexpected(e.into()))?;
 
         Ok(WalletCardAttemptResponse {
             reference_id: wca.expected_reference_id,
@@ -84,17 +84,17 @@ impl WalletService {
         self: Arc<Self>,
         user: &User,
         request: &MatchRequest
-    ) -> Result<Wallet, ServiceError> {
+    ) -> Result<Wallet, WalletError> {
         let card_attempt = self.wallet_card_attempt_dao.clone().find_by_reference_id(
             &request.reference_id
         ).await?;
         tracing::info!("Found wallet card attempt id {}", card_attempt.id);
 
         if card_attempt.status.eq(&WalletCardAttemptStatus::Matched) {
-            return Err(ServiceError::Conflict(Box::new("Card already matched")));
+            return Err(WalletError::Conflict("Card already matched".into()))
         }
         if user.id != card_attempt.user_id {
-            return Err(ServiceError::Unauthorized(Box::new("User not owner of attempt")));
+            return Err(WalletError::Unauthorized("User is not owner of attempt".into()))
         }
 
         let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {

@@ -6,8 +6,7 @@ use diesel_async::RunQueryDsl;
 use lithic_client::models::{Card, FundingAccount};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::error::error::ServiceError;
-
+use crate::error::data_error::DataError;
 use crate::user::entity::User;
 use crate::util::date::expiration_date_from_str_parts;
 use crate::util::db;
@@ -70,7 +69,7 @@ pub struct PassthroughCardStatusUpdate {
 
 impl PassthroughCard {
     #[tracing::instrument]
-    pub async fn create(card: LithicCard, user: &User) -> Result<Self, ServiceError> {
+    pub async fn create(card: LithicCard, user: &User) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let mut card = InsertablePassthroughCard::convert_from_lithic_card(&card)?;
@@ -83,7 +82,7 @@ impl PassthroughCard {
     }
 
     #[tracing::instrument]
-    pub async fn create_from_api_card(card: &Card, user: &User) -> Result<Self, ServiceError> {
+    pub async fn create_from_api_card(card: &Card, user: &User) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let mut card = InsertablePassthroughCard::convert_from_card(&card)?;
@@ -95,8 +94,9 @@ impl PassthroughCard {
         Ok(card)
     }
 
+
     #[tracing::instrument]
-    pub async fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, ServiceError> {
+    pub async fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let update = PassthroughCardStatusUpdate {
             id: id,
@@ -111,7 +111,7 @@ impl PassthroughCard {
     }
 
     #[tracing::instrument]
-    pub async fn get(id: i32) -> Result<Self, ServiceError> {
+    pub async fn get(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let card = passthrough_card::table
@@ -121,7 +121,7 @@ impl PassthroughCard {
     }
 
     #[tracing::instrument]
-    pub async fn get_by_token(token: &str) -> Result<Self, ServiceError> {
+    pub async fn get_by_token(token: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let card = passthrough_card::table
@@ -131,7 +131,7 @@ impl PassthroughCard {
     }
 
     #[tracing::instrument]
-    pub async fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, ServiceError> {
+    pub async fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
 
         let cards = passthrough_card::table
@@ -144,7 +144,7 @@ impl PassthroughCard {
     pub async fn find_card_for_user_in_status(
         user_id: i32,
         status: PassthroughCardStatus
-    ) -> Result<Self, ServiceError> {
+    ) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
         let card = passthrough_card::table
@@ -161,7 +161,7 @@ impl PassthroughCard {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, ServiceError> {
+    pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
         let res = diesel::delete(
@@ -174,19 +174,19 @@ impl PassthroughCard {
 
     #[cfg(test)]
     #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, ServiceError> {
+    pub async fn delete_self(&self) -> Result<usize, DataError> {
         PassthroughCard::delete(self.id).await
     }
 
 }
 
 impl InsertablePassthroughCard {
-    pub fn convert_from_card(card: &Card) -> Result<Self, ServiceError> {
+    pub fn convert_from_card(card: &Card) -> Result<Self, DataError> {
         let exp_year = card.exp_year.clone().ok_or(
-            ServiceError::Unexpected(Box::new("Cannot find expiration year"))
+            DataError::Unexpected("Cannot find expiration year".into())
         )?;
         let exp_month = card.exp_month.clone().ok_or(
-            ServiceError::Unexpected(Box::new("Cannot find expiration month"))
+            DataError::Unexpected("Cannot find expiration month".into())
         )?;
         let expiration = expiration_date_from_str_parts(&exp_year, &exp_month)?;
         Ok(InsertablePassthroughCard {
@@ -200,7 +200,7 @@ impl InsertablePassthroughCard {
             is_active: true
         })
     }
-    pub fn convert_from_lithic_card(card: &LithicCard) -> Result<Self, ServiceError> {
+    pub fn convert_from_lithic_card(card: &LithicCard) -> Result<Self, DataError> {
         Ok(InsertablePassthroughCard {
             passthrough_card_status: PassthroughCardStatus::Open,
             public_id: Uuid::new_v4(),

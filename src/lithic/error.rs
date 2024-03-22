@@ -21,9 +21,9 @@ pub enum LithicError {
 impl From<ApiError> for LithicError {
     fn from(value: ApiError) -> Self {
         match value {
-            ApiError::Unauthorized(e) => LithicError::Unauthorized(Box::new(e)),
-            ApiError::NotFound(e) => LithicError::NotFound(Box::new(e)),
-            ApiError::BadRequest(e) => LithicError::Unexpected(Box::new(e)),
+            ApiError::Unauthorized(e) => LithicError::Unauthorized(e),
+            ApiError::NotFound(e) => LithicError::NotFound(e),
+            ApiError::BadRequest(e) => LithicError::Unexpected(e),
             ApiError::Conflict(e) => LithicError::Conflict(e),
             ApiError::InternalServerError(e) => LithicError::Unexpected(e),
             ApiError::Timeout(e) => LithicError::Unexpected(e),

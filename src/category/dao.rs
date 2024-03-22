@@ -36,7 +36,7 @@ impl CategoryDao {
 impl CategoryDaoTrait for CategoryDao {
     #[tracing::instrument(skip(self))]
     async fn get_by_name(self: Arc<Self>, name: &str) -> Result<Category, DataError> {
-        Category::get_by_name(name)?
+        Category::get_by_name(name).await
     }
 }
 

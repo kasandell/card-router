@@ -2,14 +2,14 @@ use actix_web::http::StatusCode;
 use actix_web::ResponseError;
 
 #[derive(thiserror::Error, Debug)]
-pub enum RuleError<'a> {
+pub enum RuleError {
     #[error("No amount provided")]
-    NoAmount(&'a str),
+    NoAmount(#[source] Box<dyn std::error::Error>),
     #[error("Unexpected Error")]
     Unexpected(#[source] Box<dyn std::error::Error>)
 }
 
-impl ResponseError for RuleError {
+impl ResponseError for RuleError<> {
     fn status_code(&self) -> StatusCode {
         match self {
             RuleError::NoAmount(_) => StatusCode::BAD_REQUEST,

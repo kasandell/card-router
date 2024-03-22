@@ -13,21 +13,15 @@ extern crate uuidv7;
 use std::str::FromStr;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-
 use dotenv::dotenv;
-use uuid::Uuid;
 use crate::auth::entity::{Claims, Auth0Config};
-
 use tracing::subscriber::set_global_default;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use tracing_log::LogTracer;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_actix_web::TracingLogger;
-//use opentelemetry::{global::shutdown_tracer_provider, sdk::trace as sdktrace, trace::TraceError};
 use opentelemetry_otlp::WithExportConfig;
-use std::{collections::HashMap, env::set_var};
 use opentelemetry::global;
-use tracing::{error, info, info_span, warn};
 
 
 mod adyen;
@@ -38,7 +32,6 @@ mod lithic;
 mod credit_card_type;
 mod rule;
 mod category;
-mod membership;
 mod ledger;
 mod passthrough_card;
 mod schema;
@@ -48,12 +41,11 @@ mod middleware;
 mod webhooks;
 mod charge;
 mod auth;
-
-#[cfg(test)]
-mod test_helper;
 mod environment;
 mod footprint;
 mod error;
+#[cfg(test)]
+mod test_helper;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {

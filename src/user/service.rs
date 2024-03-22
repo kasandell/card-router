@@ -1,13 +1,14 @@
 use std::sync::Arc;
 use async_trait::async_trait;
+use crate::error::data_error::DataError;
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
-use crate::error::error::ServiceError;
 use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::entity::{User, UserMessage};
+use super::error::UserError;
 
 #[async_trait(?Send)]
 pub trait UserServiceTrait {
-    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<User, ServiceError>;
+    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<User, UserError>;
 }
 
 pub struct UserService {
@@ -39,15 +40,16 @@ impl UserService {
 #[async_trait(?Send)]
 impl UserServiceTrait for UserService {
     #[tracing::instrument(skip(self))]
-    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<User, ServiceError> {
+    async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<User, UserError> {
         let res = self.user_dao.clone().find_by_auth0_id(auth0_user_id).await;
         match res {
             Ok(user) => Ok(user),
             Err(error) => {
-                match &error.error_type {
+                match &error {
                     // not found, can create user
-                    ErrorType::NotFound => {
-                        let footprint_vault_id = self.footprint_service.clone().add_vault_for_user().await?;
+                    DataError::NotFound(_)=> {
+                        let footprint_vault_id = self.footprint_service.clone().add_vault_for_user().await
+                            .map_err(|e| UserError::Unexpected(Box::new(e)))?;
                         return Ok(
                             self.user_dao.clone().create(
                                 &UserMessage {
@@ -55,10 +57,10 @@ impl UserServiceTrait for UserService {
                                     auth0_user_id,
                                     footprint_vault_id: &footprint_vault_id.id
                                 }
-                            ).await?
+                            ).await.map_err(|e| UserError::Unexpected(Box::new(e)))?
                         )
                     }
-                    _ => Err(ServiceError::from(error))
+                    _ => Err(UserError::Unexpected(Box::new(error)))
                 }
             }
         }

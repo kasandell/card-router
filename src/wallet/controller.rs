@@ -6,7 +6,7 @@ use actix_web::{
 };
 use uuid::Uuid;
 
-use crate::error::error::ServiceError;
+use super::error::WalletError;
 use crate::middleware::services::Services;
 use crate::user::entity::User;
 use crate::wallet::service::WalletService;
@@ -25,7 +25,7 @@ async fn register_new_card_attempt(
     user: web::ReqData<User>,
     info: web::Json<request::RegisterAttemptRequest>,
     services: web::Data<Services>
-) -> Result<HttpResponse, ServiceError> {
+) -> Result<HttpResponse, WalletError> {
     let user = user.into_inner();
     let info = info.into_inner();
     let wca = services.wallet_service.clone().register_new_attempt(
@@ -42,7 +42,7 @@ async fn match_card(
     user: web::ReqData<User>,
     info: web::Json<request::MatchRequest>,
     services: web::Data<Services>
-) -> Result<HttpResponse, ServiceError> {
+) -> Result<HttpResponse, WalletError> {
     let user = user.into_inner();
     let info = info.into_inner();
     tracing::info!("{:?}", &info);
@@ -61,7 +61,7 @@ async fn match_card(
 async fn list_cards(
     user: web::ReqData<User>, // should extract from extensions
     services: web::Data<Services>
-) -> Result<HttpResponse, ServiceError> {
+) -> Result<HttpResponse, WalletError> {
     let user = user.into_inner();
     let cards: Vec<DisplayableCardInfo> = services.wallet_service.wallet_dao.clone().find_all_for_user_with_card_info(
         &user

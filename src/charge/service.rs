@@ -87,7 +87,8 @@ impl ChargeService {
         user: &User,
     ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ChargeError> {
         tracing::info!("Starting charge");
-        let metadata = TransactionMetadata::convert(&request)?;
+        let metadata = TransactionMetadata::convert(&request)
+            .map_err(|e| ChargeError::Unexpected(e.into()))?;
         let card = request.card.clone().ok_or(ChargeError::NoCardInRequest)?;
         let token = card.token.clone().ok_or(ChargeError::NoCardInRequest)?;
         tracing::info!("Registering txn");
@@ -128,7 +129,7 @@ impl ChargeService {
                     ).await?;
                     Err(
                         ChargeError::Unexpected(
-                            Box::new("Approved inner charge with no ledger entry, should not be possible".to_string())
+                            "Approved inner charge with no ledger entry, should not be possible".into()
                         )
                     )
                 }

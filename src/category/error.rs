@@ -9,10 +9,10 @@ pub enum CategoryError {
 impl From<DataError> for CategoryError {
     fn from(value: DataError) -> Self {
         match value {
-            DataError::Conflict(e) => CategoryError::Unexpected(Box::new(e)),
-            DataError::NotFound(e) => CategoryError::Unexpected(Box::new(e)),
-            DataError::Format(e) => CategoryError::Unexpected(Box::new(e)),
-            DataError::Unexpected(e) => CategoryError::Unexpected(Box::new(e)),
+            DataError::Conflict(e) => CategoryError::Unexpected(e),
+            DataError::NotFound(e) => CategoryError::Unexpected(e),
+            DataError::Format(e) => CategoryError::Unexpected(e),
+            DataError::Unexpected(e) => CategoryError::Unexpected(e),
         }
     }
 }

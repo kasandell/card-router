@@ -28,10 +28,10 @@ impl ResponseError for WalletError {
 impl From<DataError> for WalletError {
     fn from(value: DataError) -> Self {
         match value {
-            DataError::Conflict(e) => WalletError::Conflict(Box::new(e)),
-            DataError::NotFound(e) => WalletError::NotFound(Box::new(e)),
-            DataError::Format(e) => WalletError::Unexpected(Box::new(e)),
-            DataError::Unexpected(e) => WalletError::Unexpected(Box::new(e))
+            DataError::Conflict(e) => WalletError::Conflict(e),
+            DataError::NotFound(e) => WalletError::NotFound(e),
+            DataError::Format(e) => WalletError::Unexpected(e),
+            DataError::Unexpected(e) => WalletError::Unexpected(e),
         }
     }
 }

@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
 use std::num::ParseIntError;
@@ -48,13 +49,13 @@ impl From<DieselError> for DataError {
                     ClosedConnection,
                  */
                 match kind {
-                    DatabaseErrorKind::UniqueViolation => DataError::Conflict(Box::new(err)),
-                    DatabaseErrorKind::SerializationFailure => DataError::Format(Box::new(err)),
-                    _ => DataError::Unexpected(Box::new(err))
+                    DatabaseErrorKind::UniqueViolation => DataError::Conflict(Box::new(error)),
+                    DatabaseErrorKind::SerializationFailure => DataError::Format(Box::new(error)),
+                    _ => DataError::Unexpected(Box::new(error))
                 }
             },
             DieselError::NotFound => DataError::NotFound(Box::new(error)),
-            err => DataError::Unexpected(Box::new(err))
+            _ => DataError::Unexpected(Box::new(error))
         }
     }
 }

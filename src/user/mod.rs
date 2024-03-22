@@ -7,3 +7,4 @@ pub mod request;
 pub mod service;
 mod response;
 mod entity_tests;
+mod error;

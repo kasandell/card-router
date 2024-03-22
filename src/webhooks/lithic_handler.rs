@@ -2,7 +2,6 @@ use std::sync::Arc;
 use std::time::Instant;
 use crate::adyen::checkout::service::AdyenChargeServiceTrait;
 
-use crate::error::error::ServiceError;
 use crate::charge::service::ChargeService;
 use crate::asa::request::AsaRequest;
 use crate::rule::service::RuleService;
@@ -13,6 +12,7 @@ use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::ledger::service::LedgerServiceTrait;
 use crate::user::dao::{UserDao, UserDaoTrait};
+use super::error::LithicHandlerError;
 
 pub struct LithicHandler {
     pub charge_service: Arc<ChargeService>,
@@ -71,31 +71,25 @@ impl LithicHandler {
         }
     }
     #[tracing::instrument(skip(self))]
-    pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, ServiceError>{
+    pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, LithicHandlerError>{
         // TODO: do a reverse lookup based on the card token to get the user
-        tracing::info!("{:?}", &request);
         tracing::info!("Identifying user by card");
-        let mut start = Instant::now();
-        let card = request.card.clone().ok_or(ServiceError::Format(Box::new("expect card")))?;
-        tracing::info!("card from request took {:?}", start.elapsed());
-        start = Instant::now();
-        let token = card.token.clone().ok_or(ServiceError::Format(Box::new("expect token")))?;
-        tracing::info!("token from request took {:?}", start.elapsed());
-        start = Instant::now();
-        let passthrough_card = self.passthrough_card_dao.clone().get_by_token(&token).await?;
-        tracing::info!("Find card took {:?}", start.elapsed());
-        start = Instant::now();
-        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id).await?;
-        //User::find_by_internal_id(passthrough_card.user_id).await?;
-        tracing::info!("Find user took {:?}", start.elapsed());
-        start = Instant::now();
+        let card = request.card.clone().ok_or(
+            LithicHandlerError::Unexpected("expect card in request".into())
+        )?;
+        let token = card.token.clone().ok_or(
+            LithicHandlerError::Unexpected("expect token on card".into())
+        )?;
+        let passthrough_card = self.passthrough_card_dao.clone().get_by_token(&token).await
+            .map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
+        let user = self.user_dao.find_by_internal_id(passthrough_card.user_id).await
+            .map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
 
         tracing::info!("Getting user cards for userId={}", user.id);
         let cards = self.rule_service.clone().order_user_cards_for_request(
             &request,
             &user
-        ).await?;
-        tracing::info!("Rule engine order cards took {:?}", start.elapsed());
+        ).await.map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
         tracing::info!("Got {} cards for userId={}", cards.len(), user.id);
         tracing::info!("Attempting to charge userId={}", user.id);
 
@@ -104,7 +98,7 @@ impl LithicHandler {
             &cards,
             &passthrough_card,
             &user
-        ).await?;
+        ).await.map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
 
         Ok(
             AsaResponse {

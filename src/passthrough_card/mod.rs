@@ -9,4 +9,4 @@ pub mod response;
 pub mod dao;
 pub mod crypto;
 mod constant_tests;
-mod error;
+pub mod error;

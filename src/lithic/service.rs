@@ -16,6 +16,7 @@ use super::error::LithicError;
 use async_trait::async_trait;
 use base64::Engine;
 use crate::environment::ENVIRONMENT;
+use crate::util::api_call::wrap_api_call;
 
 
 #[mockall::automock]
@@ -96,7 +97,7 @@ impl LithicServiceTrait for LithicService {
         idempotency_key: &'a Uuid,
     ) -> Result<Card, LithicError> {
         Ok(
-            post_cards(&self.configuration.clone(), PostCardsRequest {
+            wrap_api_call(post_cards(&self.configuration.clone(), PostCardsRequest {
                 account_token: None, // might need
                 card_program_token: None,
                 exp_month: None,
@@ -112,7 +113,7 @@ impl LithicServiceTrait for LithicService {
                 shipping_address: None,
                 shipping_method: None,
                 carrier: None,
-            }, None).await?
+            }, None).await)?
         )
     }
 
@@ -161,7 +162,7 @@ impl LithicServiceTrait for LithicService {
         pin: Option<&'a str>
     ) -> Result<Card, LithicError> {
         Ok(
-            patch_card_by_token(
+            wrap_api_call(patch_card_by_token(
                 &self.configuration.clone(),
                 serde_json::Value::String(card_token.to_string()),
                 PatchCardByTokenRequest {
@@ -174,14 +175,14 @@ impl LithicServiceTrait for LithicService {
                     pin: None,
                     digital_card_art_token: None,
                 }
-            ).await?
+            ).await)?
         )
     }
 
     #[tracing::instrument(skip(self))]
     async fn register_webhook(self: Arc<Self>, idempotency_key: &str) -> Result<EventSubscription, LithicError> {
         Ok(
-            create_event_subscription(
+            wrap_api_call(create_event_subscription(
                 &self.configuration.clone(), // TODO: Not sure
                 Some(serde_json::to_value(idempotency_key).expect("should work")),
                 Some(
@@ -192,18 +193,18 @@ impl LithicServiceTrait for LithicService {
                         url: ENVIRONMENT.lithic_webhook_url.clone()
                     }
                 )
-            ).await?
+            ).await)?
         )
     }
 
     #[tracing::instrument(skip(self))]
     async fn deregister_webhook(self: Arc<Self>, event_subscription_token: &str) -> Result<(), LithicError> {
         Ok(
-            delete_event_subscription(
+            wrap_api_call(delete_event_subscription(
                 &self.configuration.clone(),
                 event_subscription_token,
                 None
-            ).await?
+            ).await)?
         )
     }
 }

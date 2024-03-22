@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use actix_web::http::StatusCode;
 use serde_json::Error as SerdeError;
 use std::error::Error as StdErr;
+
 #[derive(thiserror::Error, Debug)]
 pub enum ApiError {
     #[error("Unauthorized")]
@@ -33,10 +34,9 @@ fn api_error_for_status_code(status: StatusCode, error: Box<dyn std::error::Erro
         StatusCode::BAD_REQUEST => ApiError::BadRequest(error),
         StatusCode::NOT_FOUND => ApiError::NotFound(error),
         StatusCode::UNAUTHORIZED => ApiError::Unauthorized(error),
-        StatusCode(_) => ApiError::Unexpected(error)
+        _ => ApiError::Unexpected(error)
     }
 }
-
 
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
@@ -71,31 +71,38 @@ impl From<std::io::Error> for ApiError {
     }
 }
 
-
-impl From<(Option<i32>, dyn StdErr)> for ApiError {
-    fn from(value: Box<(Option<i32>, dyn StdErr)>) -> Self {
-        match value.0 {
-            Some(code) => {
-                let cast = u16::try_from(code);
-                match cast {
-                    Ok(code) => {
-                        match StatusCode::from_u16(code) {
-                            Ok(status_code) => {
-                                api_error_for_status_code(status_code, Box::new(value.1))
-                            }
-                            Err(_) => {
-                                ApiError::Unexpected(Box::new(value.1))
-                            }
-                        }
-                    },
-                    Err(_) => {
-                        ApiError::Unexpected(Box::new(value.1))
-                    }
-                }
-            },
-            None => ApiError::Unexpected(Box::new(value.1))
-        }
+impl From<(StatusCode, Box<dyn std::error::Error>)> for ApiError {
+    fn from(value: (StatusCode, Box<dyn StdErr>)) -> Self {
+        let code = value.0;
+        let error = value.1;
+        api_error_for_status_code(code, error)
+    }
+}
+/*
+impl From<(StatusCode, ErrorWrapper)> for ApiError {
+    fn from(value: (StatusCode, ErrorWrapper)) -> Self {
+        let code = value.0;
+        let error = value.1;
+        api_error_for_status_code(code, Box::new(error))
     }
 }
 
 
+impl From<(StatusCode, ErrorMessage<'_>)> for ApiError {
+    fn from(value: (StatusCode, ErrorMessage<'_>)) -> Self {
+        let code = value.0;
+        let error = value.1;
+        api_error_for_status_code(code, Box::new(error))
+    }
+}
+
+impl From<(StatusCode, String)> for ApiError {
+    fn from(value: (StatusCode, String)) -> Self {
+        let code = value.0;
+        let error = value.1;
+        api_error_for_status_code(code, error.into())
+    }
+}
+
+
+ */

@@ -31,10 +31,10 @@ impl ResponseError for PassthroughCardError {
 impl From<DataError> for PassthroughCardError {
     fn from(value: DataError) -> Self {
         match value {
-            DataError::Conflict(e) => PassthroughCardError::ActiveCardExists(Box::new(e)),
-            DataError::NotFound(e) => PassthroughCardError::CardNotFound(Box::new(e)),
-            DataError::Format(e) => PassthroughCardError::Unexpected(Box::new(e)),
-            DataError::Unexpected(e) => PassthroughCardError::Unexpected(Box::new(e)),
+            DataError::Conflict(e) => PassthroughCardError::ActiveCardExists(e),
+            DataError::NotFound(e) => PassthroughCardError::CardNotFound(e),
+            DataError::Format(e) => PassthroughCardError::Unexpected(e),
+            DataError::Unexpected(e) => PassthroughCardError::Unexpected(e),
         }
     }
 }

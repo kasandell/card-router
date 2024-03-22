@@ -6,7 +6,6 @@ use async_trait::async_trait;
 
 use chrono::Utc;
 
-use crate::error::error::ServiceError;
 use crate::asa::request::AsaRequest;
 use crate::category::dao::{MccMappingDao, MccMappingDaoTrait};
 use crate::category::entity::MccMapping;
@@ -17,7 +16,6 @@ use crate::user::entity::User;
 use crate::util::date::adjust_recurring_to_date;
 use crate::wallet::entity::Wallet;
 
-use super::constant::DayOfMonth;
 use super::entity::Rule;
 
 pub type WalletDetail = (Wallet, CreditCard, CreditCardType, CreditCardIssuer);
@@ -29,7 +27,7 @@ pub struct RuleService {
 #[mockall::automock]
 #[async_trait(?Send)]
 pub trait RuleServiceTrait {
-    async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError>;
+    async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, RuleError>;
 }
 
 
@@ -39,14 +37,15 @@ pub trait RuleServiceTrait {
 impl RuleServiceTrait for RuleService {
 
     #[tracing::instrument(skip_all)]
-    async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, ServiceError> {
+    async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, RuleError> {
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
-        let amount = request.amount.ok_or(RuleError::NoAmount("No amount supplied"))?;
+        let amount = request.amount.ok_or(RuleError::NoAmount("No amount supplied".into()))?;
         // TODO: move this to service level call
-        let cards = Wallet::find_all_for_user_with_card_info(user).await?;
+        let cards = Wallet::find_all_for_user_with_card_info(user)
+            .await.map_err(|e| RuleError::Unexpected(e.into()))?;
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.1.id).collect();
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
         tracing::info!("Using {} rules", rules.len());
@@ -76,7 +75,7 @@ impl RuleService {
 
     // TODO: this lifteime needs to be at class level
     #[tracing::instrument(skip(self))]
-    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, ServiceError> {
+    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletDetail>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
@@ -110,11 +109,14 @@ impl RuleService {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, ServiceError> {
-        let rules = Rule::get_rules_for_card_ids(card_type_ids).await?;
+    pub async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, RuleError> {
+        // TODO: remove direct call
+        let rules = Rule::get_rules_for_card_ids(card_type_ids).await
+            .map_err(|e| RuleError::Unexpected(e.into()))?;
         let Some(merchant) = request.merchant.clone() else { return Ok(Vec::new()); };
         let Some(request_mcc) = merchant.mcc.clone() else { return Ok(Vec::new()); };
-        let mcc_mapping = self.mcc_mapping_dao.clone().get_by_mcc(&request_mcc).await?;
+        let mcc_mapping = self.mcc_mapping_dao.clone().get_by_mcc(&request_mcc).await
+            .map_err(|e| RuleError::Unexpected(e.into()))?;
         let mut filtered_rules: Vec<Rule> = Vec::new();
         for rule in rules.into_iter() {
             if rule.is_valid() && self.clone().filter_rule_for_request(&rule, &request, &mcc_mapping).await {
@@ -147,7 +149,7 @@ impl RuleService {
         if rule.recurring_day_of_month.is_some() {
             tracing::info!("Filtering rule id {} by recurring day of month {:?}", rule.id, rule.recurring_day_of_month.as_ref());
             let Some(day_of_month) = rule.recurring_day_of_month.as_ref() else { return false; };
-            let expected_date = adjust_recurring_to_date(today, &day_of_month);
+            let Ok(expected_date) = adjust_recurring_to_date(today, &day_of_month) else { return false; };
             expected_date == today
         } else if rule.start_date.is_none() && rule.end_date.is_none() && rule.recurring_day_of_month.is_none() {
             tracing::info!("Rule {} has no dates so is always valid", rule.id);

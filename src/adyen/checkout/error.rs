@@ -7,7 +7,7 @@ use thiserror;
 use crate::error::api_error::ApiError;
 
 #[derive(thiserror::Error, Debug)]
-pub enum CheckoutError<'a> {
+pub enum CheckoutError {
     #[error("Unauthorized checkout attempt")]
     UnauthorizedCheckoutAttempt(#[source] Box<dyn std::error::Error>),
     #[error("Duplicate checkout attempts")]
@@ -27,5 +27,11 @@ impl From<ApiError> for CheckoutError {
             ApiError::Timeout(e) => CheckoutError::UnexpectedCheckoutError(e),
             ApiError::Unexpected(e) => CheckoutError::UnexpectedCheckoutError(e),
         }
+    }
+}
+
+impl From<SerdeError> for CheckoutError {
+    fn from(value: SerdeError) -> Self {
+        CheckoutError::UnexpectedCheckoutError(value.into())
     }
 }

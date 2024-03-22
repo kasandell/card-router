@@ -2,7 +2,7 @@ use thiserror;
 use crate::ledger::error::LedgerError;
 
 #[derive(thiserror::Error, Debug)]
-pub enum ChargeError<'a> {
+pub enum ChargeError {
     #[error("No card present to charge in the request")]
     NoCardInRequest,
     #[error("Unexpected charge error")]

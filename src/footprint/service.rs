@@ -21,6 +21,7 @@ use crate::constant::financial_constant;
 use crate::footprint::constant::Constant::{CONTENT_TYPE, PROXY_ACCESS_REASON, PROXY_METHOD, PROXY_URL, TTL};
 use crate::user::entity::User;
 use tokio::time::sleep;
+use crate::util::api_call::wrap_api_call;
 
 
 #[automock]
@@ -61,9 +62,9 @@ impl FootprintServiceTrait for FootprintService {
     #[tracing::instrument(skip(self))]
     async fn add_vault_for_user(self: Arc<Self>) ->  Result<CreateUserVaultResponse, FootprintError> {
         tracing::info!("Creating user vault");
-        Ok(create_user_vault(
+        Ok(wrap_api_call(create_user_vault(
             &self.configuration
-        ).await?)
+        ).await)?)
     }
 
     #[tracing::instrument(skip(self))]
@@ -196,7 +197,7 @@ impl FootprintServiceTrait for FootprintService {
 
          */
 
-        let response = post_vault_proxy_jit(
+        let response = wrap_api_call(post_vault_proxy_jit(
             &self.configuration,
             CONTENT_TYPE,
             PROXY_URL,
@@ -206,7 +207,7 @@ impl FootprintServiceTrait for FootprintService {
             Some(
                 to_value(payment_request)?
             )
-        ).await?;
+        ).await)?;
 
         let payment_response: PaymentResponse = serde_json::from_value(response)?;
         Ok(payment_response)
@@ -215,15 +216,15 @@ impl FootprintServiceTrait for FootprintService {
     #[tracing::instrument(skip(self))]
     async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, FootprintError> {
         Ok(
-            create_client_token(
+            wrap_api_call(create_client_token(
                 &self.configuration,
                 &user.footprint_vault_id,
                 CreateClientTokenRequest {
                     ttl: TTL,
                     scopes: get_scopes_for_request(),
-                    fields: card_request_parts_for_card_id(card_id)?,
+                    fields: card_request_parts_for_card_id(card_id),
                 }
-            ).await?
+            ).await)?
         )
     }
 

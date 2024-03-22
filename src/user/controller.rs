@@ -1,20 +1,19 @@
 use actix_web::{web, get, post, HttpResponse, services};
 use uuid::Uuid;
-use crate::error::error::ServiceError;
 use crate::auth::entity::Claims;
 use crate::middleware::services::Services;
 use crate::user::dao::{UserDao, UserDaoTrait};
 use crate::user::request::CreateUserRequest;
 use crate::user::response::UserResponse;
 use crate::user::service::UserServiceTrait;
-use super::entity::{User, UserMessage};
+use super::error::UserError;
 
 
 #[get("/{user_id}/")]
 async fn find(
     user_id: web::Path<Uuid>,
     services: web::Data<Services>
-) -> Result<HttpResponse, ServiceError> {
+) -> Result<HttpResponse, UserError> {
     let id = user_id.into_inner();
     tracing::info!("Finding user by public id {}", id.clone());
     let user = services.user_dao.clone().find(&id).await?;
@@ -26,7 +25,7 @@ async fn find(
 #[get("/list/")]
 async fn list(
     services: web::Data<Services>
-) -> Result<HttpResponse, ServiceError> {
+) -> Result<HttpResponse, UserError> {
     // This shouldn't even exist
     Ok(HttpResponse::Ok().finish())
     /*
@@ -43,9 +42,11 @@ async fn create(
     request: web::Json<CreateUserRequest>,
     claims: Claims,
     services: web::Data<Services>
-) -> Result<HttpResponse, ServiceError> {
+) -> Result<HttpResponse, UserError> {
     tracing::info!("Get or Creating user");
-    let Some(auth0) = claims.sub else {return Err(ServiceError::Unauthorized(Box::new("unauthorized".to_string())));};
+    let Some(auth0) = claims.sub else {return Err(
+        UserError::Unauthorized("unauthorized".into())
+    );};
     let request = request.into_inner();
     let user = services.user_service.clone().get_or_create(
         &auth0,
