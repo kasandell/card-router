@@ -58,17 +58,17 @@ impl FromRequest for Claims {
     ) -> Self::Future {
         let Some(config) = req.app_data::<Auth0Config>().cloned() else {
             return Box::pin(async move {
-                return Err(AuthError::Unauthorized("Config not found").into());
+                return Err(AuthError::Unauthorized("Config not found".into()).into());
             })
         };
         let extractor = BearerAuth::extract(req);
         Box::pin(async move {
             let credentials = extractor.await.map_err(
-                |_| AuthError::Unauthorized("Can't get credentials")
+                |_| AuthError::Unauthorized("Can't get credentials".into())
             )?;
             let token = credentials.token();
-            let header = decode_header(token).map_err(|_| AuthError::Unauthorized("Can't decode"))?;
-            let kid = header.kid.ok_or_else(||  AuthError::Unauthorized("Can't get KID"))?;
+            let header = decode_header(token).map_err(|_| AuthError::Unauthorized("Can't decode".into()))?;
+            let kid = header.kid.ok_or_else(||  AuthError::Unauthorized("Can't get KID".into()))?;
             let domain = config.domain.as_str();
             let jwks: JwkSet = Client::new()
                 .get(
@@ -77,17 +77,17 @@ impl FromRequest for Claims {
                         .authority(domain)
                         .path_and_query("/.well-known/jwks.json")
                         .build()
-                        .map_err(|_| AuthError::Unauthorized("Can't get well known"))?
+                        .map_err(|_| AuthError::Unauthorized("Can't get well known".into()))?
                 )
                 .send()
-                .await.map_err(|e|  AuthError::Unauthorized("JWKS Not found")
+                .await.map_err(|e|  AuthError::Unauthorized("JWKS Not found".into())
             )?
                 .json()
-                .await.map_err(|_|  AuthError::Unauthorized("Can't deserialize JWKS"))?;
+                .await.map_err(|_|  AuthError::Unauthorized("Can't deserialize JWKS".into()))?;
 
             let jwk = jwks
                 .find(&kid)
-                .ok_or_else(||  AuthError::Unauthorized("Can't find JWK"))?;
+                .ok_or_else(||  AuthError::Unauthorized("Can't find JWK".into()))?;
 
             match jwk.clone().algorithm {
                 AlgorithmParameters::RSA(ref rsa) => {
@@ -100,12 +100,12 @@ impl FromRequest for Claims {
                         .build()
                         .unwrap()]);
                     let key = DecodingKey::from_rsa_components(&rsa.n, &rsa.e)
-                        .map_err(|_|  AuthError::Unauthorized("Can't get decoding key"))?;
+                        .map_err(|_|  AuthError::Unauthorized("Can't get decoding key".into()))?;
                     let token =
-                        decode::<Claims>(token, &key, &validation).map_err(|_|  AuthError::Unauthorized("Can't get claims"))?;
+                        decode::<Claims>(token, &key, &validation).map_err(|_|  AuthError::Unauthorized("Can't get claims".into()))?;
                     Ok(token.claims)
                 }
-                algorithm => Err( AuthError::Unauthorized("Can't decode").into()),
+                algorithm => Err( AuthError::Unauthorized("Can't decode".into()).into()),
             }
         })
     }
