@@ -93,6 +93,7 @@ impl PassthroughCard {
 
     #[tracing::instrument]
     pub async fn get_by_token(token: &str) -> Result<Self, DataError> {
+        tracing::info!("runtime: {:?}", tokio::runtime::Handle::current().id());
         let mut conn = db::connection().await?;
 
         let card = passthrough_card::table

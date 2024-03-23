@@ -1,6 +1,10 @@
 use chrono::Utc;
 use uuid::Uuid;
-use crate::credit_card_type::entity::{CreditCard, CreditCardIssuer, CreditCardType};
+use crate::credit_card_type::model::{
+    CreditCardModel as CreditCard,
+    CreditCardIssuerModel as CreditCardIssuer,
+    CreditCardTypeModel as CreditCardType
+};
 pub fn create_mock_credit_card(
     name: &str,
 ) -> CreditCard {
@@ -11,8 +15,6 @@ pub fn create_mock_credit_card(
         credit_card_type_id: 1,
         credit_card_issuer_id: 1,
         card_image_url: "".to_string(),
-        created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -29,8 +31,6 @@ pub fn create_mock_credit_card_with_args(
         credit_card_type_id: credit_card_type_id,
         credit_card_issuer_id: credit_card_issuer_id,
         card_image_url: "".to_string(),
-        created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -39,8 +39,6 @@ pub fn create_mock_credit_card_issuer(name: &str) -> CreditCardIssuer {
         id: 1,
         public_id: Uuid::new_v4(),
         name: name.to_string(),
-        created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -52,8 +50,6 @@ pub fn create_mock_credit_card_issuer_with_args(
         id: id,
         public_id: Uuid::new_v4(),
         name: name.to_string(),
-        created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -62,8 +58,6 @@ pub fn create_mock_credit_card_type(name: &str) -> CreditCardType {
         id: 1,
         public_id: Uuid::new_v4(),
         name: name.to_string(),
-        created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -72,7 +66,5 @@ pub fn create_mock_credit_card_type_with_args(id: i32, name: &str) -> CreditCard
         id: id,
         public_id: Uuid::new_v4(),
         name: name.to_string(),
-        created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }

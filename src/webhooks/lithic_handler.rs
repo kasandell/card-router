@@ -40,6 +40,7 @@ impl LithicHandler {
     #[tracing::instrument(skip(self))]
     pub async fn handle(self: Arc<Self>, request: AsaRequest) -> Result<AsaResponse, LithicHandlerError>{
         // TODO: do a reverse lookup based on the card token to get the user
+        tracing::warn!("runtime: {:?}, task: {:?}", tokio::runtime::Handle::current().id(), tokio::task::id());
         tracing::info!("Identifying user by card");
         let card = request.card.clone().ok_or(
             LithicHandlerError::Unexpected("expect card in request".into())

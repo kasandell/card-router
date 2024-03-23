@@ -47,6 +47,7 @@ mod error;
 #[cfg(test)]
 mod test_helper;
 mod common;
+mod db;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {
@@ -134,7 +135,7 @@ async fn main() -> std::io::Result<()> {
         create_otlp_tracer().map(|t| tracing_opentelemetry::layer().with_tracer(t));
 
     let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+        .unwrap_or_else(|_| EnvFilter::new("warn"));
     let stdout_log = tracing_subscriber::fmt::layer()
         .with_span_events(FmtSpan::CLOSE)
         .compact();

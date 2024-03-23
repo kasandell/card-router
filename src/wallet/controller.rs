@@ -4,19 +4,15 @@ use actix_web::{
     post,
     HttpResponse,
 };
-use uuid::Uuid;
 
 use super::error::WalletError;
 use crate::middleware::services::Services;
 use crate::user::model::UserModel as User;
 use crate::wallet::service::{WalletService, WalletServiceTrait};
 use crate::wallet::response::DisplayableCardInfo;
-use crate::wallet::response::{WalletAddCardSuccessResponse, WalletCardAttemptResponse};
+use crate::wallet::response::WalletAddCardSuccessResponse;
 use super::{
     request, 
-    entity::{
-        Wallet
-    }
 };
 
 #[post("/register-card-attempt/")]

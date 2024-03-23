@@ -114,7 +114,7 @@ mod tests {
                 )
             );
 
-        let engine = Arc::new(ChargeService::new_with_service(
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(charge_service),
             Arc::new(pc_mock),
             Arc::new(user_mock),

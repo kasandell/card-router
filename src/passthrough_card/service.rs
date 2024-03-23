@@ -62,17 +62,8 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
             &pin_encoded,
             &idempotency_key
         ).await.map_err(|e| PassthroughCardError::IssueCard(e.into()))?;
-        // TODO: ERROR HERE
-        let card = InsertablePassthroughCard {
-            passthrough_card_status: PassthroughCardStatus::Closed,
-            public_id: Default::default(),
-            user_id: 0,
-            token: "".to_string(),
-            expiration: Default::default(),
-            last_four: "".to_string(),
-            passthrough_card_type: PassthroughCardType::Virtual,
-            is_active: false,
-        };
+        let token = lithic_card.token.to_string();
+        let card = InsertablePassthroughCard::try_from((lithic_card, user))?;
         let inserted_card = self.passthrough_card_dao.clone().create(
             card
         ).await;
@@ -82,7 +73,7 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
             }
             Err(e) => {
                 tracing::info!("{:?}", &e);
-                let closed = self.clone().close_lithic_card(&lithic_card.token.to_string()).await;
+                let closed = self.clone().close_lithic_card(&token).await;
                 tracing::info!("Closed card");
                 match closed {
                     Ok(card) => {
@@ -158,6 +149,7 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
 
     #[tracing::instrument(skip(self))]
     async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCardModel, PassthroughCardError> {
+        tracing::warn!("runtime: {:?}, task: {:?}", tokio::runtime::Handle::current().id(), tokio::task::id());
         Ok(self.passthrough_card_dao.clone().get_by_token(token).await?.into())
     }
 

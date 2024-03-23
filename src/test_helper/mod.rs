@@ -16,3 +16,4 @@ pub mod general;
 
 #[cfg(test)]
 pub mod rule;
+mod r#macro;

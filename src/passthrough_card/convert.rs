@@ -4,6 +4,7 @@ use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardTy
 use crate::passthrough_card::entity::InsertablePassthroughCard;
 use crate::passthrough_card::error::PassthroughCardError;
 use crate::passthrough_card::request::LithicCard;
+use crate::user::model::UserModel;
 use crate::util::date::expiration_date_from_str_parts;
 
 impl TryFrom<LithicCard> for InsertablePassthroughCard {
@@ -24,10 +25,12 @@ impl TryFrom<LithicCard> for InsertablePassthroughCard {
     }
 }
 
-impl TryFrom<Card> for InsertablePassthroughCard {
+impl TryFrom<(Card, &UserModel)> for InsertablePassthroughCard {
     type Error = PassthroughCardError;
 
-    fn try_from(card: Card) -> Result<Self, Self::Error> {
+    fn try_from(value: (Card, &UserModel)) -> Result<Self, Self::Error> {
+        let card = value.0;
+        let user = value.1;
         let exp_year = card.exp_year.clone().ok_or(
             PassthroughCardError::Unexpected("Cannot find expiration year".into())
         )?;
@@ -39,7 +42,7 @@ impl TryFrom<Card> for InsertablePassthroughCard {
         Ok(InsertablePassthroughCard {
             passthrough_card_status: PassthroughCardStatus::Open,
             public_id: Uuid::new_v4(),
-            user_id: 0,
+            user_id: user.id,
             token: card.token.to_string(),
             expiration: expiration,
             last_four: card.last_four.clone(),

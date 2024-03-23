@@ -1,7 +1,12 @@
 use chrono::Utc;
 use crate::common::model::TransactionMetadata;
 use crate::ledger::constant::ChargeStatus;
-use crate::ledger::entity::{InnerChargeLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
+use crate::ledger::model::{
+    InnerChargeLedgerModel as InnerChargeLedger,
+    OuterChargeLedgerModel as OuterChargeLedger,
+    RegisteredTransactionModel as RegisteredTransaction,
+    TransactionLedgerModel as TransactionLedger
+};
 
 pub fn create_mock_registered_transaction(
     metadata: &TransactionMetadata
@@ -34,7 +39,6 @@ pub fn create_mock_failed_inner_charge() -> InnerChargeLedger {
         status: ChargeStatus::Fail,
         is_success: None,
         created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -48,7 +52,6 @@ pub fn create_mock_success_inner_charge() -> InnerChargeLedger {
         status: ChargeStatus::Success,
         is_success: Some(true),
         created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -62,7 +65,6 @@ pub fn create_mock_failed_outer_charge() -> OuterChargeLedger {
         status: ChargeStatus::Fail,
         is_success: None,
         created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 
@@ -76,7 +78,6 @@ pub fn create_mock_success_outer_charge() -> OuterChargeLedger {
         status: ChargeStatus::Success,
         is_success: Some(true),
         created_at: Utc::now().naive_utc(),
-        updated_at: Utc::now().naive_utc()
     }
 }
 

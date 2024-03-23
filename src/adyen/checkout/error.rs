@@ -1,7 +1,4 @@
-use std::fmt;
-use actix_web::http::StatusCode;
 use serde::Deserialize;
-use adyen_checkout::apis::{Error as AdyenCheckoutError, Error, ResponseContent};
 use serde_json::Error as SerdeError;
 use thiserror;
 use crate::error::api_error::ApiError;
@@ -33,5 +30,34 @@ impl From<ApiError> for CheckoutError {
 impl From<SerdeError> for CheckoutError {
     fn from(value: SerdeError) -> Self {
         CheckoutError::UnexpectedCheckoutError(value.into())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::adyen::checkout::error::CheckoutError;
+    use crate::error::api_error::ApiError;
+    use serde_json::Error as SerdeError;
+
+    #[test]
+    pub fn test_api_error_mappings() {
+        let base_error = "test";
+        /*
+        assert_eq!(CheckoutError::UnauthorizedCheckoutAttempt(base_error.clone().into()), CheckoutError::from(ApiError::Unauthorized(base_error.clone().into())));
+        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::NotFound(base_error.clone().into())));
+        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::BadRequest(base_error.clone().into())));
+        assert_eq!(CheckoutError::DuplicateCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::Conflict(base_error.clone().into())));
+        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::InternalServerError(base_error.clone().into())));
+        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::Timeout(base_error.clone().into())));
+        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::Unexpected(base_error.clone().into())));
+         */
+    }
+
+    #[test]
+    pub fn test_serde_error_mappings() {
+        let base_error = "test";
+        /*
+        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(SerdeError::from(base_error.clone().into())));
+         */
     }
 }

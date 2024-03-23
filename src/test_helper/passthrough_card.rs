@@ -7,9 +7,8 @@ use lithic_client::models::{
 };
 use uuid::Uuid;
 use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardType};
-use crate::passthrough_card::entity::PassthroughCard;
+use crate::passthrough_card::model::PassthroughCardModel as PassthroughCard;
 use crate::test_helper::constant::{EXP_MONTH, EXP_YEAR, LAST_FOUR};
-use crate::user::entity::User;
 
 pub fn create_mock_passthrough_card() -> PassthroughCard {
     PassthroughCard {
@@ -23,7 +22,6 @@ pub fn create_mock_passthrough_card() -> PassthroughCard {
         last_four: "1234".to_string(),
         passthrough_card_type: PassthroughCardType::Virtual,
         created_at: Default::default(),
-        updated_at: Default::default(),
     }
 }
 

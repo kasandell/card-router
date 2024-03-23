@@ -62,6 +62,7 @@ impl UserServiceTrait for UserService {
 
     #[tracing::instrument(skip(self))]
     async fn find_by_internal_id(&self, id: i32) -> Result<UserModel, UserError> {
+        tracing::warn!("runtime: {:?}, task: {:?}", tokio::runtime::Handle::current().id(), tokio::task::id());
         Ok(self.user_dao.clone().find_by_internal_id(id)
             .await.map_err(|e| UserError::Unexpected(e.into()))?.into())
     }

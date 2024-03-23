@@ -3,12 +3,12 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use crate::environment::ENVIRONMENT;
 use diesel_async::{AsyncConnection, AsyncPgConnection};
 use diesel::{Connection, PgConnection};
+use diesel::prelude::*;
 use diesel_async::pooled_connection::{bb8::{RunError, Pool}, AsyncDieselConnectionManager};
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::CustomizeConnection as SyncCustomizeConnection;
 use bb8::{PooledConnection, CustomizeConnection};
 use tokio::sync::OnceCell;
-
 
 pub type ConnManage = AsyncDieselConnectionManager<AsyncPgConnection>;
 pub type DbConnection<'a> = PooledConnection<'a, ConnManage>;

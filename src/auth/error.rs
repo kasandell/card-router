@@ -19,3 +19,18 @@ impl ResponseError for AuthError {
     }
 
 }
+
+
+#[cfg(test)]
+mod test {
+    use actix_web::ResponseError;
+    use reqwest::StatusCode;
+    use crate::auth::error::AuthError;
+
+    #[test]
+    pub fn test_status_code_for_auth_error() {
+        let base_error = "test";
+        assert_eq!(StatusCode::UNAUTHORIZED, AuthError::Unauthorized(base_error.clone().into()).status_code());
+        assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, AuthError::Unexpected(base_error.clone().into()).status_code());
+    }
+}
