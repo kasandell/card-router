@@ -4,12 +4,15 @@ mod entity_tests {
     use chrono::{Utc, Duration};
     use uuid::Uuid;
     use crate::rule::constant::DayOfMonth;
-    use crate::test_helper::user::create_user;
+    //use crate::test_helper::user::create_user;
+    use actix_web::test;
+    use crate::category::constant::Category;
     use crate::rule::{
         request::CreateRuleRequest,
         entity::Rule,
         constant::RuleStatus
     };
+    /*
     use crate::category::entity::{
         Category,
         InsertableCategory,
@@ -17,26 +20,19 @@ mod entity_tests {
         InsertableMccMapping
     };
 
+     */
+
     // TODO: disabled while we can't insert category in db
-    //#[actix_web::test]
+    #[test]
     async fn test_create_rule_in_db() {
         crate::test_helper::general::init();
-        let user = create_user().await;
         let mcc = "7184";
-        let category = Category::create(
-            &InsertableCategory { name: "Random" }
-        ).await.expect("should create");
-        let mcc_mapping = MccMapping::create(
-            &InsertableMccMapping {
-                mcc_code: mcc,
-                category_id: category.id
-            }
-        ).await.expect("should create");
+
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let rule_to_create = CreateRuleRequest {
             credit_card_id: credit_card_id,
-            rule_category_id: Some(mcc_mapping.category_id),
+            rule_category_id: Some(Category::Airlines.into()),
             points_multiplier: points_multiplier,
             merchant_name: None,
             cashback_percentage_bips: None,
@@ -47,8 +43,8 @@ mod entity_tests {
         let rule = Rule::create(&rule_to_create).await.expect("Should create");
         assert_eq!(credit_card_id, rule.credit_card_id);
         assert!(rule.is_valid());
-        assert_eq!(category.id, rule.rule_category_id.expect("expect rule id"));
-        assert_eq!(mcc_mapping.id, rule.rule_category_id.expect("Expect rule category id"));
+        let category_id: i32 = Category::Airlines.into();
+        assert_eq!(category_id, rule.rule_category_id.expect("expect rule id"));
         assert_eq!(points_multiplier, rule.points_multiplier);
         assert_eq!(RuleStatus::Active, rule.rule_status);
         assert!(rule.merchant_name.is_none());
@@ -56,15 +52,10 @@ mod entity_tests {
         assert!(rule.recurring_day_of_month.is_none());
         assert!(rule.start_date.is_none());
         assert!(rule.end_date.is_none());
-        user.delete_self().await.expect("should delete");
-        Rule::delete(rule.id).await.expect("should delete");
-        mcc_mapping.delete_self().await.expect("should delete");
-        category.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_rule_invalid_start_and_recur() {
-        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -90,9 +81,8 @@ mod entity_tests {
         assert!(rule.end_date.is_none());
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_rule_invalid_start_no_end() {
-        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -115,9 +105,8 @@ mod entity_tests {
         assert!(rule.end_date.is_none());
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_rule_invalid_start_gt_end() {
-        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -142,9 +131,8 @@ mod entity_tests {
         assert_eq!(rule.end_date, end_date);
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_rule_invalid_mcc_merchant_none() {
-        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let rule = Rule {
@@ -165,9 +153,8 @@ mod entity_tests {
         assert!(rule.merchant_name.is_none());
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_rule_invalid_mcc_merchant_both_some() {
-        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let credit_card_id = 1;
         let mcc = "7184";
@@ -190,9 +177,8 @@ mod entity_tests {
         assert_eq!(rule.merchant_name, Some(merchant_name.to_string()));
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_rule_invalid_no_reward() {
-        crate::test_helper::general::init();
         let credit_card_id = 1;
         let mcc = "7184";
         let rule = Rule {
@@ -213,9 +199,8 @@ mod entity_tests {
         assert!(rule.cashback_percentage_bips.is_none());
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_rule_invalid_both_reward() {
-        crate::test_helper::general::init();
         let points_multiplier = Some(2);
         let cashback_percentage_bips = Some(500);
         let credit_card_id = 1;

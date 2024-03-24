@@ -1,22 +1,12 @@
 use std::collections::{hash_map::Entry, HashMap};
-use std::fmt::Formatter;
 use std::sync::Arc;
-use std::time::Instant;
 use async_trait::async_trait;
-
 use chrono::Utc;
-
 use crate::asa::request::AsaRequest;
 use crate::category::service::{CategoryServiceTrait, CategoryService};
 use crate::category::model::MccMappingModel as MccMapping;
-use crate::credit_card_type::model::{
-    CreditCardModel as CreditCard,
-    CreditCardIssuerModel as CreditCardIssuer,
-    CreditCardTypeModel as CreditCardType
-};
 use crate::rule::dao::{RuleDao, RuleDaoTrait};
 use crate::rule::error::RuleError;
-
 use crate::user::model::UserModel as User;
 use crate::util::date::adjust_recurring_to_date;
 use crate::wallet::model::{WalletModel as Wallet, WalletModel};
@@ -73,7 +63,6 @@ impl RuleService {
             rule_dao: Arc::new(RuleDao::new()),
             wallet_service: wallet_service.clone(),
         }
-
     }
 
     // TODO: this lifteime needs to be at class level

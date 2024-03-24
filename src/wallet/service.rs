@@ -43,7 +43,6 @@ pub struct WalletService {
     pub credit_card_service: Arc<dyn CreditCardServiceTrait>,
     pub wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
     pub wallet_dao: Arc<dyn WalletDaoTrait>,
-    pub adyen_service: Arc<dyn AdyenChargeServiceTrait>,
     pub footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
@@ -51,14 +50,12 @@ impl WalletService {
     #[tracing::instrument(skip_all)]
     pub fn new_with_services(
         credit_card_service: Arc<dyn CreditCardServiceTrait>,
-        adyen_service: Arc<dyn AdyenChargeServiceTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
         Self {
             credit_card_service,
             wallet_card_attempt_dao: Arc::new(WalletCardAttemptDao::new()),
             wallet_dao: Arc::new(WalletDao::new()),
-            adyen_service,
             footprint_service
         }
     }

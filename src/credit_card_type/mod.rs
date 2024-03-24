@@ -10,3 +10,4 @@ mod entity;
 mod typedef;
 mod entity_tests;
 mod dao_tests;
+pub mod constant;

@@ -4,7 +4,6 @@ use crate::rule::constant::DayOfMonth;
 #[derive(Debug)]
 pub struct CreateRuleRequest {
     pub credit_card_id: i32,
-    //pub rule_mcc: Option<String>,
     pub rule_category_id: Option<i32>,
     pub merchant_name: Option<String>,
     pub points_multiplier: Option<i32>,

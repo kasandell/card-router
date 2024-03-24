@@ -4,7 +4,7 @@ pub mod request;
 pub mod error;
 mod entity;
 
-//mod entity_tests;
-//mod tests;
+mod entity_tests;
+mod tests;
 mod dao;
-//mod constant_tests;
+mod constant_tests;

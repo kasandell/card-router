@@ -36,12 +36,10 @@ impl Services {
     pub fn new() -> Self {
         // TODO: these might need to be initialized in main
         let lithic_service = Arc::new(LithicService::new());
-        let adyen_service = Arc::new(AdyenChargeService::new());
         let credit_card_service = Arc::new(CreditCardService::new());
         let footprint_service = Arc::new(FakeFootprintService::new());
         let wallet_service = Arc::new(WalletService::new_with_services(
             credit_card_service.clone(),
-            adyen_service.clone(),
             footprint_service.clone()
         ));
         let passthrough_card_service = Arc::new(PassthroughCardService::new());

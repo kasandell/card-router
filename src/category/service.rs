@@ -9,8 +9,8 @@ use crate::category::model::{CategoryModel, MccMappingModel};
 
 
 // TODO: all future services should return only objects exposed in request / response
-#[async_trait(?Send)]
 #[cfg_attr(test, automock)]
+#[async_trait(?Send)]
 pub trait CategoryServiceTrait {
     async fn get_category_by_name(self: Arc<Self>, name: &str) -> Result<CategoryModel, CategoryError>;
     async fn get_mcc_mapping_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMappingModel, CategoryError>;
