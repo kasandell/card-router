@@ -16,6 +16,17 @@ impl From<LedgerError> for ChargeError {
 }
 
 
+#[cfg(test)]
+impl PartialEq for ChargeError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ChargeError::NoCardInRequest, ChargeError::NoCardInRequest)
+                | (ChargeError::Unexpected(_), ChargeError::Unexpected(_)) => true,
+            _ => false
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod test {
@@ -25,11 +36,8 @@ mod test {
     #[test]
     pub fn test_from_ledger_error() {
         let base_error = "test";
-        /*
         assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::UnexpectedLedgerError(base_error.clone().into())));
         assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::DuplicateTransaction(base_error.clone().into())));
-
-         */
     }
 
 }

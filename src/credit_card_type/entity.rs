@@ -9,7 +9,7 @@ use crate::util::db;
 use diesel_async::RunQueryDsl;
 
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable, Clone)]
+#[derive(Queryable, Debug, Identifiable, Selectable, Clone)]
 #[diesel(table_name = credit_card)]
 #[diesel(belongs_to(CreditCardIssuer))]
 #[diesel(belongs_to(CreditCardType))]
@@ -24,7 +24,7 @@ pub struct CreditCard {
     pub updated_at: NaiveDateTime
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable)]
+#[derive(Queryable, Debug, Identifiable, Selectable, Clone)]
 #[diesel(table_name = credit_card_type)]
 pub struct CreditCardType {
     pub id: i32,
@@ -34,7 +34,7 @@ pub struct CreditCardType {
     pub updated_at: NaiveDateTime
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Debug, Identifiable, Selectable)]
+#[derive(Queryable, Debug, Identifiable, Selectable, Clone)]
 #[diesel(table_name = credit_card_issuer)]
 pub struct CreditCardIssuer {
     pub id: i32,

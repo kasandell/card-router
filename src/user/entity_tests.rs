@@ -1,8 +1,11 @@
 #[cfg(test)]
 mod test {
     use uuid::Uuid;
+    use crate::error::data_error::DataError;
     use crate::user::dao::{UserDao, UserDaoTrait};
     use crate::user::entity::{User, UserMessage};
+    use actix_web::test;
+
 
     pub const EMAIL: &str = "test@email.com";
     pub const EMAIL2: &str = "test2@email.com";
@@ -11,8 +14,9 @@ mod test {
     pub const FOOTPRINT_ID: &str = "FOOTPRINT_ID";
     pub const FOOTPRINT_ID2: &str = "FOOTPRINT_ID2";
 
-    #[actix_web::test]
+    #[test]
     async fn test_create() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -27,8 +31,9 @@ mod test {
         user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_create_from_entity() {
+        crate::test_helper::general::init();
         let user = User::create(
             &UserMessage {
                 email: EMAIL,
@@ -42,8 +47,9 @@ mod test {
         user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_create_dupe_email() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -59,12 +65,13 @@ mod test {
                 footprint_vault_id: FOOTPRINT_ID2
             }
         ).await.expect_err("should create error");
-        assert_eq!(dupe_error.error_type, ErrorType::Conflict);
+        assert_eq!(DataError::Conflict("Test".into()), dupe_error);
         user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_create_dupe_footprint() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -80,12 +87,13 @@ mod test {
                 footprint_vault_id: FOOTPRINT_ID
             }
         ).await.expect_err("should create error");
-        assert_eq!(dupe_error.error_type, ErrorType::Conflict);
+        assert_eq!(DataError::Conflict("Test".into()), dupe_error);
         user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_create_dupe_auth0() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -101,12 +109,13 @@ mod test {
                 footprint_vault_id: FOOTPRINT_ID2
             }
         ).await.expect_err("should create error");
-        assert_eq!(dupe_error.error_type, ErrorType::Conflict);
+        assert_eq!(DataError::Conflict("Test".into()), dupe_error);
         user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_uuid_finds() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -118,18 +127,19 @@ mod test {
 
         let found = dao.find(&user.public_id).await.expect("Should find");
         assert_eq!(found, user);
-        user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_uuid_does_not_find() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let found_err = dao.find(&Uuid::new_v4()).await.expect_err("Should not find");
-        assert_eq!(found_err.error_type, ErrorType::NotFound);
+        assert_eq!(DataError::NotFound("Test".into()), found_err);
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_email_finds() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -141,18 +151,19 @@ mod test {
 
         let found = dao.find_by_email(EMAIL).await.expect("Should find");
         assert_eq!(found, user);
-        user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_email_does_not_find() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let found_err = dao.find_by_email(EMAIL).await.expect_err("Should not find");
-        assert_eq!(found_err.error_type, ErrorType::NotFound);
+        assert_eq!(DataError::NotFound("Test".into()), found_err);
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_auth0_finds() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -164,18 +175,19 @@ mod test {
 
         let found = dao.find_by_auth0_id(AUTH0_ID).await.expect("Should find");
         assert_eq!(found, user);
-        user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_auth0_does_not_find() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let found_err = dao.find_by_auth0_id(AUTH0_ID).await.expect_err("Should not find");
-        assert_eq!(found_err.error_type, ErrorType::NotFound);
+        assert_eq!(DataError::NotFound("test".into()), found_err);
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_internal_finds() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let user = dao.create(
             &UserMessage {
@@ -187,20 +199,20 @@ mod test {
 
         let found = dao.find_by_internal_id(user.id).await.expect("Should find");
         assert_eq!(found, user);
-        user.delete_self().await.expect("deletes");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_find_internal_does_not_find() {
+        crate::test_helper::general::init();
         let dao = UserDao::new();
         let found_err = dao.find_by_internal_id(1).await.expect_err("Should not find");
-        assert_eq!(found_err.error_type, ErrorType::NotFound);
+        assert_eq!(DataError::NotFound("test".into()), found_err);
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_update_works() {}
 
-    #[actix_web::test]
+    #[test]
     async fn test_update_fails() {}
 
 }

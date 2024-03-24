@@ -29,3 +29,46 @@ impl From<WalletError> for LithicHandlerError {
         LithicHandlerError::Unexpected(Box::new(value))
     }
 }
+
+#[cfg(test)]
+impl PartialEq for LithicHandlerError {
+    fn eq(&self, other: &Self) -> bool {
+        match(self, other) {
+            (LithicHandlerError::Unexpected(_), LithicHandlerError::Unexpected(_)) => true,
+            _ => false
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use actix_web::http::StatusCode;
+    use actix_web::ResponseError;
+    use crate::passthrough_card::error::PassthroughCardError;
+    use crate::wallet::error::WalletError;
+    use crate::webhooks::error::LithicHandlerError;
+
+    const BASE_ERROR: &str = "test";
+
+    #[test]
+    pub fn test_from_wallet() {
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(WalletError::Unexpected(BASE_ERROR.into())));
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(WalletError::Conflict(BASE_ERROR.into())));
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(WalletError::Unauthorized(BASE_ERROR.into())));
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(WalletError::NotFound(BASE_ERROR.into())));
+    }
+
+    #[test]
+    pub fn test_from_passthrough() {
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(PassthroughCardError::Unexpected(BASE_ERROR.into())));
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(PassthroughCardError::IssueCard(BASE_ERROR.into())));
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(PassthroughCardError::StatusUpdate(BASE_ERROR.into())));
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(PassthroughCardError::ActiveCardExists(BASE_ERROR.into())));
+        assert_eq!(LithicHandlerError::Unexpected(BASE_ERROR.into()), LithicHandlerError::from(PassthroughCardError::CardNotFound(BASE_ERROR.into())));
+    }
+
+    #[test]
+    pub fn test_status_code() {
+        assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, LithicHandlerError::Unexpected(BASE_ERROR.into()).status_code());
+    }
+}

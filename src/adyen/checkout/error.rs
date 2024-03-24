@@ -34,15 +34,27 @@ impl From<SerdeError> for CheckoutError {
 }
 
 #[cfg(test)]
+impl PartialEq for CheckoutError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (CheckoutError::UnauthorizedCheckoutAttempt(_), CheckoutError::UnauthorizedCheckoutAttempt(_))
+            | (CheckoutError::DuplicateCheckoutError(_), CheckoutError::DuplicateCheckoutError(_))
+            | (CheckoutError::UnexpectedCheckoutError(_), CheckoutError::UnexpectedCheckoutError(_)) => true,
+            _ => false
+        }
+    }
+}
+
+#[cfg(test)]
 mod test {
     use crate::adyen::checkout::error::CheckoutError;
     use crate::error::api_error::ApiError;
     use serde_json::Error as SerdeError;
+    use crate::test_helper::error::serde_error;
 
     #[test]
     pub fn test_api_error_mappings() {
         let base_error = "test";
-        /*
         assert_eq!(CheckoutError::UnauthorizedCheckoutAttempt(base_error.clone().into()), CheckoutError::from(ApiError::Unauthorized(base_error.clone().into())));
         assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::NotFound(base_error.clone().into())));
         assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::BadRequest(base_error.clone().into())));
@@ -50,14 +62,11 @@ mod test {
         assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::InternalServerError(base_error.clone().into())));
         assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::Timeout(base_error.clone().into())));
         assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(ApiError::Unexpected(base_error.clone().into())));
-         */
     }
 
     #[test]
     pub fn test_serde_error_mappings() {
         let base_error = "test";
-        /*
-        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(SerdeError::from(base_error.clone().into())));
-         */
+        assert_eq!(CheckoutError::UnexpectedCheckoutError(base_error.clone().into()), CheckoutError::from(serde_error()));
     }
 }

@@ -8,3 +8,5 @@ mod controller;
 mod dao;
 mod entity;
 mod typedef;
+mod entity_tests;
+mod dao_tests;

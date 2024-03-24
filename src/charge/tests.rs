@@ -7,10 +7,13 @@ mod tests {
     use adyen_checkout::models::payment_response::ResultCode;
     use adyen_checkout::models::{PaymentCancelResponse, PaymentResponse};
     use adyen_checkout::models::payment_cancel_response::Status;
-    use crate::user::entity::User;
-    use crate::error::service_error::ServiceError;
+    use mockall::Sequence;
+    use crate::user::model::UserModel as User;
     use crate::charge::{
-        service::ChargeService,
+        service::{
+            ChargeService,
+            ChargeServiceTrait
+        },
         entity::{
             ChargeCardAttemptResult,
             ChargeEngineResult
@@ -19,7 +22,8 @@ mod tests {
     use uuid::Uuid;
     use crate::adyen::checkout::service::*;
     use crate::asa::request::create_example_asa;
-    use crate::passthrough_card::dao::MockPassthroughCardDaoTrait;
+    use crate::footprint::error::FootprintError;
+    use crate::passthrough_card::service::MockPassthroughCardServiceTrait;
     use crate::test_helper::{
         ledger::{
             default_transaction_metadata,
@@ -34,9 +38,10 @@ mod tests {
         wallet::{create_mock_wallet, create_mock_wallet_with_args},
     };
     use crate::ledger::service::MockLedgerServiceTrait;
-    use crate::ledger::entity::RegisteredTransaction;
-    use crate::user::dao::{MockUserDaoTrait, UserDaoTrait};
+    use crate::ledger::model::RegisteredTransactionModel as RegisteredTransactionModel;
+    use crate::user::service::{MockUserServiceTrait, UserServiceTrait};
     use crate::footprint::service::MockFootprintServiceTrait;
+    use crate::schema::inner_charge_ledger::dsl::inner_charge_ledger;
     use crate::test_helper::ledger::create_mock_full_transaction;
 
     const USER_ID: i32 = 1;
@@ -48,28 +53,20 @@ mod tests {
         let wallet = create_mock_wallet();
         let rtx = create_mock_registered_transaction(&metadata);
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
+
         footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
-            .return_const(
-                Err(ServiceError::new(ErrorType::InternalServerError, "test_error"))
-            );
+            .return_once(move |_| Err(FootprintError::Unexpected("error".into())));
+
 
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
-            .return_const(
-                Ok(
-                    create_mock_failed_inner_charge()
-                )
-            );
+            .return_once(move |_, _, _| Ok(create_mock_failed_inner_charge()));
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -91,32 +88,20 @@ mod tests {
         let wallet = create_mock_wallet();
         let rtx = create_mock_registered_transaction(&metadata);
 
-        let charge_service = MockAdyenChargeServiceTrait::new();
-        let user_mock = MockUserDaoTrait::new();
-        let pc_mock = MockPassthroughCardDaoTrait::new();
+        let user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let mut resp = PaymentResponse::new();
         resp.result_code = Some(ResultCode::Authorised);
         footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
-            .return_const(
-                Ok(
-                    resp
-                )
-            );
+            .return_once(move |_| Ok(resp));
 
         ledger_mock.expect_register_successful_inner_charge()
             .times(1)
-            .return_const(
-                Ok(
-                    create_mock_success_inner_charge()
-                )
-            );
+            .return_once(move |_, _, _| Ok(create_mock_success_inner_charge()));
 
         let engine = Arc::new(ChargeService::new_with_services(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -139,9 +124,7 @@ mod tests {
         let rtx = create_mock_registered_transaction(&metadata);
 
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let psp_ref = "abc123".to_string();
@@ -151,11 +134,7 @@ mod tests {
 
         footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
-            .return_const(
-                Ok(
-                    resp
-                )
-            );
+            .return_once(move |_| Ok(resp));
 
         let cancel_resp = PaymentCancelResponse::new(
             "SandellEnterprisesECOM".to_string(),
@@ -163,21 +142,15 @@ mod tests {
             "abd124".to_string(),
             Status::Received
         );
-        charge_service.expect_cancel_transaction()
+        footprint_mock.expect_proxy_adyen_cancel_request()
             .times(1)
-            .return_const(
-                Ok(cancel_resp)
-            );
+            .return_once(move |_| Ok(cancel_resp));
 
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
-            .return_const(
-                Ok(create_mock_failed_inner_charge())
-            );
+            .return_once(move |_, _, _| Ok(create_mock_failed_inner_charge()));
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -199,9 +172,7 @@ mod tests {
         let wallet = create_mock_wallet();
         let rtx = create_mock_registered_transaction(&metadata);
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
         let psp_ref = "abc123".to_string();
@@ -210,23 +181,13 @@ mod tests {
         resp.psp_reference = Some(psp_ref.clone());
         footprint_mock.expect_proxy_adyen_payment_request()
             .times(1)
-            .return_const(
-                Ok(
-                    resp
-                )
-            );
+            .return_once(move |_| Ok(resp));
 
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
-            .return_const(
-                Ok(
-                    create_mock_failed_inner_charge()
-                )
-            );
+            .return_once( move |_, _, _| Ok(create_mock_failed_inner_charge()));
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -239,7 +200,6 @@ mod tests {
             &rtx
         ).await.expect("NO error");
         assert_eq!(ChargeCardAttemptResult::Denied, res);
-
     }
 
 
@@ -259,9 +219,7 @@ mod tests {
         card_1.payment_method_id = payment_method_1.to_string();
         let mut card_2 = create_mock_wallet_with_args( 2, 1, 2 );
         card_2.payment_method_id = payment_method_2.to_string();
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
@@ -281,23 +239,13 @@ mod tests {
                 }
             )
             .times(1)
-            .return_const(
-                Ok(
-                    resp
-                )
-            );
+            .return_once(move|_| Ok(resp));
 
         ledger_mock.expect_register_successful_inner_charge()
             .times(1)
-            .return_const(
-                Ok(
-                    create_mock_success_inner_charge()
-                )
-            );
+            .return_once(move |_, _, _| Ok(create_mock_success_inner_charge()));
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -320,15 +268,11 @@ mod tests {
         metadata.amount_cents = 100;
         rtx.amount_cents = 100;
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -366,9 +310,7 @@ mod tests {
         let mut card_2 = create_mock_wallet_with_args( 2, 1, 2 );
         card_2.payment_method_id = payment_method_2.to_string();
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
@@ -391,11 +333,7 @@ mod tests {
                 }
             )
             .times(1)
-            .return_const(
-                Ok(
-                    resp_1
-                )
-            );
+            .return_once( move |_| Ok(resp_1));
 
         footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
@@ -407,32 +345,18 @@ mod tests {
                 }
             )
             .times(1)
-            .return_const(
-                Ok(
-                    resp_2
-                )
-            );
+            .return_once( move |_| Ok(resp_2));
 
 
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
-            .return_const(
-                Ok(
-                    create_mock_failed_inner_charge()
-                )
-            );
+            .return_once(move |_, _, _| Ok(create_mock_failed_inner_charge()));
 
         ledger_mock.expect_register_successful_inner_charge()
             .times(1)
-            .return_const(
-                Ok(
-                    create_mock_success_inner_charge()
-                )
-            );
+            .return_once(move |_, _, _| Ok(create_mock_success_inner_charge()));
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -472,9 +396,7 @@ mod tests {
         let pc = create_mock_passthrough_card();
 
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
@@ -497,11 +419,7 @@ mod tests {
                 }
             )
             .times(1)
-            .return_const(
-                Ok(
-                    resp_1
-                )
-            );
+            .return_once(move |_| Ok(resp_1));
 
         footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
@@ -513,47 +431,33 @@ mod tests {
                 }
             )
             .times(1)
-            .return_const(
-                Ok(
-                    resp_2
-                )
-            );
-
-        pc_mock.expect_get_by_token()
-            .times(0);
+            .return_once(move |_| Ok(resp_2));
 
         user_mock.expect_find_by_internal_id()
             .times(0);
 
         ledger_mock.expect_register_successful_inner_charge()
             .times(1)
-            .return_const(
-                Ok(create_mock_success_inner_charge())
-            );
+            .return_once(move |_, _, _| Ok(create_mock_success_inner_charge()));
+
         ledger_mock.expect_register_failed_inner_charge()
             .times(1)
-            .return_const(
-                Ok(create_mock_failed_inner_charge())
-            );
+            .return_once(move |_, _, _| Ok(create_mock_failed_inner_charge()));
+
         ledger_mock.expect_register_successful_outer_charge()
             .times(1)
-            .return_const(
-                Ok(create_mock_success_outer_charge())
-            );
+            .return_once(move |_, _, _| Ok(create_mock_success_outer_charge()));
+
         ledger_mock.expect_register_full_transaction()
             .times(1)
-            .return_const(
-                Ok(create_mock_full_transaction())
-            );
+            .return_once(move |_, _, _| Ok(create_mock_full_transaction()));
+
+        let user_txn = create_mock_registered_transaction(&metadata);
         ledger_mock.expect_register_transaction_for_user()
             .times(1)
-            .return_const(
-                Ok(create_mock_registered_transaction(&metadata))
-            );
+            .return_once(move |_, _| Ok(user_txn));
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)
@@ -596,9 +500,7 @@ mod tests {
         let mcc = metadata.mcc.clone();
         let mcc2 = metadata.mcc.clone();
 
-        let mut charge_service = MockAdyenChargeServiceTrait::new();
-        let mut user_mock = MockUserDaoTrait::new();
-        let mut pc_mock = MockPassthroughCardDaoTrait::new();
+        let mut user_mock = MockUserServiceTrait::new();
         let mut ledger_mock = MockLedgerServiceTrait::new();
         let mut footprint_mock = MockFootprintServiceTrait::new();
 
@@ -621,11 +523,7 @@ mod tests {
                 }
             )
             .times(1)
-            .return_const(
-                Ok(
-                    resp_1
-                )
-            );
+            .return_once(move |_| Ok(resp_1));
 
         footprint_mock.expect_proxy_adyen_payment_request()
             .withf(
@@ -637,21 +535,20 @@ mod tests {
                 }
             )
             .times(1)
-            .return_const(
-                Ok(
-                    resp_2
-                )
-            );
+            .return_once( move |_| Ok(resp_2));
+
+        let mut sequence = Sequence::new();
+        ledger_mock.expect_register_failed_inner_charge()
+            .once()
+            .in_sequence(&mut sequence)
+            .return_once(move |_, _, _| Ok(create_mock_failed_inner_charge()));
 
         ledger_mock.expect_register_failed_inner_charge()
-            .times(2)
-            .return_const(
-                Ok(create_mock_failed_inner_charge())
-            );
+            .once()
+            .in_sequence(&mut sequence)
+            .return_once(move |_, _, _| Ok(create_mock_failed_inner_charge()));
 
-        let engine = Arc::new(ChargeService::new_with_service(
-            Arc::new(charge_service),
-            Arc::new(pc_mock),
+        let engine = Arc::new(ChargeService::new_with_services(
             Arc::new(user_mock),
             Arc::new(ledger_mock),
             Arc::new(footprint_mock)

@@ -24,7 +24,7 @@ impl ResponseError for AuthError {
 #[cfg(test)]
 mod test {
     use actix_web::ResponseError;
-    use reqwest::StatusCode;
+    use actix_web::http::StatusCode;
     use crate::auth::error::AuthError;
 
     #[test]

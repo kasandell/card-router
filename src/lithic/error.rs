@@ -31,3 +31,38 @@ impl From<ApiError> for LithicError {
         }
     }
 }
+
+
+#[cfg(test)]
+impl PartialEq for LithicError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (LithicError::NotFound(_), LithicError::NotFound(_))
+            | (LithicError::Conflict(_), LithicError::Conflict(_))
+            | (LithicError::Unauthorized(_), LithicError::Unauthorized(_))
+            | (LithicError::Unexpected(_), LithicError::Unexpected(_))
+            | (LithicError::NotImplemented, LithicError::NotImplemented) => true,
+            _ => false
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::error::api_error::ApiError;
+    use crate::lithic::error::LithicError;
+
+    const BASE_ERROR: &str = "test";
+
+    #[test]
+    pub fn from_api_error() {
+        assert_eq!(LithicError::NotFound(BASE_ERROR.into()), LithicError::from(ApiError::NotFound(BASE_ERROR.into())));
+        assert_eq!(LithicError::Unauthorized(BASE_ERROR.into()), LithicError::from(ApiError::Unauthorized(BASE_ERROR.into())));
+        assert_eq!(LithicError::Conflict(BASE_ERROR.into()), LithicError::from(ApiError::Conflict(BASE_ERROR.into())));
+        assert_eq!(LithicError::Unexpected(BASE_ERROR.into()), LithicError::from(ApiError::BadRequest(BASE_ERROR.into())));
+        assert_eq!(LithicError::Unexpected(BASE_ERROR.into()), LithicError::from(ApiError::InternalServerError(BASE_ERROR.into())));
+        assert_eq!(LithicError::Unexpected(BASE_ERROR.into()), LithicError::from(ApiError::Unexpected(BASE_ERROR.into())));
+        assert_eq!(LithicError::Unexpected(BASE_ERROR.into()), LithicError::from(ApiError::Timeout(BASE_ERROR.into())));
+
+    }
+}

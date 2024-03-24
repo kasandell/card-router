@@ -78,3 +78,44 @@ impl From<(StatusCode, Box<dyn std::error::Error>)> for ApiError {
         api_error_for_status_code(code, error)
     }
 }
+
+#[cfg(test)]
+impl PartialEq for ApiError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ApiError::Unexpected(_), ApiError::Unexpected(_))
+            | (ApiError::BadRequest(_), ApiError::BadRequest(_))
+            | (ApiError::Conflict(_), ApiError::Conflict(_))
+            | (ApiError::InternalServerError(_), ApiError::InternalServerError(_))
+            | (ApiError::Timeout(_), ApiError::Timeout(_))
+            | (ApiError::NotFound(_), ApiError::NotFound(_))
+            | (ApiError::Unauthorized(_), ApiError::Unauthorized(_))
+            => true,
+            _ => false
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use reqwest::StatusCode;
+    use crate::error::api_error::{api_error_for_status_code, ApiError};
+    use crate::test_helper::error::serde_error;
+
+    #[test]
+    pub fn test_from_serde() {
+        let base_error = "test";
+        assert_eq!(ApiError::Unexpected(base_error.into()), ApiError::from(serde_error()));
+    }
+
+    #[test]
+    pub fn test_from_status_code() {
+        let base_error = "test";
+        assert_eq!(ApiError::NotFound(base_error.into()), api_error_for_status_code(StatusCode::NOT_FOUND, base_error.into()));
+        assert_eq!(ApiError::BadRequest(base_error.into()), api_error_for_status_code(StatusCode::BAD_REQUEST, base_error.into()));
+        assert_eq!(ApiError::Unauthorized(base_error.into()), api_error_for_status_code(StatusCode::UNAUTHORIZED, base_error.into()));
+        assert_eq!(ApiError::Unexpected(base_error.into()), api_error_for_status_code(StatusCode::REQUEST_TIMEOUT, base_error.into()));
+        assert_eq!(ApiError::Unexpected(base_error.into()), api_error_for_status_code(StatusCode::GATEWAY_TIMEOUT, base_error.into()));
+        assert_eq!(ApiError::Unexpected(base_error.into()), api_error_for_status_code(StatusCode::INTERNAL_SERVER_ERROR, base_error.into()));
+    }
+}

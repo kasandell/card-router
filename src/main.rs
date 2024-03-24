@@ -47,7 +47,6 @@ mod error;
 #[cfg(test)]
 mod test_helper;
 mod common;
-mod db;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {

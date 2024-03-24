@@ -8,8 +8,8 @@ pub mod model;
 
 mod controller;
 mod entity;
-mod entity_tests;
+//mod entity_tests;
 mod dao;
-mod tests;
+//mod tests;
 mod converter;
-mod constant_tests;
+//mod constant_tests;

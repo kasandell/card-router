@@ -19,3 +19,29 @@ impl From<DataError> for LedgerError {
         }
     }
 }
+
+#[cfg(test)]
+impl PartialEq for LedgerError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (LedgerError::DuplicateTransaction(_), LedgerError::DuplicateTransaction(_))
+            | (LedgerError::UnexpectedLedgerError(_), LedgerError::UnexpectedLedgerError(_)) => true,
+            _ => false
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::error::data_error::DataError;
+    use crate::ledger::error::LedgerError;
+
+    const BASE_ERROR: &str = "test";
+    #[test]
+    pub fn from_data_error() {
+        assert_eq!(LedgerError::DuplicateTransaction(BASE_ERROR.into()), LedgerError::from(DataError::Conflict(BASE_ERROR.into())));
+        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::Format(BASE_ERROR.into())));
+        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::NotFound(BASE_ERROR.into())));
+        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::Unexpected(BASE_ERROR.into())));
+    }
+}

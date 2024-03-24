@@ -39,3 +39,43 @@ impl From<SerdeError> for FootprintError {
         FootprintError::BadRequest("Formatting error".into())
     }
 }
+
+#[cfg(test)]
+impl PartialEq for FootprintError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (FootprintError::Conflict(_), FootprintError::Conflict(_))
+            | (FootprintError::BadRequest(_), FootprintError::BadRequest(_))
+            | (FootprintError::Unexpected(_), FootprintError::Unexpected(_))
+            | (FootprintError::NotFound(_), FootprintError::NotFound(_))
+            | (FootprintError::NotImplemented, FootprintError::NotImplemented)
+            | (FootprintError::Unauthorized(_), FootprintError::Unauthorized(_)) => true,
+            _ => false
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use serde::de::IntoDeserializer;
+    use crate::error::api_error::ApiError;
+    use crate::footprint::error::FootprintError;
+    use crate::test_helper::error::serde_error;
+
+    const BASE_ERROR: &str = "test";
+    #[test]
+    pub fn test_serde_error() {
+        assert_eq!(FootprintError::BadRequest(BASE_ERROR.into()), FootprintError::from(serde_error()));
+    }
+
+    #[test]
+    pub fn test_from_api_error() {
+        assert_eq!(FootprintError::Unauthorized(BASE_ERROR.into()), FootprintError::from(ApiError::Unauthorized(BASE_ERROR.into())));
+        assert_eq!(FootprintError::Conflict(BASE_ERROR.into()), FootprintError::from(ApiError::Conflict(BASE_ERROR.into())));
+        assert_eq!(FootprintError::NotFound(BASE_ERROR.into()), FootprintError::from(ApiError::NotFound(BASE_ERROR.into())));
+        assert_eq!(FootprintError::Unexpected(BASE_ERROR.into()), FootprintError::from(ApiError::BadRequest(BASE_ERROR.into())));
+        assert_eq!(FootprintError::Unexpected(BASE_ERROR.into()), FootprintError::from(ApiError::InternalServerError(BASE_ERROR.into())));
+        assert_eq!(FootprintError::Unexpected(BASE_ERROR.into()), FootprintError::from(ApiError::Timeout(BASE_ERROR.into())));
+        assert_eq!(FootprintError::Unexpected(BASE_ERROR.into()), FootprintError::from(ApiError::Unexpected(BASE_ERROR.into())));
+    }
+}

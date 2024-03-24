@@ -72,3 +72,35 @@ impl From<ParseIntError> for DataError {
     }
 }
 
+
+#[cfg(test)]
+impl PartialEq for DataError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (DataError::Conflict(_), DataError::Conflict(_))
+            | (DataError::NotFound(_), DataError::NotFound(_))
+            | (DataError::Unexpected(_), DataError::Unexpected(_))
+            | (DataError::Format(_), DataError::Format(_)) => true,
+            _ => false
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use crate::error::data_error::DataError;
+    use crate::test_helper::error::serde_error;
+
+    #[test]
+    pub fn test_parse_int() {
+        let base_error = "test";
+        assert_eq!(DataError::Format(base_error.into()), DataError::from("hi".parse::<i32>().expect_err("shouldn't parse")));
+    }
+
+    #[test]
+    pub fn test_serde_error() {
+        let base_error = "test";
+        assert_eq!(DataError::Format(base_error.into()), DataError::from(serde_error()));
+    }
+}
