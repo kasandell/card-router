@@ -8,4 +8,4 @@ pub mod model;
 mod entity;
 //mod entity_tests;
 mod dao;
-//mod constant_tests;
+mod constant_tests;

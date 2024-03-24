@@ -7,12 +7,13 @@ mod entity_tests {
     use crate::ledger::entity::{InsertableInnerChargeLedger, InnerChargeLedger, InsertableOuterChargeLedger, OuterChargeLedger, RegisteredTransaction, InsertableRegisteredTransaction, TransactionLedger, InsertableTransactionLedger};
     use crate::test_helper::wallet::create_test_wallet_in_db;
     use crate::wallet::entity::Wallet;
+    use actix_web::test;
 
     const TEST_MEMO: &str = "Test charge";
     const TEST_MCC: &str = "0000";
     const TEST_AMOUNT: i32 = 10000;
 
-    #[actix_web::test]
+    #[test]
     async fn test_registered_txn_create() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -65,7 +66,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_inner_charge_creates() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -110,7 +111,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_inner_charge_creates_several() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -175,7 +176,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_inner_charge_fails_dupe_success() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -232,7 +233,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_inner_charge_fails_no_registered_txn() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -260,7 +261,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_outer_charge_success() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -304,7 +305,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_outer_charge_fails_no_registered_txn() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -330,7 +331,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_outer_charge_fails_dupe_registered_txn() {
         crate::test_helper::general::init();
         let user = create_user().await;
@@ -386,7 +387,7 @@ mod entity_tests {
         user.delete_self().await.expect("should delete");
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_transaction_ledger_ok() {
         crate::test_helper::general::init();
         let user = create_user().await;
