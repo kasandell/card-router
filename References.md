@@ -4,6 +4,8 @@ https://github.com/serde-rs/serde/issues/1019
 # Coverage 
 ```
 cargo tarpaulin --out Html -- --nocapture --test-threads=1
+
+cargo tarpaulin --engine=llvm --out Html --exclude-files "src/adyen/*" --exclude-files "src/lithic/*" --exclude-files "src/*/constant.rs" --exclude-files "src/*/config.rs" --exclude-files "src/schema.rs" -- --nocapture --test-threads=1
 ```
 
 
@@ -59,13 +61,27 @@ Run with `cargo test -- --nocapture --test-threads=1`
 https://danielbunte.medium.com/a-guide-to-testing-and-mocking-in-rust-a73d022b4075
 
 # Env
-DATABASE_URL=""
-ADYEN_API_KEY=""
-ADYEN_MERCHANT_ACCOUNT_NAME=""
+```
+DATABASE_URL=
+ADYEN_API_KEY_2=
+ADYEN_API_KEY=
+ADYEN_MERCHANT_ACCOUNT_NAME=
 AUTHORITY=
 LITHIC_API_KEY=
 MODE=
 LITHIC_WEBHOOK_URL=
+AUTH0_AUDIENCE=
+AUTH0_DOMAIN=
+CLIENT_ORIGIN_URL=
+FOOTPRINT_VAULT_PROXY_ID=
+FOOTPRINT_SECRET_KEY_2=
+FOOTPRINT_SECRET_KEY=
+OTEL_EXPORTER_OTLP_ENDPOINT=
+OTEL_EXPORTER_OTLP_HEADERS=
+OTEL_EXPORTER_OTLP_PROTOCOL=
+OTEL_SERVICE_NAME=
+RUST_LOG=
+```
 
 # TODOs:
 Restructure data in such a way that we can mock it. ie without having to actually hit db for tests
