@@ -1,11 +1,20 @@
+use std::sync::Arc;
 use chrono::Utc;
+use footprint::models::CreateClientTokenResponse;
+use mockall::predicate::eq;
 use uuid::Uuid;
-use crate::error::data_error::DataError;
+use crate::credit_card_type::service::MockCreditCardServiceTrait;
+use crate::footprint::service::MockFootprintServiceTrait;
+use crate::test_helper::credit_card::create_mock_credit_card;
+use crate::user::model::UserModel;
 use crate::wallet::constant::WalletCardAttemptStatus;
 use crate::wallet::model::{
     WalletModel as Wallet,
     WalletCardAttemptModel as WalletCardAttempt
 };
+use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
+use crate::wallet::response::WalletCardAttemptResponse;
+use crate::wallet::service::{WalletService, WalletServiceTrait};
 
 pub fn create_mock_wallet() -> Wallet {
     Wallet {
@@ -45,4 +54,49 @@ pub fn create_mock_wallet_attempt() -> WalletCardAttempt {
         status: WalletCardAttemptStatus::Pending,
         created_at: Default::default(),
     }
+}
+
+pub async fn create_wallet(user: &UserModel) -> Wallet {
+    let mut footprint_service = MockFootprintServiceTrait::new();
+    let mut credit_card_service = MockCreditCardServiceTrait::new();
+    let cc_name = "Chase Sapphire";
+    let cc_id = Uuid::new_v4();
+
+    let cc = create_mock_credit_card(cc_name);
+    let cc_cloned = cc.clone();
+    credit_card_service.expect_find_by_public_id()
+        .times(1)
+        .with(eq(cc_id))
+        .return_once(
+            move |_| Ok(cc_cloned)
+        );
+
+    footprint_service.expect_create_client_token()
+        .once()
+        .return_once(move |_, _|
+            Ok(CreateClientTokenResponse {
+                expires_at: None,
+                token: "12345".to_string(),
+            })
+        );
+
+    let svc = Arc::new(WalletService::new_with_services(
+        Arc::new(credit_card_service),
+        Arc::new(footprint_service),
+    ));
+    let att = svc.clone().register_new_attempt(
+        &user,
+        &RegisterAttemptRequest {
+            credit_card_type_public_id: cc_id.into(),
+        }
+    ).await.expect("should create attempt");
+    
+    let card = svc.clone().match_card(
+        &user,
+        &MatchRequest {
+            reference_id: att.reference_id.clone(),
+        }
+    ).await.expect("should create card");
+
+    card
 }

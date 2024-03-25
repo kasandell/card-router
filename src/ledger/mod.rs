@@ -6,6 +6,6 @@ pub mod model;
 
 
 mod entity;
-//mod entity_tests;
+mod entity_tests;
 mod dao;
 mod constant_tests;
