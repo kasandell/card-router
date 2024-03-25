@@ -4,6 +4,7 @@ mod tests {
     use std::ops::Add;
     use actix_web::test;
     use std::sync::Arc;
+    use diesel_async::AsyncConnection;
     use footprint::models::CreateClientTokenResponse;
     use mockall::predicate::eq;
     use mockall::Sequence;
@@ -18,6 +19,7 @@ mod tests {
     };
     use crate::test_helper::user::create_user;
     use crate::test_helper::wallet::create_mock_wallet_attempt;
+    use crate::util::db;
     use crate::wallet::constant::WalletCardAttemptStatus;
     use crate::wallet::entity::{UpdateCardAttempt, WalletCardAttempt};
     use crate::wallet::error::WalletError;
@@ -526,10 +528,7 @@ mod tests {
                 status: WalletCardAttemptStatus::Pending,
             }
         ).await.expect("should update");
-        println!("{:?}", &attempt_in_db_pending);
         assert_eq!(attempt_in_db_pending.status, WalletCardAttemptStatus::Pending);
-        let mut attempts_size = WalletCardAttempt::find_all().await.expect("finds");
-        
 
         let error = wallet_engine.clone().match_card(
             &user,
@@ -538,19 +537,9 @@ mod tests {
             }
         ).await.expect_err("Should fail to match twice");
         assert_eq!(WalletError::Conflict("test".into()), error);
-        println!("{:?}", error);
-
-        attempts_size = WalletCardAttempt::find_all().await.expect("finds");
-        /*
-        let attempt_in_db_err = wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        attempt_in_db= wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
             attempt_in_db_pending.expected_reference_id.as_str()
-        ).await.expect_err("Should find in db");
-        println!("{:?}", attempt_in_db_err);
-        let attempts_size = WalletCardAttempt::find_all().await.expect("finds");
-
-         */
-        println!("{:?}", attempts_size.len());
-        /*
+        ).await.expect("Should find in db");
         assert_eq!(created_card.payment_method_id, attempt_in_db.expected_reference_id.to_string());
         assert_eq!(created_card.wallet_card_attempt_id, attempt_in_db.id);
         assert_eq!(attempt_in_db.status, WalletCardAttemptStatus::Pending);
@@ -565,7 +554,5 @@ mod tests {
         assert_eq!(card.payment_method_id, attempt_in_db.expected_reference_id);
         assert_eq!(card.created_at, created_at);
         assert_eq!(card.updated_at, updated_at);
-
-         */
     }
 }

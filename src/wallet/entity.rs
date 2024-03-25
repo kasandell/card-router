@@ -14,7 +14,8 @@ use crate::error::data_error::DataError;
 use crate::user::model::UserModel as User;
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
+use diesel::result::Error;
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use uuidv7;
@@ -136,12 +137,15 @@ impl Wallet {
     pub async fn insert_card<'a>(card: &InsertableCard<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         //let insertable_card = InsertableCard::from(card);
-        let attempts = wallet_card_attempt::table.load::<WalletCardAttempt>(&mut conn).await?;
-        let inserted_card = diesel::insert_into(wallet::table)
-        .values(card)
-        .get_result(&mut conn).await?;
-        Ok(inserted_card)
+        // TODO: I'm literally doing this for the test suite because it bubbles out of the whole test txn
+        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
+            let inserted_card = diesel::insert_into(wallet::table)
+                .values(card)
+                .get_result::<Wallet>(&mut _conn).await?;
+            Ok(inserted_card)
 
+        })).await?;
+        Ok(res)
     }
 
     #[cfg(test)]
@@ -180,19 +184,11 @@ impl WalletCardAttempt {
     pub async fn find_by_reference_id(reference: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
-        let attempts = wallet_card_attempt::table.load::<WalletCardAttempt>(&mut conn).await?;
         let card_attempt = wallet_card_attempt::table
             .filter(wallet_card_attempt::expected_reference_id.eq(reference))
             .first(&mut conn).await?;
 
         Ok(card_attempt)
-    }
-
-    #[tracing::instrument]
-    pub async fn find_all() -> Result<Vec<Self>, DataError> {
-        let mut conn = db::connection().await?;
-        let attempts = wallet_card_attempt::table.load::<WalletCardAttempt>(&mut conn).await?;
-        Ok(attempts)
     }
 
     #[tracing::instrument]
