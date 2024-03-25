@@ -110,20 +110,19 @@ impl WalletServiceTrait for WalletService {
             return Err(WalletError::Unauthorized("User is not owner of attempt".into()))
         }
 
+        let created_card = self.wallet_dao.clone().insert_card(
+            &InsertableCard {
+                user_id: card_attempt.user_id,
+                payment_method_id: &request.reference_id,
+                credit_card_id: card_attempt.credit_card_id,
+                wallet_card_attempt_id: card_attempt.id,
+            }
+        ).await?;
+        tracing::info!("Created card: {}", &created_card.public_id);
         let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {
             status: WalletCardAttemptStatus::Matched
         }).await?;
         tracing::info!("Updated to matched: {}", &update.status);
-
-        let created_card = self.wallet_dao.clone().insert_card(
-            &InsertableCard {
-                user_id: update.user_id,
-                payment_method_id: &request.reference_id,
-                credit_card_id: update.credit_card_id,
-                wallet_card_attempt_id: update.id,
-            }
-        ).await?;
-        tracing::info!("Created card: {}", &created_card.public_id);
         Ok(created_card.into())
     }
 

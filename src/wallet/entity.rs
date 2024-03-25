@@ -136,6 +136,7 @@ impl Wallet {
     pub async fn insert_card<'a>(card: &InsertableCard<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         //let insertable_card = InsertableCard::from(card);
+        let attempts = wallet_card_attempt::table.load::<WalletCardAttempt>(&mut conn).await?;
         let inserted_card = diesel::insert_into(wallet::table)
         .values(card)
         .get_result(&mut conn).await?;
@@ -179,11 +180,19 @@ impl WalletCardAttempt {
     pub async fn find_by_reference_id(reference: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
+        let attempts = wallet_card_attempt::table.load::<WalletCardAttempt>(&mut conn).await?;
         let card_attempt = wallet_card_attempt::table
             .filter(wallet_card_attempt::expected_reference_id.eq(reference))
             .first(&mut conn).await?;
 
         Ok(card_attempt)
+    }
+
+    #[tracing::instrument]
+    pub async fn find_all() -> Result<Vec<Self>, DataError> {
+        let mut conn = db::connection().await?;
+        let attempts = wallet_card_attempt::table.load::<WalletCardAttempt>(&mut conn).await?;
+        Ok(attempts)
     }
 
     #[tracing::instrument]
