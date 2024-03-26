@@ -80,7 +80,6 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
         self: Arc<Self>,
         request: &ChargeCardRequest<'a>
     ) -> Result<PaymentResponse, CheckoutError> {
-        let mut start = Instant::now();
         let body = Some(PaymentRequest {
             account_info: None,
             additional_amount: None,
@@ -179,8 +178,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
             three_ds_authentication_only: None,
             trusted_shopper: None
         });
-        tracing::info!("Creating body took {:?}", start.elapsed());
-        start = Instant::now();
+        let start = Instant::now();
         let resp = wrap_api_call(post_payments(
             &self.configuration.clone(),
             Some(to_value(request.idempotency_key)?),

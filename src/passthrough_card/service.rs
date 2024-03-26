@@ -52,8 +52,10 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
         user: &User,
         pin: &str
     ) -> Result<PassthroughCardModel, PassthroughCardError> {
+        tracing::info!("Issuing card to user_id={}", user.id);
         let has_active = self.clone().user_has_active_card(&user).await?;
         if has_active {
+            tracing::warn!("User has active card already");
             return Err(PassthroughCardError::ActiveCardExists("User has active card already".into()))
         }
         let idempotency_key = Uuid::new_v4();
@@ -61,26 +63,32 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
         let lithic_card = self.lithic_service.clone().create_card(
             &pin_encoded,
             &idempotency_key
-        ).await.map_err(|e| PassthroughCardError::IssueCard(e.into()))?;
+        ).await.map_err(|e| {
+            tracing::error!("Error issuing card in lithic call");
+            PassthroughCardError::IssueCard(e.into())
+        })?;
         let token = lithic_card.token.to_string();
+        tracing::info!("Mapping lithic to internal card");
         let card = InsertablePassthroughCard::try_from((lithic_card, user))?;
+        tracing::info!("Inserting card");
         let inserted_card = self.passthrough_card_dao.clone().create(
             card
         ).await;
         return match inserted_card {
             Ok(card) => {
+                tracing::info!("Succesffully inserted card");
                 return Ok(card.into())
             }
             Err(e) => {
-                tracing::info!("{:?}", &e);
+                tracing::error!("Error inserting card {:?}", &e);
+                tracing::info!("Rolling back lithic card creation");
                 let closed = self.clone().close_lithic_card(&token).await;
-                tracing::info!("Closed card");
                 match closed {
                     Ok(card) => {
                         tracing::info!("Rolled back lithic card successfully");
                     },
                     Err(err) => {
-                        tracing::error!("Unable to close lithic card");
+                        tracing::error!("Unable to close lithic card error={:?}", &err);
                         return Err(err);
                     }
                 }
@@ -111,11 +119,15 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
 
         tracing::info!("Updated card={} for userId={}", card.id, user.id);
 
+        tracing::info!("Transitioning card in lithic");
         let lithic_result = match &status {
             PassthroughCardStatus::Closed => self.clone().close_lithic_card(&updated.token).await,
             PassthroughCardStatus::Open => self.clone().activate_lithic_card(&updated.token).await,
             PassthroughCardStatus::Paused =>  self.clone().pause_lithic_card(&updated.token).await,
-            _ => Err(PassthroughCardError::Unexpected("Invalid state transition from engine".into()))
+            _ => {
+                tracing::error!("Invalid state transition state={}", &status);
+                Err(PassthroughCardError::Unexpected("Invalid state transition from engine".into()))
+            }
         };
 
         return match lithic_result {
@@ -127,7 +139,6 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
                 // we really want to rollback here
                 // will figure out later. for now logs
                 tracing::error!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
-                // TODO: don't call direct
                 let rollback = self.passthrough_card_dao.clone().update_status(
                     updated.id,
                     previous_status
@@ -139,6 +150,7 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
                     },
                     Err(e) => {
                         tracing::error!("Error rolling back internal status");
+                        // TODO: Error out of this branch?
                     }
                 }
                 Err(e)
@@ -149,6 +161,7 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
 
     #[tracing::instrument(skip(self))]
     async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCardModel, PassthroughCardError> {
+        tracing::info!("Getting card by token={}", token);
         Ok(self.passthrough_card_dao.clone().get_by_token(token).await?.into())
     }
 
@@ -179,8 +192,9 @@ impl PassthroughCardService {
         user: &User,
         status: &PassthroughCardStatus
     ) -> Result<PassthroughCard, PassthroughCardError> {
-        // TODO: don't call db direct
+        tracing::info!("Finding cards for user_id={} in status={:?}", user.id, status);
         let cards: Vec<PassthroughCard> = self.passthrough_card_dao.clone().find_cards_for_user(user.id).await?;
+        tracing::info!("Found {} cards to filter", cards.len());
         return match status {
             PassthroughCardStatus::Closed => {
                 self.filter_cards(
@@ -206,7 +220,10 @@ impl PassthroughCardService {
                     }
                 ).cloned()
             },
-            _ => return Err(PassthroughCardError::StatusUpdate("Invalid state transition from engine".into()))
+            _ => {
+                tracing::error!("Invalid state transition found in passthrough card state={:?}", &status);
+                return Err(PassthroughCardError::StatusUpdate("Invalid state transition from engine".into()))
+            }
         }
     }
 
@@ -215,8 +232,10 @@ impl PassthroughCardService {
         self: Arc<Self>,
         user: &User
     ) -> Result<Option<PassthroughCard>, PassthroughCardError> {
+        tracing::info!("Getting active card for user_id={}", user.id);
         let cards: Vec<PassthroughCard> = self.passthrough_card_dao.clone().find_cards_for_user(user.id).await?;
         if cards.len() == 0 {
+            tracing::info!("No cards for user found in any state");
             return Ok(None);
         }
         let result: Vec<&PassthroughCard> = cards
@@ -228,11 +247,15 @@ impl PassthroughCardService {
             })
             .collect();
         if result.len() > 0 {
+            tracing::info!("Found {} cards for user", result.len());
             if let Some(card) = result.get(0) {
+                tracing::info!("Found card in state={:?}", &card.passthrough_card_status);
                 return Ok(Some((**card).clone()))
             }
+            tracing::warn!("Unable to get card in list");
             return Ok(None);
         }
+        tracing::warn!("No active cards found for user");
         Ok(None)
     }
 
@@ -241,6 +264,7 @@ impl PassthroughCardService {
         self: Arc<Self>,
         user: &User
     ) -> Result<bool, PassthroughCardError> {
+        tracing::info!("Checking if user has active card");
         if let Some(card) = self.clone().get_active_card_for_user(&user).await? {
             return Ok(true)
         }
@@ -259,8 +283,11 @@ impl PassthroughCardService {
             //.cloned()
             .collect();
         // TODO: this scares me
-        Ok(v.get(0).ok_or(
-            PassthroughCardError::CardNotFound("card to transition not found".into())
+        Ok(v.get(0).ok_or_else(||
+            {
+                tracing::error!("No card found to transition");
+                return PassthroughCardError::CardNotFound("card to transition not found".into())
+            }
         )?)
     }
 
@@ -269,6 +296,7 @@ impl PassthroughCardService {
         self: Arc<Self>,
         token: &str
     ) -> Result<Card, PassthroughCardError> {
+        tracing::info!("Closing card");
         let closed = self.lithic_service.clone().close_card(token)
             .await.map_err(|e| PassthroughCardError::StatusUpdate(Box::new(e)))?;
         Ok(closed)
@@ -278,6 +306,7 @@ impl PassthroughCardService {
         self: Arc<Self>,
         token: &str
     ) -> Result<Card, PassthroughCardError> {
+        tracing::info!("Pausing card");
         let paused = self.lithic_service.clone().pause_card(token)
             .await.map_err(|e| PassthroughCardError::StatusUpdate(Box::new(e)))?;
         Ok(paused)
@@ -287,6 +316,7 @@ impl PassthroughCardService {
         self: Arc<Self>,
         token: &str
     ) -> Result<Card, PassthroughCardError> {
+        tracing::info!("Activating card");
         let active = self.lithic_service.clone().activate_card(token)
             .await.map_err(|e| PassthroughCardError::StatusUpdate(Box::new(e)))?;
         Ok(active)

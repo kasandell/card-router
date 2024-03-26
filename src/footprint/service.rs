@@ -42,6 +42,7 @@ pub struct FootprintService {
 impl FootprintService {
     #[tracing::instrument]
     pub fn new() -> Self {
+        tracing::info!("initializing footprint service");
         let mut cfg = Configuration::new();
         cfg.basic_auth = Some((env::var(FOOTPRINT_SECRET_KEY).expect("need key"), None));
         cfg.api_key = Some(ApiKey {
@@ -69,6 +70,7 @@ impl FootprintServiceTrait for FootprintService {
 
     #[tracing::instrument(skip(self))]
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError> {
+        tracing::info!("Proxying payment request");
         let number = Some(
             to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::CardNumber))?
         );
@@ -208,13 +210,15 @@ impl FootprintServiceTrait for FootprintService {
                 to_value(payment_request)?
             )
         ).await)?;
-
+        tracing::info!("Successfully proxied request");
         let payment_response: PaymentResponse = serde_json::from_value(response)?;
+        tracing::info!("Successfully deserialized response body");
         Ok(payment_response)
     }
 
     #[tracing::instrument(skip(self))]
     async fn create_client_token(self: Arc<Self>, user: &User, card_id: &str) -> Result<CreateClientTokenResponse, FootprintError> {
+        tracing::info!("Creating client token for user_id={}", &user.id);
         Ok(
             wrap_api_call(create_client_token(
                 &self.configuration,
@@ -252,10 +256,21 @@ impl FootprintServiceTrait for FakeFootprintService {
 
     #[tracing::instrument(skip(self))]
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError> {
-        sleep(Duration::from_millis(rand::thread_rng().gen_range(0..10)));
+        tracing::info!("Proxying payment request");
+        let sleepy_time = rand::thread_rng().gen_range(400..1000);
+        sleep(Duration::from_millis(sleepy_time)).await;
         let mut result_code = ResultCode::Authorised;
-        if rand::thread_rng().gen_range(0..10) > 8 {
-            result_code = ResultCode::Refused
+        let rnd_fail = rand::thread_rng().gen_range(0..10);
+        if rnd_fail > 6 {
+            if rnd_fail > 9 {
+                tracing::warn!("throwing full error {}", rnd_fail);
+                return Err(FootprintError::Unexpected("Unexpected error".into()))
+            } else {
+                tracing::warn!("Refusing charge attempt {}", rnd_fail);
+                result_code = ResultCode::Refused
+            }
+        } else {
+            tracing::warn!("Approving charge attempt");
         }
         Ok(
             PaymentResponse {

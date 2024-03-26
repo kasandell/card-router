@@ -125,7 +125,7 @@ fn parse_otlp_headers_from_env() -> Vec<(String, String)> {
 
 //#[actix_web::main]
 // TODO: why does tokio vs actix cause inner requests not to hang
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 64)]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     LogTracer::init().expect("Failed to set logger");
@@ -134,7 +134,7 @@ async fn main() -> std::io::Result<()> {
         create_otlp_tracer().map(|t| tracing_opentelemetry::layer().with_tracer(t));
 
     let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("warn"));
+        .unwrap_or_else(|_| EnvFilter::new("info"));
     let stdout_log = tracing_subscriber::fmt::layer()
         .with_span_events(FmtSpan::CLOSE)
         .compact();

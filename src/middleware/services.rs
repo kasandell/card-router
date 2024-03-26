@@ -34,6 +34,7 @@ pub struct Services {
 impl Services {
     #[tracing::instrument(skip_all)]
     pub fn new() -> Self {
+        tracing::info!("Instantiating all services");
         // TODO: these might need to be initialized in main
         let lithic_service = Arc::new(LithicService::new());
         let credit_card_service = Arc::new(CreditCardService::new());

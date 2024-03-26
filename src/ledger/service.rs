@@ -83,6 +83,7 @@ impl LedgerServiceTrait for LedgerService {
         metadata: &TransactionMetadata,
     ) -> Result<RegisteredTransactionModel, LedgerError> {
         // TODO: this call takes a long time
+        tracing::info!("Registering transaction for user_id={} amount={}", user.id, &metadata.amount_cents);
         let res = self.dao.clone().insert_registered_transaction(
             &InsertableRegisteredTransaction {
                 user_id: user.id,
@@ -101,6 +102,7 @@ impl LedgerServiceTrait for LedgerService {
         metadata: &TransactionMetadata,
         card: &Wallet
     ) -> Result<InnerChargeLedgerModel, LedgerError> {
+        tracing::info!("Registering failed inner charge for transaction={} card_id={}", &registered_transaction.transaction_id, &card.id);
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
@@ -123,6 +125,7 @@ impl LedgerServiceTrait for LedgerService {
         metadata: &TransactionMetadata,
         card: &Wallet
     ) -> Result<InnerChargeLedgerModel, LedgerError> {
+        tracing::info!("Registering successful inner charge for transaction={} card_id={}", &registered_transaction.transaction_id, &card.id);
         // TODO: should do some verification somewhere that cards are associated with the correct user for the outer txn
         Ok(
             self.dao.clone().insert_inner_charge(
@@ -146,6 +149,7 @@ impl LedgerServiceTrait for LedgerService {
         card: &PassthroughCard
     ) -> Result<OuterChargeLedgerModel, LedgerError> {
         // TODO: do some assertions that everything is associated
+        tracing::info!("Registering failed outer charge for transaction={} passthrough_card_id={}", &registered_transaction.transaction_id, &card.id);
         Ok(
             self.dao.clone().insert_outer_charge(
                 &InsertableOuterChargeLedger {
@@ -168,6 +172,7 @@ impl LedgerServiceTrait for LedgerService {
         card: &PassthroughCard
     ) -> Result<OuterChargeLedgerModel, LedgerError> {
         // TODO: do some assertions that everything is associated
+        tracing::info!("Registering succesful outer charge for transaction={} passthrough_card_id={}", &registered_transaction.transaction_id, &card.id);
         Ok(
             self.dao.clone().insert_outer_charge(
                 &InsertableOuterChargeLedger {
@@ -189,6 +194,7 @@ impl LedgerServiceTrait for LedgerService {
         successful_inner_charge: &InnerChargeLedgerModel,
         successful_outer_charge: &OuterChargeLedgerModel
     ) -> Result<TransactionLedgerModel, LedgerError> {
+        tracing::info!("Registering full transaction for transaction_id={} inner_id={} outer_id={}", &registered_transaction.transaction_id, successful_inner_charge.id, successful_outer_charge.id);
         Ok(
             self.dao.clone().insert_transaction_ledger(
                 &InsertableTransactionLedger {

@@ -45,11 +45,13 @@ impl CategoryService {
 impl CategoryServiceTrait for CategoryService {
     #[tracing::instrument(skip(self))]
     async fn get_category_by_name(self: Arc<Self>, name: &str) -> Result<CategoryModel, CategoryError> {
+        tracing::info!("Getting category by name={}", name);
         Ok(self.category_dao.clone().get_by_name(name).await?.into())
     }
 
     #[tracing::instrument(skip(self))]
     async fn get_mcc_mapping_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMappingModel, CategoryError> {
+        tracing::info!("Getting mcc mapping by mcc={}", mcc);
         Ok(self.mcc_dao.clone().get_by_mcc(mcc).await?.into())
     }
 

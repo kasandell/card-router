@@ -96,6 +96,7 @@ impl LithicServiceTrait for LithicService {
         pin_str: &'a str,
         idempotency_key: &'a Uuid,
     ) -> Result<Card, LithicError> {
+        tracing::info!("Creating card");
         Ok(
             wrap_api_call(post_cards(&self.configuration.clone(), PostCardsRequest {
                 account_token: None, // might need
@@ -122,6 +123,7 @@ impl LithicServiceTrait for LithicService {
         self: Arc<Self>,
         card_token: &str
     ) -> Result<Card, LithicError> {
+        tracing::warn!("Closing card with token={}", card_token);
         self.patch_card(
             card_token,
             Some(&PatchState::Closed),
@@ -135,6 +137,7 @@ impl LithicServiceTrait for LithicService {
         self: Arc<Self>,
         card_token: &str,
     ) -> Result<Card, LithicError> {
+        tracing::info!("Pausing card with token={}", card_token);
         self.patch_card(
             card_token,
             Some(&PatchState::Paused),
@@ -147,6 +150,7 @@ impl LithicServiceTrait for LithicService {
         self: Arc<Self>,
         card_token: &str,
     ) -> Result<Card, LithicError> {
+        tracing::info!("Opening card with token={}", card_token);
         self.patch_card(
             card_token,
             Some(&PatchState::Open),
@@ -161,6 +165,7 @@ impl LithicServiceTrait for LithicService {
         state: Option<&'a PatchState>,
         pin: Option<&'a str>
     ) -> Result<Card, LithicError> {
+        tracing::info!("Patching card={} with state={:?}", card_token, &state);
         Ok(
             wrap_api_call(patch_card_by_token(
                 &self.configuration.clone(),
@@ -181,6 +186,7 @@ impl LithicServiceTrait for LithicService {
 
     #[tracing::instrument(skip(self))]
     async fn register_webhook(self: Arc<Self>, idempotency_key: &str) -> Result<EventSubscription, LithicError> {
+        tracing::warn!("Registering webhook, deprecated");
         Ok(
             wrap_api_call(create_event_subscription(
                 &self.configuration.clone(), // TODO: Not sure
@@ -199,6 +205,7 @@ impl LithicServiceTrait for LithicService {
 
     #[tracing::instrument(skip(self))]
     async fn deregister_webhook(self: Arc<Self>, event_subscription_token: &str) -> Result<(), LithicError> {
+        tracing::warn!("Deregister webhook, deprecated");
         Ok(
             wrap_api_call(delete_event_subscription(
                 &self.configuration.clone(),

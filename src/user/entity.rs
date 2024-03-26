@@ -66,7 +66,6 @@ impl User {
     #[tracing::instrument]
     pub async fn find_by_internal_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-
         let user = users::table
             .filter(users::id.eq(id))
             .first(&mut conn).await?;

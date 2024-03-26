@@ -40,6 +40,7 @@ fn api_error_for_status_code(status: StatusCode, error: Box<dyn std::error::Erro
 
 impl From<SerdeError> for ApiError {
     fn from(error: SerdeError) -> ApiError {
+        tracing::info!("ApiError from serde error={:?}", &error);
         match &error {
             err => ApiError::Unexpected(Box::new(error))
         }
@@ -49,6 +50,7 @@ impl From<SerdeError> for ApiError {
 
 impl From<reqwest::Error> for ApiError {
     fn from(error: reqwest::Error) -> ApiError {
+        tracing::info!("ApiError from reqwest error={:?}", &error);
         if error.is_status() {
             match error.status() {
                 Some(status) => {
@@ -67,6 +69,7 @@ impl From<reqwest::Error> for ApiError {
 
 impl From<std::io::Error> for ApiError {
     fn from(error: std::io::Error) -> ApiError {
+        tracing::info!("ApiError from io error={:?}", &error);
         ApiError::Unexpected(Box::new(error))
     }
 }
@@ -75,6 +78,7 @@ impl From<(StatusCode, Box<dyn std::error::Error>)> for ApiError {
     fn from(value: (StatusCode, Box<dyn StdErr>)) -> Self {
         let code = value.0;
         let error = value.1;
+        tracing::info!("ApiError from status_code={:?}, error={:?}", &code, &error);
         api_error_for_status_code(code, error)
     }
 }

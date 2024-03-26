@@ -30,6 +30,7 @@ impl From<R2D2Error> for DataError {
 impl From<RunError> for DataError {
     fn from(error: RunError) -> DataError {
         // TODO: this can also encapsulate duplicate, etc
+        tracing::info!("DataError from run error={:?}", &error);
         DataError::Unexpected(Box::new(error))
     }
 
@@ -37,6 +38,7 @@ impl From<RunError> for DataError {
 
 impl From<DieselError> for DataError {
     fn from(error: DieselError) -> DataError {
+        tracing::info!("DataError from diesel error={:?}", &error);
         match &error {
             DieselError::DatabaseError(kind, err) => {
                 /*
@@ -62,12 +64,15 @@ impl From<DieselError> for DataError {
 
 impl From<SerdeError> for DataError {
     fn from(error: SerdeError) -> DataError {
+        tracing::info!("DataError from serde error={:?}", &error);
         DataError::Format(Box::new(error))
     }
 }
 
 impl From<ParseIntError> for DataError {
     fn from(error: ParseIntError) -> Self {
+        tracing::info!("DataError from parse int error={:?}", &error);
+
         DataError::Format(Box::new(error))
     }
 }

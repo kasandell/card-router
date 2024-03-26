@@ -73,14 +73,24 @@ impl ChargeServiceTrait for ChargeService {
     ) -> Result<(ChargeEngineResult, Option<TransactionLedger>), ChargeError> {
         tracing::info!("Starting charge");
         let metadata = TransactionMetadata::convert(&request)
-            .map_err(|e| ChargeError::Unexpected(e.into()))?;
-        let card = request.card.clone().ok_or(ChargeError::NoCardInRequest)?;
-        let token = card.token.clone().ok_or(ChargeError::NoCardInRequest)?;
-        tracing::info!("Registering txn");
+            .map_err(|e| {
+                tracing::error!("Error converting to required metadata");
+                ChargeError::Unexpected(e.into())
+            })?;
+        let card = request.card.clone().ok_or_else(|| {
+            tracing::error!("No card found to charge in request");
+            ChargeError::NoCardInRequest
+        })?;
+        let token = card.token.clone().ok_or_else(|| {
+            tracing::error!("No token found for card in request");
+            ChargeError::NoCardInRequest
+        })?;
+        tracing::info!("Registering transaction");
         let rtx = self.ledger_service.clone().register_transaction_for_user(
             &user,
             &metadata
         ).await?;
+        tracing::info!("Registered transaction with public_id={}", &rtx.transaction_id);
 
         tracing::info!("Charging wallet");
         let (charge_result, ledger) = self.clone().charge_wallet(
@@ -89,29 +99,36 @@ impl ChargeServiceTrait for ChargeService {
             &metadata,
             &rtx
         ).await?;
+        tracing::info!("Charged wallet with result={:?}", &charge_result);
         return match charge_result {
             ChargeEngineResult::Approved => {
                 if let Some(ledger) = ledger {
                     // TODO: should verify that this is success
+                    tracing::info!("Charge success, registering in ledger for transaction={}", &rtx.transaction_id);
                     let outer_successs = self.ledger_service.clone().register_successful_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
                     ).await?;
+                    tracing::info!("Registered outer charge with id={}", &outer_successs.id);
 
                     let full_txn = self.ledger_service.clone().register_full_transaction(
                         &rtx,
                         &ledger,
                         &outer_successs
                     ).await?;
+                    tracing::info!("Registered full transaction with id={}", &full_txn.id);
                     Ok((charge_result, Some(full_txn)))
 
                 } else {
+                    tracing::warn!("Outer transaction came in with no registered inner transaction ledgers");
+                    tracing::warn!("Registering failed outer charge for transaction={}", &rtx.transaction_id);
                     self.ledger_service.clone().register_failed_outer_charge(
                         &rtx,
                         &metadata,
                         &passthrough_card
                     ).await?;
+                    // TODO: this might actually just mean user has no cards
                     Err(
                         ChargeError::Unexpected(
                             "Approved inner charge with no ledger entry, should not be possible".into()
@@ -120,6 +137,7 @@ impl ChargeServiceTrait for ChargeService {
                 }
             },
             _ => {
+                tracing::warn!("Registering failed outer charge for transaction={}", &rtx.transaction_id);
                 self.ledger_service.clone().register_failed_outer_charge(
                     &rtx,
                     &metadata,
@@ -156,11 +174,11 @@ impl ChargeService {
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeEngineResult, Option<InnerChargeLedger>), ChargeError> {
         // iterate through the users wallet, charging one and ONLY ONE card
+        tracing::info!("Charging {} cards for user={}", wallet.len(), user.id);
         let idempotency_key = Uuid::new_v4();
         let mut success_charge = false;
         let mut codes : Vec<ChargeCardAttemptResult> = vec![];
         let mut ledger_res: Option<InnerChargeLedger> = None;
-        tracing::info!("Charging {} cards for user={}", wallet.len(), user.id);
         for card in wallet {
             if success_charge { break; }
             if let Ok((charge_attempt, ledger)) = self.clone().charge_card_with_cleanup(
@@ -170,17 +188,17 @@ impl ChargeService {
                 transaction_metadata,
                 registered_transaction
             ).await {
-                tracing::info!("Successfully charged card={} for user={}", card.id, user.id);
+                tracing::info!("Successfully charged card={} for user={}", card.id, &user.id);
                 success_charge = bool::from(&charge_attempt);
                 ledger_res = ledger;
                 codes.push(charge_attempt)
-
             }
         }
         if success_charge {
+            tracing::info!("Successfully charged a card for user={}", &user.id);
             Ok((ChargeEngineResult::Approved, ledger_res))
-
         } else {
+            tracing::warn!("Unable to charge a card for user={}", &user.id);
             Ok((ChargeEngineResult::Denied, ledger_res))
         }
     }
@@ -194,6 +212,7 @@ impl ChargeService {
         transaction_metadata: &TransactionMetadata,
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ChargeError> {
+        tracing::info!("Charging card with cleanup for user={} card={}", &user.id, card.id);
         /*
         let resp = self.charge_service.clone().charge_card_on_file(
             &ChargeCardRequest {
@@ -219,6 +238,7 @@ impl ChargeService {
                 statement: &transaction_metadata.memo
             }
         ).await;
+        tracing::info!("Made request through proxy to charge card");
 
         if let Ok(response) = resp {
             if let Some(code) = response.result_code {
@@ -230,9 +250,8 @@ impl ChargeService {
                         transaction_metadata,
                         card
                     ).await?;
+                    tracing::info!("Registered successful inner charge in ledger for transaction={} id={}", &registered_transaction.transaction_id, &ledger_entry.id);
                     return Ok((ChargeCardAttemptResult::from(code), Some(ledger_entry)));
-
-
                     //add to ledger
                 } else if FINAL_STATE_ERROR_CODES.contains(&code) {
                     tracing::warn!("Error charging card={} for user={}", card.id, user.id);
@@ -241,12 +260,14 @@ impl ChargeService {
                         transaction_metadata,
                         card
                     ).await?;
+                    tracing::warn!("Registered unsuccessful inner charge in ledger for transaction={} id={}", &registered_transaction.transaction_id, &ledger_entry.id);
                     return Ok((ChargeCardAttemptResult::Denied, Some(ledger_entry)));
                     //can safely bypass this branch
                 } else {
                     tracing::warn!("Intermediate state needs cleanup for card={} for user={}", card.id, user.id);
                     if let Some(psp) = response.psp_reference {
                         // TODO: move this call to proxy
+                        tracing::warn!("Cancelling transaction for user={} card={}", &user.id, card.id);
                         let cancel = self.footprint_service.clone().proxy_adyen_cancel_request(
                             &psp
                         ).await;
@@ -257,6 +278,7 @@ impl ChargeService {
                                 transaction_metadata,
                                 card
                             ).await?;
+                            tracing::warn!("Registered unsuccessful inner charge in ledger for transaction={} id={}", &registered_transaction.transaction_id, ledger_entry.id);
                             return Ok((ChargeCardAttemptResult::PartialCancelSucceeded, Some(ledger_entry)));
                             //cancel received. block on webhook response?
                         } else {
@@ -266,18 +288,21 @@ impl ChargeService {
                                 transaction_metadata,
                                 card
                             ).await?;
+                            tracing::error!("Registered unsuccessful inner charge in ledger for transaction={} id={}, requires further cleanup", &registered_transaction.transaction_id, ledger_entry.id);
                             return Ok((ChargeCardAttemptResult::PartialCancelFailed, Some(ledger_entry)));
-                            // error cancelling. figure out what to do
+                            // TODO: error cancelling. figure out what to do
                         }
                     }
                 }
             }
         }
+        tracing::warn!("Fell through charge logic");
         let ledger_entry = self.ledger_service.clone().register_failed_inner_charge(
             registered_transaction,
             transaction_metadata,
             card
         ).await?;
+        tracing::warn!("Registered unsuccessful inner charge in ledger for transaction={} id={}", &registered_transaction.transaction_id, ledger_entry.id);
         Ok((ChargeCardAttemptResult::Denied, Some(ledger_entry)))
     }
 }

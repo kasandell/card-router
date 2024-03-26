@@ -60,13 +60,16 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
 
         Box::pin(async move {
             // TODO: swap this to a call to auth0
+            tracing::info!("Extracting user from request");
             let mut is_logged_in = false;
             let (req, payload)= request.parts_mut();
             let claims = Claims::from_request(req, payload).await?;
+            tracing::info!("Got claims");
             if let Some(auth0_id) = claims.sub {
                 // TODO: can we access services so we don't hit db every time
                 if let Ok(user) = find_by_auth0_id(&auth0_id).await {
                     // insert data into extensions if enabled
+                    tracing::info!("Found user_id={}", &user.id);
                     is_logged_in = true;
                     request.extensions_mut()
                         .insert(user);
@@ -74,10 +77,12 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
             }
 
             if is_logged_in {
+                tracing::info!("Proceeding with call");
                 let res = svc.call(request);
                 // forwarded responses map to "left" body
                 return res.await.map(ServiceResponse::map_into_left_body)
             } else {
+                tracing::warn!("Unable to log in");
                 let response = HttpResponse::Unauthorized().finish().map_into_right_body();
                 let (request, _pl) = request.into_parts();
                 return Ok(ServiceResponse::new(request, response))
