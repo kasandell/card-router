@@ -602,6 +602,7 @@ dependencies = [
  "num",
  "num-derive",
  "num-traits",
+ "num_cpus",
  "openssl",
  "opentelemetry",
  "opentelemetry-otlp",

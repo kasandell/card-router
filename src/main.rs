@@ -49,6 +49,7 @@ mod test_helper;
 mod common;
 
 
+
 async fn manual_hello(claims: Claims) -> impl Responder {
     tracing::info!("{:?}", &claims);
     HttpResponse::Ok().body("Hey there!")
@@ -125,7 +126,7 @@ fn parse_otlp_headers_from_env() -> Vec<(String, String)> {
 
 //#[actix_web::main]
 // TODO: why does tokio vs actix cause inner requests not to hang
-#[tokio::main(flavor = "multi_thread", worker_threads = 64)]
+#[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     LogTracer::init().expect("Failed to set logger");
@@ -144,6 +145,7 @@ async fn main() -> std::io::Result<()> {
         .with(telemetry_layer);
     set_global_default(subscriber).expect("Failed to set subscriber");
     tracing::warn!("TEST");
+    tracing::warn!("{:?}", num_cpus::get_physical());
 
 
     HttpServer::new(move || {
