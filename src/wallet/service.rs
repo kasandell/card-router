@@ -40,10 +40,10 @@ pub trait WalletServiceTrait {
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
 // and make the network call in one
 pub struct WalletService {
-    pub credit_card_service: Arc<dyn CreditCardServiceTrait>,
-    pub wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
-    pub wallet_dao: Arc<dyn WalletDaoTrait>,
-    pub footprint_service: Arc<dyn FootprintServiceTrait>
+    credit_card_service: Arc<dyn CreditCardServiceTrait>,
+    wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
+    wallet_dao: Arc<dyn WalletDaoTrait>,
+    footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
 impl WalletService {

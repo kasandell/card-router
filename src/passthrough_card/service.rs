@@ -40,8 +40,8 @@ pub trait PassthroughCardServiceTrait {
 }
 
 pub struct PassthroughCardService {
-    pub lithic_service: Arc<dyn LithicServiceTrait>,
-    pub passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>
+    lithic_service: Arc<dyn LithicServiceTrait>,
+    passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>
 }
 
 #[async_trait(?Send)]

@@ -21,7 +21,7 @@ mod tests {
     use crate::test_helper::wallet::create_mock_wallet_attempt;
     use crate::util::db;
     use crate::wallet::constant::WalletCardAttemptStatus;
-    use crate::wallet::entity::{UpdateCardAttempt, WalletCardAttempt};
+    use crate::wallet::entity::{UpdateCardAttempt, Wallet, WalletCardAttempt};
     use crate::wallet::error::WalletError;
     use crate::wallet::service::{WalletService, WalletServiceTrait};
     use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
@@ -267,7 +267,7 @@ mod tests {
 
         assert_eq!(created_card.credit_card_id, cc.id);
         assert_eq!(created_card.user_id, user.id);
-        let attempt_in_db = wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        let attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
         ).await.expect("Should find in db");
         assert_eq!(created_card.payment_method_id, attempt_in_db.expected_reference_id.to_string());
@@ -323,13 +323,13 @@ mod tests {
 
         assert_eq!(created_card.credit_card_id, cc.id);
         assert_eq!(created_card.user_id, user.id);
-        let mut attempt_in_db = wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        let mut attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
         ).await.expect("Should find in db");
         assert_eq!(created_card.payment_method_id, attempt_in_db.expected_reference_id.to_string());
         assert_eq!(created_card.wallet_card_attempt_id, attempt_in_db.id);
         assert_eq!(attempt_in_db.status, WalletCardAttemptStatus::Matched);
-        let mut cards_in_db = wallet_engine.wallet_dao.clone().find_all_for_user(
+        let mut cards_in_db = Wallet::find_all_for_user(
             &user
         ).await.expect("should get");
         assert_eq!(1, cards_in_db.len());
@@ -350,13 +350,13 @@ mod tests {
             }
         ).await.expect_err("Should fail to match twice");
         assert_eq!(WalletError::Conflict("test".into()), error);
-        attempt_in_db = wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
         ).await.expect("Should find in db");
         assert_eq!(created_card.payment_method_id, attempt_in_db.expected_reference_id.to_string());
         assert_eq!(created_card.wallet_card_attempt_id, attempt_in_db.id);
         assert_eq!(attempt_in_db.status, WalletCardAttemptStatus::Matched);
-        cards_in_db = wallet_engine.wallet_dao.clone().find_all_for_user(
+        cards_in_db = Wallet::find_all_for_user(
             &user
         ).await.expect("should get");
         assert_eq!(1, cards_in_db.len());
@@ -417,14 +417,14 @@ mod tests {
             }
         ).await.expect_err("should not match");
         assert_eq!(WalletError::Unauthorized("test".into()), wallet_error);
-        let attempt_in_db = wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        let attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
         ).await.expect("Should find in db");
         assert_eq!(attempt_in_db.status, WalletCardAttemptStatus::Pending);
         assert_eq!(attempt_in_db.user_id, user.id);
-        let mut cards_in_db = wallet_engine.wallet_dao.clone().find_all_for_user(&user).await.expect("should get cards");
+        let mut cards_in_db = Wallet::find_all_for_user(&user).await.expect("should get cards");
         assert_eq!(0, cards_in_db.len());
-        cards_in_db = wallet_engine.wallet_dao.clone().find_all_for_user(&user2).await.expect("should get cards");
+        cards_in_db = Wallet::find_all_for_user(&user2).await.expect("should get cards");
         assert_eq!(0, cards_in_db.len());
     }
 
@@ -449,11 +449,11 @@ mod tests {
             }
         ).await.expect_err("should not match");
         assert_eq!(WalletError::NotFound("test".into()), wallet_error);
-        let attempt_error = wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        let attempt_error = WalletCardAttempt::find_by_reference_id(
             attempt_id
         ).await.expect_err("Should not find in db");
         assert_eq!(DataError::NotFound("test".into()), attempt_error);
-        let mut cards_in_db = wallet_engine.wallet_dao.clone().find_all_for_user(&user).await.expect("should get cards");
+        let mut cards_in_db = Wallet::find_all_for_user(&user).await.expect("should get cards");
         assert_eq!(0, cards_in_db.len());
     }
 
@@ -504,13 +504,13 @@ mod tests {
 
         assert_eq!(created_card.credit_card_id, cc.id);
         assert_eq!(created_card.user_id, user.id);
-        let mut attempt_in_db = wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        let mut attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
         ).await.expect("Should find in db");
         assert_eq!(created_card.payment_method_id, attempt_in_db.expected_reference_id.to_string());
         assert_eq!(created_card.wallet_card_attempt_id, attempt_in_db.id);
         assert_eq!(attempt_in_db.status, WalletCardAttemptStatus::Matched);
-        let mut cards_in_db = wallet_engine.wallet_dao.clone().find_all_for_user(
+        let mut cards_in_db = Wallet::find_all_for_user(
             &user
         ).await.expect("should get");
         assert_eq!(1, cards_in_db.len());
@@ -522,7 +522,7 @@ mod tests {
         let created_at = card.created_at;
         let updated_at = card.updated_at;
         
-        let attempt_in_db_pending= wallet_engine.wallet_card_attempt_dao.clone().update_card(
+        let attempt_in_db_pending = WalletCardAttempt::update_card(
             attempt_in_db.id,
             &UpdateCardAttempt {
                 status: WalletCardAttemptStatus::Pending,
@@ -537,13 +537,13 @@ mod tests {
             }
         ).await.expect_err("Should fail to match twice");
         assert_eq!(WalletError::Conflict("test".into()), error);
-        attempt_in_db= wallet_engine.wallet_card_attempt_dao.clone().find_by_reference_id(
+        attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt_in_db_pending.expected_reference_id.as_str()
         ).await.expect("Should find in db");
         assert_eq!(created_card.payment_method_id, attempt_in_db.expected_reference_id.to_string());
         assert_eq!(created_card.wallet_card_attempt_id, attempt_in_db.id);
         assert_eq!(attempt_in_db.status, WalletCardAttemptStatus::Pending);
-        cards_in_db = wallet_engine.wallet_dao.clone().find_all_for_user(
+        cards_in_db = Wallet::find_all_for_user(
             &user
         ).await.expect("should get");
         assert_eq!(1, cards_in_db.len());

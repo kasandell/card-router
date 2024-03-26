@@ -17,8 +17,8 @@ pub trait UserServiceTrait {
 }
 
 pub struct UserService {
-    pub user_dao: Arc<dyn UserDaoTrait>,
-    pub footprint_service: Arc<dyn FootprintServiceTrait>
+    user_dao: Arc<dyn UserDaoTrait>,
+    footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
 impl UserService {

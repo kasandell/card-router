@@ -15,10 +15,10 @@ use crate::user::service::UserServiceTrait;
 use super::error::LithicHandlerError;
 
 pub struct LithicHandler {
-    pub charge_service: Arc<dyn ChargeServiceTrait>,
-    pub rule_service: Arc<dyn RuleServiceTrait>,
-    pub passthrough_card_service: Arc<dyn PassthroughCardServiceTrait>,
-    pub user_service: Arc<dyn UserServiceTrait>,
+    charge_service: Arc<dyn ChargeServiceTrait>,
+    rule_service: Arc<dyn RuleServiceTrait>,
+    passthrough_card_service: Arc<dyn PassthroughCardServiceTrait>,
+    user_service: Arc<dyn UserServiceTrait>,
 }
 
 impl LithicHandler {

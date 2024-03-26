@@ -122,7 +122,7 @@ mod tests {
             .await;
 
         assert!(res.is_ok());
-        let pc_db = engine.passthrough_card_dao.clone().get_by_token(
+        let pc_db = PassthroughCard::get_by_token(
             &created_card.token
         ).await.expect("card is found");
         assert!(pc_db.is_active.unwrap());
@@ -166,10 +166,7 @@ mod tests {
             .await;
 
         assert!(res.is_ok());
-        let pc_db = engine
-            .passthrough_card_dao
-            .clone()
-            .get_by_token(&created_card.token)
+        let pc_db = PassthroughCard::get_by_token(&created_card.token)
             .await
             .expect("should find");
 
@@ -215,10 +212,7 @@ mod tests {
             .await;
 
         assert!(res.is_ok());
-        let mut pc_db = engine
-            .passthrough_card_dao
-            .clone()
-            .get_by_token(&card.token)
+        let mut pc_db = PassthroughCard::get_by_token(&card.token)
             .await
             .expect("finds card");
         assert_eq!(pc_db.passthrough_card_status, PassthroughCardStatus::Closed);
@@ -232,10 +226,7 @@ mod tests {
 
         assert_eq!(PassthroughCardError::CardNotFound("Cannot update from closed".into()), res);
 
-        let mut pc_db = engine
-            .passthrough_card_dao
-            .clone()
-            .get_by_token(&card.token)
+        let mut pc_db = PassthroughCard::get_by_token(&card.token)
             .await
             .expect("finds card");
         assert_eq!(pc_db.passthrough_card_status, PassthroughCardStatus::Closed);
