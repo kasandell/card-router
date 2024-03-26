@@ -46,7 +46,6 @@ impl UserDaoTrait for UserDao {
     }
 
     async fn find_by_internal_id(&self, id: i32) -> Result<User, DataError> {
-        tracing::warn!("runtime: {:?}, task: {:?}", tokio::runtime::Handle::current().id(), tokio::task::id());
         User::find_by_internal_id(id).await
     }
 

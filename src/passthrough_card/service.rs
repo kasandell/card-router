@@ -149,7 +149,6 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
 
     #[tracing::instrument(skip(self))]
     async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCardModel, PassthroughCardError> {
-        tracing::warn!("runtime: {:?}, task: {:?}", tokio::runtime::Handle::current().id(), tokio::task::id());
         Ok(self.passthrough_card_dao.clone().get_by_token(token).await?.into())
     }
 

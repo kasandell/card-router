@@ -34,7 +34,6 @@ impl RuleServiceTrait for RuleService {
 
     #[tracing::instrument(skip_all)]
     async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, RuleError> {
-        tracing::warn!("runtime: {:?}, task: {:?}", tokio::runtime::Handle::current().id(), tokio::task::id());
         /*
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */

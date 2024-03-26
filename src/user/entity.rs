@@ -65,7 +65,6 @@ impl User {
 
     #[tracing::instrument]
     pub async fn find_by_internal_id(id: i32) -> Result<Self, DataError> {
-        tracing::warn!("runtime: {:?}, task: {:?}", tokio::runtime::Handle::current().id(), tokio::task::id());
         let mut conn = db::connection().await?;
 
         let user = users::table
