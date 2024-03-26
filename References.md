@@ -102,3 +102,5 @@ then present adyen screen. this guarantees that we have a wallet card attempt to
 
 openapi anyof is forcing some of the api parameters to show as required even though they're not and we're getting 
 bad request from it. need to make a custom api schema probably.
+
+make all daos and internal services private members of struct

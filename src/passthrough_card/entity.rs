@@ -1,7 +1,7 @@
-use crate::schema::passthrough_card;
+use crate::schema::{passthrough_card, wallet};
 use chrono::{NaiveDate, NaiveDateTime};
 use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::error::data_error::DataError;
@@ -29,7 +29,7 @@ pub struct PassthroughCard {
     pub updated_at: NaiveDateTime
 }
 
-#[derive(Insertable, Debug)]
+#[derive(Insertable, Debug, Clone)]
 #[diesel(table_name = passthrough_card)]
 #[diesel(belongs_to(PassthroughCardType))]
 #[diesel(belongs_to(PassThroughCardStatus))]
@@ -69,16 +69,21 @@ impl PassthroughCard {
     #[tracing::instrument]
     pub async fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-        let update = PassthroughCardStatusUpdate {
-            id: id,
-            passthrough_card_status: status,
-            is_active: status.is_active_for_status()
-        };
-        let update = diesel::update(passthrough_card::table)
-        .filter(passthrough_card::id.eq(id))
-        .set(update)
-        .get_result(&mut conn).await?;
-        Ok(update)
+        // TODO: this is literally so test txn doesn't rollback
+        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
+            let update = PassthroughCardStatusUpdate {
+                id: id,
+                passthrough_card_status: status,
+                is_active: status.is_active_for_status()
+            };
+            let update = diesel::update(passthrough_card::table)
+                .filter(passthrough_card::id.eq(id))
+                .set(update)
+                .get_result(&mut _conn).await?;
+            Ok(update)
+
+        })).await?;
+        Ok(res)
     }
 
     #[tracing::instrument]

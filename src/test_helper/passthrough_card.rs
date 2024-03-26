@@ -29,6 +29,41 @@ pub fn create_mock_passthrough_card() -> PassthroughCard {
     }
 }
 
+pub fn create_mock_lithic_card_with_params(
+    token: &Uuid,
+    exp_month: &str,
+    exp_year: &str,
+    last_four: &str
+) -> InnerCard {
+    Card {
+        created: "".to_string(),
+        cvv: None,
+        funding: Box::new(FundingAccount {
+            account_name: None,
+            created: "".to_string(),
+            last_four: "".to_string(),
+            nickname: None,
+            state: Default::default(),
+            token: Default::default(),
+            r#type: Default::default(),
+        }),
+        exp_month: Some(exp_month.into()),
+        exp_year: Some(exp_year.into()),
+        hostname: None,
+        last_four: last_four.into(),
+        memo: None,
+        pan: None,
+        spend_limit: 0,
+        spend_limit_duration: Default::default(),
+        state: Default::default(),
+        auth_rule_tokens: None,
+        token: token.clone(),
+        r#type: Default::default(),
+        digital_card_art_token: None,
+    }
+
+}
+
 
 
 pub fn create_mock_lithic_card_for_status_update() -> InnerCard {
@@ -114,3 +149,5 @@ pub async fn create_passthrough_card(user: &UserModel) -> PassthroughCardModel {
     ));
     svc.issue_card_to_user(&user, "1234").await.expect("should issue card")
 }
+
+

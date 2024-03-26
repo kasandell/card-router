@@ -1,5 +1,17 @@
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+    use actix_web::test;
+    use chrono::NaiveDate;
+    use lithic_client::models::Card;
+    use uuid::Uuid;
+    use crate::error::data_error::DataError;
+    use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardType};
+    use crate::passthrough_card::entity::{InsertablePassthroughCard, PassthroughCard};
+    use crate::test_helper::passthrough_card::create_mock_lithic_card_with_params;
+    use crate::test_helper::user::create_user;
+    use crate::util::error::UtilityError::DateError;
+
     const TOKEN: &str = "12345";
     const TOKEN2: &str = "12346";
     const TOKEN3: &str = "12347";
@@ -7,25 +19,25 @@ mod tests {
     const EXP_MONTH: &str = "09";
     const EXP_YEAR: &str = "2026";
 
-    #[actix_web::test]
+    #[test]
     async fn test_create_insertable_card() {
+        let token = Uuid::new_v4();
         crate::test_helper::general::init();
         let user = create_user().await;
         let expected_date = NaiveDate::from_ymd_opt(2026, 9, 1).expect("date should create");
-        let card = LithicCard {
-            token: TOKEN.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
-        let insertable_card = InsertablePassthroughCard::convert_from_lithic_card(&card.clone()).expect("should convert");
+        let card = create_mock_lithic_card_with_params(
+            &token,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card = InsertablePassthroughCard::try_from((card, &user)).expect("converts");
         assert_eq!(expected_date, insertable_card.expiration);
-        assert_eq!(TOKEN, insertable_card.token);
+        assert_eq!(token.to_string(), insertable_card.token);
         assert_eq!(PassthroughCardStatus::Open, insertable_card.passthrough_card_status);
         assert_eq!(PassthroughCardType::Virtual, insertable_card.passthrough_card_type);
         let created_card = PassthroughCard::create(
-            card,
-            &user
+            insertable_card
         ).await.expect("card should create");
 
         assert_eq!(user.id, created_card.user_id);
@@ -34,28 +46,26 @@ mod tests {
         assert_eq!(PassthroughCardType::Virtual, created_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, created_card.last_four);
         assert!(created_card.is_active.expect("should be here and true"));
-        created_card.delete_self().await.expect("card should delete");
-        user.delete_self().await.expect("User should delete");
     }
-    #[actix_web::test]
+    #[test]
     async fn test_status_update() {
         crate::test_helper::general::init();
         let user = create_user().await;
         let expected_date = NaiveDate::from_ymd_opt(2026, 9, 1).expect("date should create");
-        let card = LithicCard {
-            token: TOKEN.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
-        let insertable_card = InsertablePassthroughCard::convert_from_lithic_card(&card.clone()).expect("should convert");
+        let token = Uuid::new_v4();
+        let card = create_mock_lithic_card_with_params(
+            &token,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card = InsertablePassthroughCard::try_from((card, &user)).expect("converts");
         assert_eq!(expected_date, insertable_card.expiration);
-        assert_eq!(TOKEN, insertable_card.token);
+        assert_eq!(token.to_string(), insertable_card.token);
         assert_eq!(PassthroughCardStatus::Open, insertable_card.passthrough_card_status);
         assert_eq!(PassthroughCardType::Virtual, insertable_card.passthrough_card_type);
         let created_card = PassthroughCard::create(
-            card,
-            &user
+            insertable_card
         ).await.expect("card should create");
 
         assert_eq!(user.id, created_card.user_id);
@@ -88,27 +98,23 @@ mod tests {
         assert_eq!(PassthroughCardType::Virtual, updated_card.passthrough_card_type);
         assert_eq!(LAST_FOUR, updated_card.last_four);
         assert!(updated_card.is_active.is_none());
-
-        updated_card.delete_self().await.expect("card should delete");
-        user.delete_self().await.expect("User should delete");
     }
 
 
-    #[actix_web::test]
+    #[test]
     async fn test_create_insertable_card_fails_for_same_token() {
         crate::test_helper::general::init();
         let user = create_user().await;
         let expected_date = NaiveDate::from_ymd_opt(2026, 9, 1).expect("date should create");
-        let card = LithicCard {
-            token: TOKEN.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
-        let created_card = PassthroughCard::create(
-            card.clone(),
-            &user
-        ).await.expect("card should create");
+        let token = Uuid::new_v4();
+        let card = create_mock_lithic_card_with_params(
+            &token,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card = InsertablePassthroughCard::try_from((card, &user)).expect("converts");
+        let created_card = PassthroughCard::create(insertable_card.clone()).await.expect("inserts");
         assert_eq!(user.id, created_card.user_id);
         assert_eq!(expected_date, created_card.expiration);
         assert_eq!(PassthroughCardStatus::Open, created_card.passthrough_card_status);
@@ -117,32 +123,28 @@ mod tests {
         assert!(created_card.is_active.expect("should be here and true"));
 
         let created_error = PassthroughCard::create(
-            card.clone(),
-            &user
+            insertable_card.clone(),
         ).await.expect_err("error expected to be thrown here");
 
-        assert_eq!(ErrorType::Conflict, created_error.error_type);
-
-        created_card.delete_self().await.expect("card should delete");
-        user.delete_self().await.expect("User should delete");
+        assert_eq!(DataError::Conflict("test".into()), created_error);
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_create_insertable_card_fails_for_active_already() {
         crate::test_helper::general::init();
         let user = create_user().await;
 
         let expected_date = NaiveDate::from_ymd_opt(2026, 9, 1).expect("date should create");
-        let card = LithicCard {
-            token: TOKEN.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
-        let created_card = PassthroughCard::create(
-            card.clone(),
-            &user
-        ).await.expect("card should create");
+        let token = Uuid::new_v4();
+        let card = create_mock_lithic_card_with_params(
+            &token,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card = InsertablePassthroughCard::try_from((card, &user)).expect("converts");
+        let created_card = PassthroughCard::create(insertable_card.clone()).await.expect("creates");
+
         assert_eq!(user.id, created_card.user_id);
         assert_eq!(expected_date, created_card.expiration);
         assert_eq!(PassthroughCardStatus::Open, created_card.passthrough_card_status);
@@ -150,75 +152,61 @@ mod tests {
         assert_eq!(LAST_FOUR, created_card.last_four);
         assert!(created_card.is_active.expect("should be here and true"));
 
-        let card2 = LithicCard {
-            token: TOKEN2.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
 
-        let created_error = PassthroughCard::create(
-            card.clone(),
-            &user
-        ).await.expect_err("error expected to be thrown here");
+        let token2 = Uuid::new_v4();
+        let card2 = create_mock_lithic_card_with_params(
+            &token2,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card2 = InsertablePassthroughCard::try_from((card2, &user)).expect("converts");
+        let created_error = PassthroughCard::create(insertable_card.clone()).await.expect_err("conflicts");
 
-        assert_eq!(ErrorType::Conflict, created_error.error_type);
-
-        created_card.delete_self().await.expect("card should delete");
-        user.delete_self().await.expect("User should delete");
+        assert_eq!(DataError::Conflict("test".into()), created_error);
     }
 
-    #[actix_web::test]
+    #[test]
     async fn test_list_card_for_user() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let user2 = User::create(
-            &UserMessage {
-                email: "kyle2@gmail.com",
-                auth0_user_id: "12345",
-                footprint_vault_id: "test_vault_2"
-            }
-        ).await.expect("User should be created");
+        let user2 = create_user().await;
         let expected_date = NaiveDate::from_ymd_opt(2026, 9, 1).expect("date should create");
-        let card1 = LithicCard {
-            token: TOKEN.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
 
-        let mut created_card1 = PassthroughCard::create(
-            card1.clone(),
-            &user
-        ).await.expect("card should create");
-        created_card1 = PassthroughCard::update_status(
-            created_card1.id,
-            PassthroughCardStatus::Closed
-        ).await.expect("should be fine");
 
-        let card2 = LithicCard {
-            token: TOKEN2.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
+        let token = Uuid::new_v4();
+        let card = create_mock_lithic_card_with_params(
+            &token,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card = InsertablePassthroughCard::try_from((card, &user)).expect("converts");
+        let created_card1 = PassthroughCard::create(insertable_card).await.expect("creates");
 
-        let created_card2 = PassthroughCard::create(
-            card2.clone(),
-            &user
-        ).await.expect("should create");
+        let updated_card = PassthroughCard::update_status(created_card1.id, PassthroughCardStatus::Closed).await.expect("updates");
+        assert!(updated_card.is_active.is_none());
+        assert_eq!(updated_card.passthrough_card_status, PassthroughCardStatus::Closed);
 
-        let card3 = LithicCard {
-            token: TOKEN3.to_string(),
-            last_four: LAST_FOUR.to_string(),
-            exp_month: EXP_MONTH.to_string(),
-            exp_year: EXP_YEAR.to_string()
-        };
+        let token2 = Uuid::new_v4();
+        let card2 = create_mock_lithic_card_with_params(
+            &token2,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card2 = InsertablePassthroughCard::try_from((card2, &user)).expect("converts");
+        let created_card2 = PassthroughCard::create(insertable_card2).await.expect("creates");
 
-        let created_card3 = PassthroughCard::create(
-            card3.clone(),
-            &user2
-        ).await.expect("should create");
+        let token3 = Uuid::new_v4();
+        let card3 = create_mock_lithic_card_with_params(
+            &token3,
+            &EXP_MONTH,
+            &EXP_YEAR,
+            &LAST_FOUR
+        );
+        let insertable_card3 = InsertablePassthroughCard::try_from((card3, &user2)).expect("converts");
+        let created_card3 = PassthroughCard::create(insertable_card3).await.expect("creates");
 
         let cards = PassthroughCard::find_cards_for_user(user.id).await.expect("no error");
         assert_eq!(
@@ -230,12 +218,5 @@ mod tests {
             )
         );
 
-
-        created_card1.delete_self().await.expect("card should delete");
-        created_card2.delete_self().await.expect("card should delete");
-        created_card3.delete_self().await.expect("card should delete");
-        user2.delete_self().await.expect("user should delete");
-        user.delete_self().await.expect("User should delete");
     }
-
 }
