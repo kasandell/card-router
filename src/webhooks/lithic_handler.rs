@@ -67,6 +67,8 @@ impl LithicHandler {
             &user
         ).await.map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
 
+        tracing::info!("Charged with result={:?}", &result);
+
         Ok(
             AsaResponse {
                 token,

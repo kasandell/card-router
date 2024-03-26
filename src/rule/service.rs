@@ -38,11 +38,20 @@ impl RuleServiceTrait for RuleService {
         Given an asa request, and a user, attempt charging against a user's wallet until we get a successful attempt
          */
         //wallet, credit_card, credit_card_type, credit_card_issuer
-        let amount = request.amount.ok_or(RuleError::NoAmount("No amount supplied".into()))?;
+        tracing::info!("Ordering cards in request for user_id={}", &user.id);
+        let amount = request.amount.ok_or_else(|| {
+            tracing::error!("No amount supplied in the charge request");
+            RuleError::NoAmount("No amount supplied".into())
+        })?;
         // TODO: move this to service level call
+        tracing::info!("Finding all cards for user");
         let cards = self.wallet_service.clone().find_all_for_user(user)
-            .await.map_err(|e| RuleError::Unexpected(e.into()))?;
+            .await.map_err(|e| {
+            tracing::error!("Error retrieving cards for user_id={} error={:?}", &user.id, &e);
+            RuleError::Unexpected(e.into())
+        })?;
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.credit_card_id).collect();
+        tracing::info!("Filtering rulse for cards");
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
         tracing::info!("Using {} rules", rules.len());
         let ordered_cards = self.clone().get_card_order_from_rules(&cards, &rules, amount).await?;
@@ -67,6 +76,7 @@ impl RuleService {
     // TODO: this lifteime needs to be at class level
     #[tracing::instrument(skip(self))]
     pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletModel>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
+        tracing::info!("Getting card order from rules");
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
@@ -85,6 +95,7 @@ impl RuleService {
 
         }
         let mut cards_only: Vec<&WalletModel> = cards.iter().map(|card_detail| card_detail).collect();
+        tracing::info!("Sorting cards");
         cards_only.sort_by(|a_card, b_card| {
             let a_score = match max_reward_map.entry(a_card.credit_card_id) {
                 Entry::Vacant(_) => 0,
@@ -102,8 +113,12 @@ impl RuleService {
     #[tracing::instrument(skip(self))]
     pub async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, RuleError> {
         // TODO: remove direct call
+        tracing::info!("Find and filter rules based on card types");
         let rules = self.rule_dao.clone().get_rules_for_card_ids(card_type_ids).await
-            .map_err(|e| RuleError::Unexpected(e.into()))?;
+            .map_err(|e| {
+                tracing::error!("Error getting rules for card ids error={:?}", &e);
+                RuleError::Unexpected(e.into())
+            })?;
         let Some(merchant) = request.merchant.clone() else { return Ok(Vec::new()); };
         let Some(request_mcc) = merchant.mcc.clone() else { return Ok(Vec::new()); };
         let mcc_mapping = self.category_service.clone().get_mcc_mapping_by_mcc(&request_mcc).await

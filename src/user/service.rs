@@ -52,15 +52,24 @@ impl UserService {
 impl UserServiceTrait for UserService {
     #[tracing::instrument(skip(self))]
     async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<UserModel, UserError> {
+        tracing::info!("Get or create user");
         let res = self.user_dao.clone().find_by_auth0_id(auth0_user_id).await;
+        tracing::info!("Got response from user dao");
         match res {
-            Ok(user) => Ok(user.into()),
+            Ok(user) => {
+                tracing::info!("User exists, returning user_id={}", user.id);
+                Ok(user.into())
+            },
             Err(error) => {
                 match &error {
                     // not found, can create user
                     DataError::NotFound(_)=> {
+                        tracing::info!("User does not exist, creating");
                         let footprint_vault_id = self.footprint_service.clone().add_vault_for_user().await
-                            .map_err(|e| UserError::Unexpected(Box::new(e)))?;
+                            .map_err(|e| {
+                                tracing::error!("Error creating user in footprint error={:?}", &e);
+                                UserError::Unexpected(Box::new(e))
+                            })?;
                         return Ok(
                             self.user_dao.clone().create(
                                 &UserMessage {
@@ -68,10 +77,16 @@ impl UserServiceTrait for UserService {
                                     auth0_user_id,
                                     footprint_vault_id: &footprint_vault_id.id
                                 }
-                            ).await.map_err(|e| UserError::Unexpected(Box::new(e)))?.into()
+                            ).await.map_err(|e| {
+                                tracing::error!("Error creating user in database error={:?}", &e);
+                                UserError::Unexpected(Box::new(e))
+                            })?.into()
                         )
                     }
-                    _ => Err(UserError::Unexpected(Box::new(error)))
+                    _ => {
+                        tracing::error!("Unexpected error creating user error={:?}", &error);
+                        Err(UserError::Unexpected(Box::new(error)))
+                    }
                 }
             }
         }
@@ -79,7 +94,11 @@ impl UserServiceTrait for UserService {
 
     #[tracing::instrument(skip(self))]
     async fn find_by_internal_id(&self, id: i32) -> Result<UserModel, UserError> {
+        tracing::info!("Finding user by id={}", id);
         Ok(self.user_dao.clone().find_by_internal_id(id)
-            .await.map_err(|e| UserError::Unexpected(e.into()))?.into())
+            .await.map_err(|e| {
+            tracing::info!("Error finding user by id={} error={:?}", id, &e);
+            UserError::Unexpected(e.into())
+        })?.into())
     }
 }

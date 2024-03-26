@@ -70,8 +70,13 @@ impl WalletServiceTrait for WalletService {
         user: &User,
         request: &RegisterAttemptRequest
     ) -> Result<WalletCardAttemptResponse, WalletError> {
+        tracing::info!("Registering new card attempt for user_id={}", &user.id);
         let credit_card = self.credit_card_service.clone().find_by_public_id(&request.credit_card_type_public_id)
-            .await.map_err(|e| WalletError::Unexpected(e.into()))?;
+            .await.map_err(|e| {
+            tracing::error!("Unexpected error finding credit card by public_id={} error={:?}", &request.credit_card_type_public_id, &e);
+            WalletError::Unexpected(e.into())
+        })?;
+        tracing::info!("inserting card attempt");
         let wca = self.wallet_card_attempt_dao.clone().insert(
             &InsertableCardAttempt {
                 user_id: user.id,
@@ -79,11 +84,15 @@ impl WalletServiceTrait for WalletService {
                 expected_reference_id: &Uuid::new_v4().to_string()
             }
         ).await?;
-
+        tracing::info!("Inserted attempt with id={}", wca.id);
+        tracing::info!("Creating footprint token for attempt");
         let token = self.footprint_service.clone().create_client_token(
             &user,
             &wca.expected_reference_id
-        ).await.map_err(|e| WalletError::Unexpected(e.into()))?;
+        ).await.map_err(|e| {
+            tracing::error!("Error creating footprint token={:?}", &e);
+            WalletError::Unexpected(e.into())
+        })?;
 
         Ok(WalletCardAttemptResponse {
             reference_id: wca.expected_reference_id,
@@ -98,18 +107,22 @@ impl WalletServiceTrait for WalletService {
         user: &User,
         request: &MatchRequest
     ) -> Result<WalletModel, WalletError> {
+        tracing::info!("Matching card for user_id={} reference_id={}", &user.id, &request.reference_id);
         let card_attempt = self.wallet_card_attempt_dao.clone().find_by_reference_id(
             &request.reference_id
         ).await?;
         tracing::info!("Found wallet card attempt id {}", card_attempt.id);
 
         if card_attempt.status.eq(&WalletCardAttemptStatus::Matched) {
+            tracing::error!("Card already matched");
             return Err(WalletError::Conflict("Card already matched".into()))
         }
         if user.id != card_attempt.user_id {
+            tracing::error!("User is not owner of attempt");
             return Err(WalletError::Unauthorized("User is not owner of attempt".into()))
         }
 
+        tracing::info!("Creating card");
         let created_card = self.wallet_dao.clone().insert_card(
             &InsertableCard {
                 user_id: card_attempt.user_id,
@@ -127,6 +140,7 @@ impl WalletServiceTrait for WalletService {
     }
 
     async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError> {
+        tracing::info!("Finding all cards for user_id={}", &user.id);
         Ok(
             self.wallet_dao.clone().find_all_for_user(user).await?
                 .into_iter()
@@ -136,6 +150,7 @@ impl WalletServiceTrait for WalletService {
     }
 
     async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError> {
+        tracing::info!("Finding all cards with extra info for user_id={}", &user.id);
         Ok(
             self.wallet_dao.clone().find_all_for_user_with_card_info(user).await?
                 .into_iter()

@@ -126,7 +126,7 @@ fn parse_otlp_headers_from_env() -> Vec<(String, String)> {
 
 //#[actix_web::main]
 // TODO: why does tokio vs actix cause inner requests not to hang
-#[tokio::main(flavor = "multi_thread", worker_threads = 8)]
+#[tokio::main(flavor = "multi_thread", worker_threads = 7)]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     LogTracer::init().expect("Failed to set logger");
