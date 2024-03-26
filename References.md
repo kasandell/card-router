@@ -1,6 +1,8 @@
 # Rust specific 
 https://github.com/serde-rs/serde/issues/1019
 
+https://www.lpalmieri.com/posts/2020-06-06-zero-to-production-1-setup-toolchain-ides-ci/
+
 # Coverage 
 ```
 cargo tarpaulin --out Html -- --nocapture --test-threads=1
