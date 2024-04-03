@@ -25,6 +25,9 @@ run:
 run-release:
     cargo run --release
 
+run-local-detail:
+    cargo run --features develop-detail
+
 
 var-test:
     #!/usr/bin/env bash

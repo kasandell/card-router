@@ -28,7 +28,10 @@ pub struct Services {
     pub user_service: Arc<UserService>,
     pub credit_card_service: Arc<CreditCardService>,
     pub rule_service: Arc<RuleService>,
-    pub footprint_service: Arc<FakeFootprintService>
+    #[cfg(feature = "fake-footprint")]
+    pub footprint_service: Arc<FakeFootprintService>,
+    #[cfg(not(feature = "fake-footprint"))]
+    pub footprint_service: Arc<FootprintService>,
 }
 
 impl Services {
@@ -38,7 +41,10 @@ impl Services {
         // TODO: these might need to be initialized in main
         let lithic_service = Arc::new(LithicService::new());
         let credit_card_service = Arc::new(CreditCardService::new());
+        #[cfg(feature = "fake-footprint")]
         let footprint_service = Arc::new(FakeFootprintService::new());
+        #[cfg(not(feature = "fake-footprint"))]
+        let footprint_service = Arc::new(FootprintService::new());
         let wallet_service = Arc::new(WalletService::new_with_services(
             credit_card_service.clone(),
             footprint_service.clone()

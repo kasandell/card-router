@@ -147,9 +147,6 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or_else(|_| EnvFilter::new("info"));
     // TODO: this absolutely shits on our runtime
     /*
-    let stdout_log = tracing_subscriber::fmt::layer()
-        .with_span_events(FmtSpan::CLOSE)
-        .compact();
 
     let formatter = tracing_subscriber::fmt()
         .with_file(false)
@@ -158,6 +155,18 @@ async fn main() -> std::io::Result<()> {
         .with_line_number(false)
         ;
      */
+    #[cfg(feature="logs-to-stdout")]
+    let stdout_log = tracing_subscriber::fmt::layer()
+        .with_span_events(FmtSpan::CLOSE)
+        .compact();
+
+    #[cfg(feature="logs-to-stdout")]
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(telemetry_layer)
+        .with(stdout_log);
+
+    #[cfg(not(feature="logs-to-stdout"))]
     let subscriber = Registry::default()
         .with(env_filter)
         .with(telemetry_layer)

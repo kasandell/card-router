@@ -257,54 +257,57 @@ impl FootprintServiceTrait for FakeFootprintService {
 
     #[tracing::instrument(skip(self))]
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError> {
-        /*
-        tracing::info!("Proxying payment request");
-        let sleepy_time = rand::thread_rng().gen_range(400..1000);
-        sleep(Duration::from_millis(sleepy_time)).await;
-        let mut result_code = ResultCode::Authorised;
-        let rnd_fail = rand::thread_rng().gen_range(0..10);
-        if rnd_fail > 6 {
-            if rnd_fail > 9 {
-                tracing::warn!("throwing full error {}", rnd_fail);
-                return Err(FootprintError::Unexpected("Unexpected error".into()))
+        #[cfg(feature = "fake-footprint-internally")]
+        {
+            tracing::info!("Proxying payment request");
+            let sleepy_time = rand::thread_rng().gen_range(400..1000);
+            sleep(Duration::from_millis(sleepy_time)).await;
+            let mut result_code = ResultCode::Authorised;
+            let rnd_fail = rand::thread_rng().gen_range(0..10);
+            if rnd_fail > 6 {
+                if rnd_fail > 9 {
+                    tracing::warn!("throwing full error {}", rnd_fail);
+                    return Err(FootprintError::Unexpected("Unexpected error".into()))
+                } else {
+                    tracing::warn!("Refusing charge attempt {}", rnd_fail);
+                    result_code = ResultCode::Refused
+                }
             } else {
-                tracing::warn!("Refusing charge attempt {}", rnd_fail);
-                result_code = ResultCode::Refused
+                tracing::warn!("Approving charge attempt");
             }
-        } else {
-            tracing::warn!("Approving charge attempt");
+            Ok(
+                PaymentResponse {
+                    action: None,
+                    additional_data: None,
+                    amount: None,
+                    donation_token: None,
+                    fraud_result: None,
+                    merchant_reference: None,
+                    order: None,
+                    payment_method: None,
+                    psp_reference: None,
+                    refusal_reason: None,
+                    refusal_reason_code: None,
+                    result_code: Some(result_code),
+                    three_ds2_response_data: None,
+                    three_ds2_result: None,
+                    three_ds_payment_data: None,
+                }
+            )
         }
-        Ok(
-            PaymentResponse {
-                action: None,
-                additional_data: None,
-                amount: None,
-                donation_token: None,
-                fraud_result: None,
-                merchant_reference: None,
-                order: None,
-                payment_method: None,
-                psp_reference: None,
-                refusal_reason: None,
-                refusal_reason_code: None,
-                result_code: Some(result_code),
-                three_ds2_response_data: None,
-                three_ds2_result: None,
-                three_ds_payment_data: None,
-            }
-        )
+        #[cfg(not(feature = "fake-footprint-internally"))]
+        {
+            let res = reqwest::get("http://127.0.0.1:8082/footprint/mock/").await
+                .map_err(|e| {
+                    FootprintError::Unexpected("not working".into())
+                })?;
+            let payment_response: PaymentResponse = res.json().await
+                .map_err(|e| {
+                    FootprintError::Unexpected("not working".into())
+                })?;
+            Ok(payment_response)
+        }
 
-         */
-        let res = reqwest::get("http://127.0.0.1:8082/footprint/mock/").await
-            .map_err(|e| {
-                FootprintError::Unexpected("not working".into())
-            })?;
-        let payment_response: PaymentResponse = res.json().await
-            .map_err(|e| {
-                FootprintError::Unexpected("not working".into())
-            })?;
-
-        Ok(payment_response)
     }
 
     #[tracing::instrument(skip(self))]

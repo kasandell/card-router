@@ -6,6 +6,10 @@ edition = "2021"
 [features]
 trace-detail = []
 no-redis = []
+fake-footprint = []
+fake-footprint-internally = []
+logs-to-stdout = []
+develop-detail = ["trace-detail", "fake-footprint", "logs-to-stdout"]
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

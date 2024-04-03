@@ -26,6 +26,7 @@ impl<T> From<RunError<T>> for RedisError {
 
 impl From<RedisClientError> for RedisError {
     fn from(value: RedisClientError) -> Self {
+        tracing::info!("Converting from redis error type: {:?}", value);
         match value.kind() {
             /*
             ErrorKind::ResponseError => {}
@@ -54,11 +55,9 @@ impl From<RedisClientError> for RedisError {
             ErrorKind::Serialize => {}
              */
             ErrorKind::TypeError => {
-                println!("converting from {:?}", value.kind());
                 NotFound(value.into())
             },
             _ => {
-                println!("converting from {:?}", value.kind());
                 Unexpected(value.into())
             }
         }
