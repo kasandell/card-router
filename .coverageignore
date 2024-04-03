@@ -1,5 +1,6 @@
 src/adyen/*
 src/lithic/*
+src/auth/entity.rs
 src/*/constant.rs
 src/*/config.rs
 src/schema.rs
