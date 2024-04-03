@@ -29,7 +29,7 @@ pub async fn init_db() -> Pool<AsyncPgConnection>{
    let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(db_url);
    let pool_size = match cfg!(test) {
        true => 1,
-       false => 8,
+       false => 50,
    };
    let mut builder = Pool::builder();
     if cfg!(test) {
@@ -62,7 +62,7 @@ pub async fn init() {
 }
 
 pub type ConnResult<'a> = Result<PooledConnection<'a, AsyncDieselConnectionManager<AsyncPgConnection>>, RunError>;
-#[tracing::instrument]
+#[cfg_attr(feature="trace-detail", tracing::instrument)]
 pub async fn connection<'a>() -> ConnResult<'a> {
     POOL.get_or_init(init_db).await.get().await
         //.map_err(|e| ApiError::new(500, format!("Failed getting db connection: {}", e)))

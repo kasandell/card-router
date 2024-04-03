@@ -7,7 +7,7 @@ https://www.lpalmieri.com/posts/2020-06-06-zero-to-production-1-setup-toolchain-
 ```
 cargo tarpaulin --out Html -- --nocapture --test-threads=1
 
-cargo tarpaulin --engine=llvm --out Html --exclude-files "src/adyen/*" --exclude-files "src/lithic/*" --exclude-files "src/*/constant.rs" --exclude-files "src/*/config.rs" --exclude-files "src/schema.rs" -- --nocapture --test-threads=1
+cargo tarpaulin --engine=llvm --out Html --exclude-files "src/adyen/*" --exclude-files "src/lithic/*" --exclude-files "src/*/constant.rs" --exclude-files "src/*/config.rs" --exclude-files "src/schema.rs" --exclude-files "src/main.rs" --exclude-files "src/util/db.rs" --exclude-files "src/*/controller.rs" --exclude-files "src/footprint/service.rs" -- --nocapture --test-threads=1
 ```
 
 

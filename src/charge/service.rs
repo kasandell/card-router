@@ -152,7 +152,7 @@ impl ChargeServiceTrait for ChargeService {
 // TODO: probably need this to be a threadsafe singleton to avoid reinit everywhere
 impl ChargeService {
 
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new_with_services(
         user_service: Arc<dyn UserServiceTrait>,
         ledger_service: Arc<dyn LedgerServiceTrait>,
@@ -188,7 +188,7 @@ impl ChargeService {
                 transaction_metadata,
                 registered_transaction
             ).await {
-                tracing::info!("Successfully charged card={} for user={}", card.id, &user.id);
+                tracing::info!("Charged card={} for user={} with result={:?}", card.id, &user.id, &charge_attempt);
                 success_charge = bool::from(&charge_attempt);
                 ledger_res = ledger;
                 codes.push(charge_attempt)

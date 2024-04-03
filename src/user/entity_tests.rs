@@ -5,6 +5,7 @@ mod test {
     use crate::user::dao::{UserDao, UserDaoTrait};
     use crate::user::entity::{User, UserMessage};
     use actix_web::test;
+    use crate::test_helper::user::{create_mock_user, create_user};
 
 
     pub const EMAIL: &str = "test@email.com";
@@ -210,9 +211,36 @@ mod test {
     }
 
     #[test]
-    async fn test_update_works() {}
+    async fn test_update_works() {
+        crate::test_helper::general::init();
+        let dao = UserDao::new();
+        let user = create_user().await;
+        let new_email = "test@test-email.com";
+        let new_auth0 = "auth0_12345";
+        let new_footprint = "footprint_12345";
+        let user = dao.update(&user.public_id, &UserMessage {
+            email: new_email,
+            auth0_user_id: new_auth0,
+            footprint_vault_id: new_footprint
+        }).await.expect("ok");
 
+        assert_eq!(user.footprint_vault_id, new_footprint);
+        assert_eq!(user.auth0_user_id, new_auth0);
+        assert_eq!(user.email, new_email);
+    }
     #[test]
-    async fn test_update_fails() {}
-
+    async fn test_update_fails() {
+        crate::test_helper::general::init();
+        let dao = UserDao::new();
+        let user = create_mock_user();
+        let new_email = "test@test-email.com";
+        let new_auth0 = "auth0_12345";
+        let new_footprint = "footprint_12345";
+        let error = dao.update(&user.public_id, &UserMessage {
+            email: new_email,
+            auth0_user_id: new_auth0,
+            footprint_vault_id: new_footprint
+        }).await.expect_err("error");
+        assert_eq!(DataError::NotFound("test".into()), error);
+    }
 }

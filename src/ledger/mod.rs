@@ -9,3 +9,5 @@ mod entity;
 mod entity_tests;
 mod dao;
 mod constant_tests;
+mod dao_tests;
+mod tests;

@@ -195,6 +195,7 @@ impl LedgerServiceTrait for LedgerService {
         successful_outer_charge: &OuterChargeLedgerModel
     ) -> Result<TransactionLedgerModel, LedgerError> {
         tracing::info!("Registering full transaction for transaction_id={} inner_id={} outer_id={}", &registered_transaction.transaction_id, successful_inner_charge.id, successful_outer_charge.id);
+        // TODO: we should probably do some verification that everything is successful before doing this
         Ok(
             self.dao.clone().insert_transaction_ledger(
                 &InsertableTransactionLedger {

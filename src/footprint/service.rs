@@ -71,6 +71,7 @@ impl FootprintServiceTrait for FootprintService {
     #[tracing::instrument(skip(self))]
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError> {
         tracing::info!("Proxying payment request");
+        // TODO: i'd like to move these into a testable location
         let number = Some(
             to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::CardNumber))?
         );
@@ -256,6 +257,7 @@ impl FootprintServiceTrait for FakeFootprintService {
 
     #[tracing::instrument(skip(self))]
     async fn proxy_adyen_payment_request<'a>(self: Arc<Self>, request: &ChargeThroughProxyRequest<'a>) -> Result<PaymentResponse, FootprintError> {
+        /*
         tracing::info!("Proxying payment request");
         let sleepy_time = rand::thread_rng().gen_range(400..1000);
         sleep(Duration::from_millis(sleepy_time)).await;
@@ -291,6 +293,18 @@ impl FootprintServiceTrait for FakeFootprintService {
                 three_ds_payment_data: None,
             }
         )
+
+         */
+        let res = reqwest::get("http://127.0.0.1:8082/footprint/mock/").await
+            .map_err(|e| {
+                FootprintError::Unexpected("not working".into())
+            })?;
+        let payment_response: PaymentResponse = res.json().await
+            .map_err(|e| {
+                FootprintError::Unexpected("not working".into())
+            })?;
+
+        Ok(payment_response)
     }
 
     #[tracing::instrument(skip(self))]

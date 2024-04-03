@@ -9,9 +9,13 @@ pub enum UtilityError {
     Unexpected(#[source] Box<dyn std::error::Error>)
 }
 
-// TODO: REMOVE THIS
-impl From<ParseIntError> for UtilityError {
-    fn from(value: ParseIntError) -> Self {
-        UtilityError::Unexpected(Box::new(value))
+#[cfg(test)]
+impl PartialEq for UtilityError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (UtilityError::Unexpected(_), UtilityError::Unexpected(_))
+            | (UtilityError::DateError(_), UtilityError::DateError(_)) => true,
+            _ => false
+        }
     }
 }

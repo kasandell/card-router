@@ -42,3 +42,7 @@ CREATE TABLE IF NOT EXISTS transaction_ledger(
     inner_charge_ledger_id INT NOT NULL REFERENCES inner_charge_ledger(id),
     outer_charge_ledger_id INT NOT NULL REFERENCES outer_charge_ledger(id)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS transaction_ledger_registered_transaction_unique ON transaction_ledger(registered_transaction_id);
+CREATE UNIQUE INDEX IF NOT EXISTS transaction_ledger_registered_inner_charge_unique ON transaction_ledger(inner_charge_ledger_id);
+CREATE UNIQUE INDEX IF NOT EXISTS transaction_ledger_registered_outer_charge_unique ON transaction_ledger(outer_charge_ledger_id);

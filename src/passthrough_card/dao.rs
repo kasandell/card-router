@@ -6,6 +6,12 @@ use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+use crate::redis::helper::try_redis_fallback_db;
+use crate::redis::key::Key;
+use crate::redis::services::{
+    RedisService,
+    RedisServiceTrait
+};
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
@@ -23,37 +29,63 @@ pub trait PassthroughCardDaoTrait {
 }
 
 
-pub struct PassthroughCardDao {}
+pub struct PassthroughCardDao {
+    #[cfg(not(feature = "no-redis"))]
+    redis: Arc<RedisService>
+}
 
 impl PassthroughCardDao {
     pub fn new() -> Self {
-        Self {}
+        #[cfg(not(feature = "no-redis"))]
+        {
+            Self {
+                redis: Arc::new(RedisService::new())
+            }
+        }
+        #[cfg(feature = "no-redis")]
+        {
+            Self {}
+        }
     }
 }
 
+
 #[async_trait(?Send)]
 impl PassthroughCardDaoTrait for PassthroughCardDao {
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn create(self: Arc<Self>, card: InsertablePassthroughCard) -> Result<PassthroughCard, DataError> {
         PassthroughCard::create(card).await
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn get(self: Arc<Self>, id: i32) -> Result<PassthroughCard, DataError> {
         PassthroughCard::get(id).await
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCard, DataError> {
-        PassthroughCard::get_by_token(token).await
+        #[cfg(not(feature = "no-redis"))]
+        {
+            Ok(try_redis_fallback_db(
+                self.redis.clone(),
+                Key::PassthroughCardByToken(token),
+                || async { PassthroughCard::get_by_token(token).await },
+                false
+            ).await?)
+        }
+        #[cfg(feature = "no-redis")]
+        {
+
+            PassthroughCard::get_by_token(token).await
+        }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn find_cards_for_user(self: Arc<Self>, user_id: i32) -> Result<Vec<PassthroughCard>, DataError> {
         PassthroughCard::find_cards_for_user(user_id).await
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn find_card_for_user_in_status(
         self: Arc<Self>,
         user_id: i32,
@@ -62,7 +94,7 @@ impl PassthroughCardDaoTrait for PassthroughCardDao {
         PassthroughCard::find_card_for_user_in_status(user_id, status).await
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn update_status(self: Arc<Self>, id: i32, status: PassthroughCardStatus) -> Result<PassthroughCard, DataError> {
         PassthroughCard::update_status(id, status).await
     }

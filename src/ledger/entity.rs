@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use crate::schema::{inner_charge_ledger, outer_charge_ledger, registered_transactions, transaction_ledger};
 use diesel::{BoolExpressionMethods, Identifiable, Insertable, Queryable, Selectable};
-use diesel_async::RunQueryDsl;
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
@@ -123,16 +123,20 @@ pub struct InsertableTransactionLedger {
 
 
 impl RegisteredTransaction {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn insert<'a>(transaction: &InsertableRegisteredTransaction<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-        let txn = diesel::insert_into(registered_transactions::table)
-            .values(transaction)
-            .get_result(&mut conn).await?;
-        Ok(txn)
+        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
+            let txn = diesel::insert_into(registered_transactions::table)
+                .values(transaction)
+                .get_result(&mut _conn).await?;
+            Ok(txn)
+
+        })).await?;
+        Ok(res)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_by_transaction_id(id: &Uuid) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = registered_transactions::table.filter(
@@ -141,7 +145,7 @@ impl RegisteredTransaction {
         Ok(txn)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = registered_transactions::table.filter(
@@ -149,51 +153,23 @@ impl RegisteredTransaction {
         ).first::<RegisteredTransaction>(&mut conn).await?;
         Ok(txn)
     }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            registered_transactions::table
-                .filter(registered_transactions::id.eq(id))
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
-        RegisteredTransaction::delete(self.id).await
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_all() -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            registered_transactions::table
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
 }
 
 
 impl InnerChargeLedger {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn insert(transaction: &InsertableInnerChargeLedger) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-        let txn = diesel::insert_into(inner_charge_ledger::table)
-            .values(transaction)
-            .get_result(&mut conn).await?;
-        Ok(txn)
+        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
+            let txn = diesel::insert_into(inner_charge_ledger::table)
+                .values(transaction)
+                .get_result(&mut _conn).await?;
+            Ok(txn)
+        })).await?;
+        Ok(res)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_inner_charges_by_registered_transaction(registered_transaction: i32) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
         let txns = inner_charge_ledger::table
@@ -204,6 +180,7 @@ impl InnerChargeLedger {
         Ok(txns)
     }
 
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_successful_inner_charge_by_registered_transaction(registered_transaction: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = inner_charge_ledger::table
@@ -218,7 +195,7 @@ impl InnerChargeLedger {
 
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = inner_charge_ledger::table
@@ -228,50 +205,22 @@ impl InnerChargeLedger {
             .first(&mut conn).await?;
         Ok(txn)
     }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            inner_charge_ledger::table
-                .filter(inner_charge_ledger::id.eq(id))
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
-        InnerChargeLedger::delete(self.id).await
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_all() -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            inner_charge_ledger::table
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
 }
 
 impl OuterChargeLedger {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn insert(transaction: &InsertableOuterChargeLedger) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-        let txn = diesel::insert_into(outer_charge_ledger::table)
-            .values(transaction)
-            .get_result(&mut conn).await?;
-        Ok(txn)
+        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
+            let txn = diesel::insert_into(outer_charge_ledger::table)
+                .values(transaction)
+                .get_result(&mut _conn).await?;
+            Ok(txn)
+        })).await?;
+        Ok(res)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_outer_charge_by_registered_transaction(registered_transaction: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = outer_charge_ledger::table
@@ -282,7 +231,7 @@ impl OuterChargeLedger {
         Ok(txn)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = outer_charge_ledger::table
@@ -292,50 +241,22 @@ impl OuterChargeLedger {
             .first(&mut conn).await?;
         Ok(txn)
     }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            outer_charge_ledger::table
-                .filter(outer_charge_ledger::id.eq(id))
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
-        OuterChargeLedger::delete(self.id).await
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_all() -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            outer_charge_ledger::table
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
 }
 
 impl TransactionLedger {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn insert(transaction: &InsertableTransactionLedger) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
-        let txn = diesel::insert_into(transaction_ledger::table)
-            .values(transaction)
-            .get_result(&mut conn).await?;
-        Ok(txn)
+        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
+            let txn = diesel::insert_into(transaction_ledger::table)
+                .values(transaction)
+                .get_result(&mut _conn).await?;
+            Ok(txn)
+        })).await?;
+        Ok(res)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_by_registered_transaction_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = transaction_ledger::table
@@ -346,7 +267,7 @@ impl TransactionLedger {
         Ok(txn)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let txn = transaction_ledger::table
@@ -356,24 +277,4 @@ impl TransactionLedger {
             .first(&mut conn).await?;
         Ok(txn)
     }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            transaction_ledger::table
-                .filter(transaction_ledger::id.eq(id))
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
-        TransactionLedger::delete(self.id).await
-    }
-
 }

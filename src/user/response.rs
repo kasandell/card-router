@@ -13,3 +13,15 @@ impl From<&User> for UserResponse {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::user::response::UserResponse;
+
+    #[test]
+    pub fn test_from_user() {
+        let model = crate::test_helper::user::create_mock_user();
+        let resp = UserResponse::from(&model);
+        assert_eq!(resp.public_id, model.public_id.to_string());
+    }
+}

@@ -54,7 +54,7 @@ impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
 
     dev::forward_ready!(service);
 
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     fn call(&self, mut request: ServiceRequest) -> Self::Future {
         let svc = self.service.clone();
 

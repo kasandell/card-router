@@ -45,7 +45,7 @@ pub struct CreditCardIssuer {
 }
 
 impl CreditCard {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn list_all_card_types() -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
         let mut conn = db::connection().await?;
         let cards = credit_card::table
@@ -57,26 +57,7 @@ impl CreditCard {
         Ok(cards)
     }
 
-    #[tracing::instrument]
-    pub async fn search_all_card_types(
-        query: &str
-    ) -> Result<Vec<(Self, CreditCardType, CreditCardIssuer)>, DataError> {
-        let mut conn = db::connection().await?;
-        let cards = credit_card::table
-            .inner_join(credit_card_type::table)
-            .inner_join(credit_card_issuer::table)
-            .filter(credit_card::name.like(&query).or(
-                credit_card_type::name.like(&query).or(
-                    credit_card_issuer::name.like(&query)
-                )
-            ))
-            .select((Self::as_select(), CreditCardType::as_select(), CreditCardIssuer::as_select()))
-            .load::<(Self, CreditCardType, CreditCardIssuer)>(&mut conn).await?;
-        tracing::info!("Query executed ok");
-        Ok(cards)
-    }
-
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn find_by_public_id(
         public_id: &Uuid
     ) -> Result<Self, DataError> {
@@ -87,5 +68,40 @@ impl CreditCard {
             .first(&mut conn).await?;
 
         Ok(card)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::credit_card_type::entity::CreditCard;
+    use actix_web::test;
+    use uuid::Uuid;
+    use crate::error::data_error::DataError;
+
+    #[test]
+    pub async fn test_list() {
+        crate::test_helper::general::init();
+        let cards = CreditCard::list_all_card_types().await.expect("Ok");
+        assert_eq!(3, cards.len())
+    }
+
+    #[test]
+    async fn test_find_by_pub_id_finds() {
+        crate::test_helper::general::init();
+        // This is a pub id pulled from db. if remigrate db, need ot grab this
+        let cards = CreditCard::list_all_card_types().await.expect("OK");
+        let id = cards[0].0.public_id;
+        let card = CreditCard::find_by_public_id(&id).await.expect("ok");
+        assert_eq!(card.id, cards[0].0.id);
+        assert_eq!(card.public_id, id);
+        assert_eq!(card.name, cards[0].0.name);
+    }
+
+    #[test]
+    async fn test_find_by_pub_id_does_not_find() {
+        crate::test_helper::general::init();
+        let id = Uuid::new_v4();
+        let error = CreditCard::find_by_public_id(&id).await.expect_err("ok");
+        assert_eq!(DataError::NotFound("test".into()), error);
     }
 }

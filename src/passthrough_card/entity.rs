@@ -56,7 +56,7 @@ pub struct PassthroughCardStatusUpdate {
 
 
 impl PassthroughCard {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn create(card: InsertablePassthroughCard) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -66,7 +66,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn update_status(id: i32, status: PassthroughCardStatus) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         // TODO: this is literally so test txn doesn't rollback
@@ -86,7 +86,7 @@ impl PassthroughCard {
         Ok(res)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get(id: i32) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -96,7 +96,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_by_token(token: &str) -> Result<Self, DataError> {
         tracing::info!("runtime: {:?}", tokio::runtime::Handle::current().id());
         let mut conn = db::connection().await?;
@@ -107,7 +107,7 @@ impl PassthroughCard {
         Ok(card)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn find_cards_for_user(user_id: i32) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
 
@@ -117,7 +117,7 @@ impl PassthroughCard {
         Ok(cards)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn find_card_for_user_in_status(
         user_id: i32,
         status: PassthroughCardStatus
@@ -135,25 +135,5 @@ impl PassthroughCard {
             .first(&mut conn).await?;
         Ok(card)
     }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete(id: i32) -> Result<usize, DataError> {
-        let mut conn = db::connection().await?;
-
-        let res = diesel::delete(
-            passthrough_card::table
-                .filter(passthrough_card::id.eq(id))
-        )
-            .execute(&mut conn).await?;
-        Ok(res)
-    }
-
-    #[cfg(test)]
-    #[tracing::instrument]
-    pub async fn delete_self(&self) -> Result<usize, DataError> {
-        PassthroughCard::delete(self.id).await
-    }
-
 }
 

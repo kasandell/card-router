@@ -75,7 +75,7 @@ impl AdyenCheckoutService {
 
 #[async_trait(?Send)]
 impl AdyenChargeServiceTrait for AdyenCheckoutService {
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn charge_card_on_file<'a>(
         self: Arc<Self>,
         request: &ChargeCardRequest<'a>
@@ -188,7 +188,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
         Ok(resp)
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn cancel_transaction(
         self: Arc<Self>,
         psp_reference: &str,
@@ -209,7 +209,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
         )
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn add_card(
         self: Arc<Self>,
         idempotency_key: &str,

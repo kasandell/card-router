@@ -47,7 +47,7 @@ pub struct Rule {
 }
 
 impl Rule {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn create(new_rule: &CreateRuleRequest) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         let rule = diesel::insert_into(rule::table)
@@ -56,7 +56,7 @@ impl Rule {
         Ok(rule)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn get_rules_for_card_ids(ids: &Vec<i32>) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
 

@@ -15,3 +15,6 @@ pub mod credit_card;
 pub mod general;
 #[cfg(test)]
 pub mod error;
+
+#[cfg(test)]
+pub mod redis;

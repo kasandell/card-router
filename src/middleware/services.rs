@@ -32,7 +32,7 @@ pub struct Services {
 }
 
 impl Services {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub fn new() -> Self {
         tracing::info!("Instantiating all services");
         // TODO: these might need to be initialized in main
@@ -75,5 +75,15 @@ impl Services {
             rule_service: rule_service.clone(),
             footprint_service: footprint_service.clone()
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::middleware::services::Services;
+
+    #[test]
+    fn test_services_create() {
+        let svc_middleware = Services::new();
     }
 }

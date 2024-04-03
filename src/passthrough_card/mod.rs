@@ -11,5 +11,5 @@ pub mod config;
 pub mod response;
 mod dao;
 mod crypto;
-mod constant_tests;
 mod convert;
+mod dao_tests;

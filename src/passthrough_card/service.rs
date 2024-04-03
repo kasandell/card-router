@@ -89,7 +89,7 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
                     },
                     Err(err) => {
                         tracing::error!("Unable to close lithic card error={:?}", &err);
-                        return Err(err);
+                        return Err(PassthroughCardError::Unexpected(err.into()));
                     }
                 }
                 return Err(PassthroughCardError::Unexpected("unable to issue card".into()));
@@ -168,14 +168,14 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
 }
 
 impl PassthroughCardService {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new() -> Self {
         Self {
             lithic_service: Arc::new(LithicService::new()),
             passthrough_card_dao: Arc::new(PassthroughCardDao::new())
         }
     }
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new_with_services(
         lithic_service: Arc<dyn LithicServiceTrait>,
     ) -> Self {
@@ -227,7 +227,7 @@ impl PassthroughCardService {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     pub(super) async fn get_active_card_for_user(
         self: Arc<Self>,
         user: &User
@@ -272,6 +272,7 @@ impl PassthroughCardService {
     }
 
     //probably need a lifetime
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     fn filter_cards<'a>(
         &'a self,
         cards: &'a Vec<PassthroughCard>,
@@ -291,7 +292,7 @@ impl PassthroughCardService {
         )?)
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn close_lithic_card(
         self: Arc<Self>,
         token: &str
@@ -302,6 +303,8 @@ impl PassthroughCardService {
         Ok(closed)
     }
 
+
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn pause_lithic_card(
         self: Arc<Self>,
         token: &str
@@ -312,6 +315,7 @@ impl PassthroughCardService {
         Ok(paused)
     }
 
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn activate_lithic_card(
         self: Arc<Self>,
         token: &str
@@ -320,5 +324,18 @@ impl PassthroughCardService {
         let active = self.lithic_service.clone().activate_card(token)
             .await.map_err(|e| PassthroughCardError::StatusUpdate(Box::new(e)))?;
         Ok(active)
+    }
+}
+
+#[cfg(test)]
+impl PassthroughCardService {
+    pub fn new_with_mocks(
+        lithic_service: Arc<dyn LithicServiceTrait>,
+        passthrough_card_dao: Arc<dyn PassthroughCardDaoTrait>
+    ) -> Self {
+        Self {
+            lithic_service,
+            passthrough_card_dao
+        }
     }
 }

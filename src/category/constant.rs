@@ -20,3 +20,18 @@ impl From<Category> for i32 {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::category::constant::Category;
+
+    #[test]
+    fn test_conversions() {
+        assert_eq!(1, Category::Hotels as i32);
+        assert_eq!(2, Category::CarRental as i32);
+        assert_eq!(3, Category::Airlines as i32);
+        assert_eq!(4, Category::Dining as i32);
+        assert_eq!(5, Category::SportingGoods as i32);
+        assert_eq!(6, Category::Transportation as i32);
+    }
+}

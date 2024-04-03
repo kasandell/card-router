@@ -56,3 +56,49 @@ impl CategoryServiceTrait for CategoryService {
     }
 
 }
+
+
+
+#[cfg(test)]
+mod test {
+    use std::sync::Arc;
+    use actix_web::test;
+    use crate::category::constant::Category as CategoryEnum;
+    use crate::category::error::CategoryError;
+    use crate::category::service::{CategoryService, CategoryServiceTrait};
+
+    const DINING_MCC: &str = "5812";
+    const DINING_CATEGORY_NAME: &str = "dining";
+
+    #[test]
+    async fn test_get_category_by_name_ok() {
+        let svc = Arc::new(CategoryService::new());
+        let res = svc.clone().get_category_by_name(DINING_CATEGORY_NAME).await.expect("Ok");
+        assert_eq!(res.name, DINING_CATEGORY_NAME);
+        assert_eq!(res.id, CategoryEnum::Dining as i32);
+    }
+
+    #[test]
+    async fn test_get_category_by_name_not_found() {
+        let svc = Arc::new(CategoryService::new());
+        let error = svc.clone().get_category_by_name("restaurants are not category named").await.expect_err("Ok");
+        assert_eq!(CategoryError::Unexpected("test".into()), error);
+    }
+
+    #[test]
+    async fn test_get_mcc_mapping_by_mcc_ok() {
+        let svc = Arc::new(CategoryService::new());
+        let res = svc.clone().get_mcc_mapping_by_mcc(DINING_MCC).await.expect("Ok");
+        assert_eq!(res.mcc_code, DINING_MCC);
+        assert_eq!(res.category_id, CategoryEnum::Dining as i32);
+    }
+
+    #[test]
+    async fn test_get_mcc_mapping_by_mcc_not_found() {
+        let svc = Arc::new(CategoryService::new());
+        let error = svc.clone().get_mcc_mapping_by_mcc("this is not an mcc").await.expect_err("Ok");
+        assert_eq!(CategoryError::Unexpected("test".into()), error);
+
+    }
+
+}

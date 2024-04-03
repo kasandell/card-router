@@ -20,3 +20,14 @@ pub fn security_headers() -> DefaultHeaders {
         .header(header::PRAGMA, "no-cache")
         .header(header::EXPIRES, "0")
 }
+
+#[cfg(test)]
+mod test {
+    use crate::middleware::security_headers::security_headers;
+
+    #[test]
+    fn test_security_headers_creates() {
+        let headers = security_headers();
+    }
+
+}

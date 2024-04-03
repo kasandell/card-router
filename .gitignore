@@ -25,3 +25,4 @@ countlines.sh
 tarpaulin-report.html
 flamegraph.svg
 bombard.json
+build_rs_cov.profraw

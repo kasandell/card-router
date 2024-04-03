@@ -61,7 +61,7 @@ impl RuleServiceTrait for RuleService {
 }
 
 impl RuleService {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new_with_services(
         category_service: Arc<dyn CategoryServiceTrait>,
         wallet_service: Arc<dyn WalletServiceTrait>
@@ -74,7 +74,7 @@ impl RuleService {
     }
 
     // TODO: this lifteime needs to be at class level
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletModel>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
         tracing::info!("Getting card order from rules");
         /*
@@ -110,7 +110,7 @@ impl RuleService {
         Ok(cards_only)
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     pub async fn find_and_filter_rules(self: Arc<Self>, request: &AsaRequest, card_type_ids: &Vec<i32>) -> Result<Vec<Rule>, RuleError> {
         // TODO: remove direct call
         tracing::info!("Find and filter rules based on card types");

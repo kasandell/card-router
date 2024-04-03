@@ -60,7 +60,7 @@ pub struct LithicService {
 }
 
 impl LithicService {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub fn new() -> Self {
         let mut cfg = Configuration::new();
         let base_path = match ENVIRONMENT.mode.as_str() {
@@ -158,7 +158,7 @@ impl LithicServiceTrait for LithicService {
         ).await
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn patch_card<'a>(
         self: Arc<Self>,
         card_token: &'a str,
@@ -184,7 +184,7 @@ impl LithicServiceTrait for LithicService {
         )
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn register_webhook(self: Arc<Self>, idempotency_key: &str) -> Result<EventSubscription, LithicError> {
         tracing::warn!("Registering webhook, deprecated");
         Ok(
@@ -203,7 +203,7 @@ impl LithicServiceTrait for LithicService {
         )
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn deregister_webhook(self: Arc<Self>, event_subscription_token: &str) -> Result<(), LithicError> {
         tracing::warn!("Deregister webhook, deprecated");
         Ok(

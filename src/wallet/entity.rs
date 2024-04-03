@@ -94,7 +94,7 @@ pub struct WalletWithExtraInfo {
 }
 
 impl Wallet {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn find_all_for_user(user: &User) -> Result<Vec<Self>, DataError> {
         let mut conn = db::connection().await?;
         //let cards = Wallet::belonging_to(&user).load::<Wallet>(&mut conn).await?;
@@ -104,8 +104,7 @@ impl Wallet {
         Ok(cards) 
     }
 
-    #[tracing::instrument]
-    //TODO: This is going to break violently
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn find_all_for_user_with_card_info(user: &User) -> Result<Vec<WalletWithExtraInfo>, DataError> {
         let mut conn = db::connection().await?;
         let cards = wallet::table
@@ -132,8 +131,7 @@ impl Wallet {
         Ok(cards)
     }
 
-    // TODO: from consumes
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn insert_card<'a>(card: &InsertableCard<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
         //let insertable_card = InsertableCard::from(card);
@@ -149,7 +147,7 @@ impl Wallet {
     }
 
     #[cfg(test)]
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -162,7 +160,7 @@ impl Wallet {
     }
 
     #[cfg(test)]
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         Wallet::delete(self.id).await
     }
@@ -170,7 +168,7 @@ impl Wallet {
 
 
 impl WalletCardAttempt {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn insert<'a>(card_attempt: &InsertableCardAttempt<'a>) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -180,7 +178,7 @@ impl WalletCardAttempt {
         Ok(wallet)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn find_by_reference_id(reference: &str) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -191,7 +189,7 @@ impl WalletCardAttempt {
         Ok(card_attempt)
     }
 
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn update_card(id: i32, card: &UpdateCardAttempt) -> Result<Self, DataError> {
         let mut conn = db::connection().await?;
 
@@ -203,7 +201,7 @@ impl WalletCardAttempt {
     }
 
     #[cfg(test)]
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn delete(id: i32) -> Result<usize, DataError> {
         let mut conn = db::connection().await?;
 
@@ -216,7 +214,7 @@ impl WalletCardAttempt {
     }
 
     #[cfg(test)]
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub async fn delete_self(&self) -> Result<usize, DataError> {
         WalletCardAttempt::delete(self.id).await
     }

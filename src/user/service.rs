@@ -23,7 +23,7 @@ pub struct UserService {
 
 impl UserService {
 
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new_with_services(
         footprint_service: Arc<dyn FootprintServiceTrait>
     ) -> Self {
@@ -36,7 +36,7 @@ impl UserService {
 
 #[cfg(test)]
 impl UserService {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new_with_mocks(
         user_dao: Arc<dyn UserDaoTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
@@ -92,13 +92,20 @@ impl UserServiceTrait for UserService {
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn find_by_internal_id(&self, id: i32) -> Result<UserModel, UserError> {
         tracing::info!("Finding user by id={}", id);
         Ok(self.user_dao.clone().find_by_internal_id(id)
             .await.map_err(|e| {
             tracing::info!("Error finding user by id={} error={:?}", id, &e);
-            UserError::Unexpected(e.into())
+            return match e {
+                DataError::NotFound(_) => {
+                    UserError::NotFound(e.into())
+                }
+                _ => {
+                    UserError::Unexpected(e.into())
+                }
+            }
         })?.into())
     }
 }

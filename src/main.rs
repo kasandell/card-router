@@ -10,7 +10,9 @@ extern crate num_derive;
 extern crate console_subscriber;
 extern crate uuidv7;
 
+use std::fmt::Debug;
 use std::str::FromStr;
+use std::sync::Arc;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
@@ -22,6 +24,11 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_actix_web::TracingLogger;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry::global;
+use crate::redis::key::Key;
+use crate::redis::services::{
+    RedisService,
+    RedisServiceTrait
+};
 
 
 mod adyen;
@@ -47,7 +54,8 @@ mod error;
 #[cfg(test)]
 mod test_helper;
 mod common;
-
+#[cfg(not(feature = "no-redis"))]
+mod redis;
 
 
 async fn manual_hello(claims: Claims) -> impl Responder {
@@ -124,9 +132,10 @@ fn parse_otlp_headers_from_env() -> Vec<(String, String)> {
     headers
 }
 
-//#[actix_web::main]
 // TODO: why does tokio vs actix cause inner requests not to hang
-#[tokio::main(flavor = "multi_thread", worker_threads = 7)]
+#[tokio::main(flavor = "multi_thread", worker_threads = 64)]
+//#[tokio::main(flavor = "current_thread")]
+//#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     LogTracer::init().expect("Failed to set logger");
@@ -136,16 +145,28 @@ async fn main() -> std::io::Result<()> {
 
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info"));
+    // TODO: this absolutely shits on our runtime
+    /*
     let stdout_log = tracing_subscriber::fmt::layer()
         .with_span_events(FmtSpan::CLOSE)
         .compact();
+
+    let formatter = tracing_subscriber::fmt()
+        .with_file(false)
+        .with_thread_ids(false)
+        .with_file(false)
+        .with_line_number(false)
+        ;
+     */
     let subscriber = Registry::default()
         .with(env_filter)
-        .with(stdout_log)
-        .with(telemetry_layer);
+        .with(telemetry_layer)
+        //.with(stdout_log)
+        ;
     set_global_default(subscriber).expect("Failed to set subscriber");
     tracing::warn!("TEST");
     tracing::warn!("{:?}", num_cpus::get_physical());
+
 
 
     HttpServer::new(move || {

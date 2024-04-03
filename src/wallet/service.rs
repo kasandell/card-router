@@ -47,7 +47,7 @@ pub struct WalletService {
 }
 
 impl WalletService {
-    #[tracing::instrument(skip_all)]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new_with_services(
         credit_card_service: Arc<dyn CreditCardServiceTrait>,
         footprint_service: Arc<dyn FootprintServiceTrait>
@@ -139,6 +139,7 @@ impl WalletServiceTrait for WalletService {
         Ok(created_card.into())
     }
 
+    #[tracing::instrument(skip(self))]
     async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError> {
         tracing::info!("Finding all cards for user_id={}", &user.id);
         Ok(
@@ -149,6 +150,7 @@ impl WalletServiceTrait for WalletService {
         )
     }
 
+    #[tracing::instrument(skip(self))]
     async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError> {
         tracing::info!("Finding all cards with extra info for user_id={}", &user.id);
         Ok(

@@ -6,6 +6,10 @@ use async_trait::async_trait;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+use crate::redis::error::RedisError;
+use crate::redis::helper::try_redis_fallback_db;
+use crate::redis::key::Key;
+use crate::redis::services::{RedisService, RedisServiceTrait};
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
@@ -15,25 +19,47 @@ pub trait RuleDaoTrait {
 
 }
 
-pub struct RuleDao {}
+pub struct RuleDao {
+    #[cfg(not(feature = "no-redis"))]
+    redis: Arc<RedisService>
+}
 
 
 impl RuleDao {
-    #[tracing::instrument]
+    #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub fn new() -> Self {
-        Self {}
+        #[cfg(feature = "no-redis")]
+        {
+            Self {}
+        }
+        #[cfg(not(feature = "no-redis"))]
+        {
+            Self {
+                redis: Arc::new(RedisService::new())
+            }
+        }
     }
 }
 
 #[async_trait(?Send)]
 impl RuleDaoTrait for RuleDao {
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn create(self: Arc<Self>, new_rule: &CreateRuleRequest) -> Result<Rule, DataError> {
         Rule::create(new_rule).await
     }
 
-    #[tracing::instrument(skip(self))]
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn get_rules_for_card_ids(self: Arc<Self>, ids: &Vec<i32>) -> Result<Vec<Rule>, DataError> {
-        Rule::get_rules_for_card_ids(ids).await
+        #[cfg(not(feature = "no-redis"))] {
+            Ok(try_redis_fallback_db(
+                self.redis.clone(),
+                Key::RulesForCards(ids),
+                || async {Rule::get_rules_for_card_ids(ids).await},
+                false
+            ).await?)
+        }
+        #[cfg(feature = "no-redis")] {
+            Rule::get_rules_for_card_ids(ids).await
+        }
     }
 }
