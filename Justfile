@@ -34,3 +34,8 @@ var-test:
     set -euxo pipefail
     var="hello"
     echo "$var"
+
+build-docker:
+    #!/usr/bin/env bash
+    docker build --tag card_router --file Dockerfile --ssh default=$HOME/.ssh/id_ed25519 .
+

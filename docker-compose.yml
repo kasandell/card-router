@@ -1,0 +1,69 @@
+version: '3.8'
+services:
+  postgres:
+    container_name: container-pg
+    image: postgres
+    ports:
+      - '5433:5432'
+    environment:
+      - POSTGRES_USER=router
+      - POSTGRES_PASSWORD=router
+      - POSTGRES_DB=router
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrations:
+    build:
+      dockerfile: ./docker/migration/Dockerfile
+      context: .
+    environment:
+      - DATABASE_USERNAME=router
+      - DATABASE_PASSWORD=router
+      - DATABASE_HOSTNAME=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=router
+    depends_on:
+      postgres:
+        condition:
+          service_healthy
+
+
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build:
+      dockerfile: ./docker/service/Dockerfile
+      context: .
+      ssh:
+        - default
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      cache:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - '8080:8080'
+
+volumes:
+  db:
+    driver: local
+  cache:
+    driver: local
+  postgres-data:
+    driver: local

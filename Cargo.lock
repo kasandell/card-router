@@ -250,6 +250,7 @@ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 [[package]]
 name = "adyen-checkout"
 version = "71.0.0"
+source = "git+ssh://git@github.com/kasandell/AdyenCustomApi.git?branch=main#389f575bf72c817c0a91defbe07ce5270c185495"
 dependencies = [
  "reqwest",
  "serde",
@@ -263,6 +264,7 @@ dependencies = [
 [[package]]
 name = "adyen-webhooks"
 version = "1.0.0"
+source = "git+ssh://git@github.com/kasandell/AdyenCustomApi.git?branch=main#389f575bf72c817c0a91defbe07ce5270c185495"
 dependencies = [
  "reqwest",
  "serde",
@@ -1272,6 +1274,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "footprint"
 version = "1.0.0"
+source = "git+ssh://git@github.com/kasandell/FootprintOpenApi.git?branch=main#c2c4b21d1d870803183f6418eadc67dd4afd724e"
 dependencies = [
  "reqwest",
  "serde",
@@ -1805,6 +1808,7 @@ checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
 [[package]]
 name = "lithic_client"
 version = "1.0.0"
+source = "git+ssh://git@github.com/kasandell/LithicOpenApi.git?branch=main#c57f95e9e5cc416a6a9c7d6861470bca75f045cc"
 dependencies = [
  "reqwest",
  "serde",
@@ -2178,6 +2182,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
+name = "openssl-src"
+version = "300.2.3+3.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cff92b6f71555b61bb9315f7c64da3ca43d87531622120fea0195fc761b4843"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "openssl-sys"
 version = "0.9.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2185,6 +2198,7 @@ checksum = "dda2b0f344e78efc2facf7d195d098df0dd72151b26ab98da807afc26c198dff"
 dependencies = [
  "cc",
  "libc",
+ "openssl-src",
  "pkg-config",
  "vcpkg",
 ]

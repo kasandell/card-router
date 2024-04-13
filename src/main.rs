@@ -24,6 +24,7 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_actix_web::TracingLogger;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry::global;
+use crate::error::data_error::DataError;
 use crate::redis::key::Key;
 use crate::redis::services::{
     RedisService,
@@ -58,9 +59,8 @@ mod common;
 mod redis;
 
 
-async fn manual_hello(claims: Claims) -> impl Responder {
-    tracing::info!("{:?}", &claims);
-    HttpResponse::Ok().body("Hey there!")
+async fn health_check() -> impl Responder {
+    HttpResponse::Ok().body("live")
 }
 
 
@@ -132,6 +132,12 @@ fn parse_otlp_headers_from_env() -> Vec<(String, String)> {
     headers
 }
 
+#[tracing::instrument]
+async fn ping_db() -> Result<(), DataError>{
+    let conn = util::db::connection().await?;
+    Ok(())
+}
+
 // TODO: why does tokio vs actix cause inner requests not to hang
 #[tokio::main(flavor = "multi_thread", worker_threads = 64)]
 //#[tokio::main(flavor = "current_thread")]
@@ -146,15 +152,7 @@ async fn main() -> std::io::Result<()> {
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info"));
     // TODO: this absolutely shits on our runtime
-    /*
 
-    let formatter = tracing_subscriber::fmt()
-        .with_file(false)
-        .with_thread_ids(false)
-        .with_file(false)
-        .with_line_number(false)
-        ;
-     */
     #[cfg(feature="logs-to-stdout")]
     let stdout_log = tracing_subscriber::fmt::layer()
         .with_span_events(FmtSpan::CLOSE)
@@ -166,15 +164,12 @@ async fn main() -> std::io::Result<()> {
         .with(telemetry_layer)
         .with(stdout_log);
 
-    #[cfg(not(feature="logs-to-stdout"))]
-    let subscriber = Registry::default()
-        .with(env_filter)
-        .with(telemetry_layer)
-        //.with(stdout_log)
-        ;
     set_global_default(subscriber).expect("Failed to set subscriber");
     tracing::warn!("TEST");
     tracing::warn!("{:?}", num_cpus::get_physical());
+
+
+    let res = ping_db().await.expect("No issue");
 
 
 
@@ -194,9 +189,9 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/")
             )
-            .route("/hey/", web::get().to(manual_hello))
+            .route("/health-check/", web::get().to(health_check))
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await?;
     //shutdown_tracer_provider();

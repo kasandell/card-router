@@ -1,3 +1,4 @@
+use std::time::Duration;
 use async_trait::async_trait;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use crate::environment::ENVIRONMENT;
@@ -9,6 +10,7 @@ use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::CustomizeConnection as SyncCustomizeConnection;
 use bb8::{PooledConnection, CustomizeConnection};
 use tokio::sync::OnceCell;
+use tonic::codegen::tokio_stream::StreamExt;
 
 pub type ConnManage = AsyncDieselConnectionManager<AsyncPgConnection>;
 pub type DbConnection<'a> = PooledConnection<'a, ConnManage>;
@@ -37,7 +39,7 @@ pub async fn init_db() -> Pool<AsyncPgConnection>{
         builder = builder.connection_customizer(Box::new(TestConnectionCustomizer));
     }
    tracing::info!("Initializing connection pool with {} connections", pool_size);
-   builder.max_size(pool_size).build(manager).await.expect("Failed to create db pool")
+   builder.max_size(pool_size).connection_timeout(Duration::from_secs(2)).build(manager).await.expect("Failed to create db pool")
 }
 
 pub async fn init_sync_db() -> r2d2::Pool<ConnectionManager<PgConnection>> {
@@ -50,7 +52,7 @@ pub async fn init_sync_db() -> r2d2::Pool<ConnectionManager<PgConnection>> {
         builder = builder.connection_customizer(Box::new(SyncTestConnectionCustomizer));
     }
     tracing::info!("Initializing connnection pool with {} connections", pool_size);
-    builder.max_size(pool_size).build(manager).expect("Failed to create db pool")
+    builder.max_size(pool_size).connection_timeout(Duration::from_secs(2)).build(manager).expect("Failed to create db pool")
 }
 
 pub async fn init() {

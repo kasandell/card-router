@@ -1,3 +1,8 @@
+# Dockerizing 
+```
+docker build --tag card_router --file Dockerfile --ssh default=$HOME/.ssh/key_name .
+```
+
 # Rust specific 
 https://github.com/serde-rs/serde/issues/1019
 
