@@ -6,8 +6,11 @@ use async_trait::async_trait;
 use tracing;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::helper::try_redis_fallback_db;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::key::Key;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::services::{
     RedisService,
     RedisServiceTrait

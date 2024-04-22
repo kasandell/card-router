@@ -4,16 +4,20 @@ use crate::error::data_error::DataError;
 use crate::user::entity::{User, UserMessage};
 use async_trait::async_trait;
 use diesel::row::NamedRow;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::services::{
     RedisService,
     RedisServiceTrait
 };
+#[cfg(not(feature = "no-redis"))]
+use redis::Commands;
+#[cfg(not(feature = "no-redis"))]
+use crate::redis::helper::try_redis_fallback_db;
+#[cfg(not(feature = "no-redis"))]
+use crate::redis::key::Key;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
-use redis::Commands;
-use crate::redis::helper::try_redis_fallback_db;
-use crate::redis::key::Key;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]

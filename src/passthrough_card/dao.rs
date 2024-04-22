@@ -3,15 +3,19 @@ use crate::error::data_error::DataError;
 use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::entity::{InsertablePassthroughCard, PassthroughCard};
 use async_trait::async_trait;
-
-#[cfg(test)]
-use mockall::{automock, predicate::*};
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::helper::try_redis_fallback_db;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::key::Key;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::services::{
     RedisService,
     RedisServiceTrait
 };
+
+#[cfg(test)]
+use mockall::{automock, predicate::*};
+
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]

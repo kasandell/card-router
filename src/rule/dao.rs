@@ -3,13 +3,15 @@ use crate::error::data_error::DataError;
 use crate::rule::entity::Rule;
 use crate::rule::request::CreateRuleRequest;
 use async_trait::async_trait;
+#[cfg(not(feature = "no-redis"))]
+use crate::redis::helper::try_redis_fallback_db;
+#[cfg(not(feature = "no-redis"))]
+use crate::redis::key::Key;
+#[cfg(not(feature = "no-redis"))]
+use crate::redis::services::{RedisService, RedisServiceTrait};
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
-use crate::redis::error::RedisError;
-use crate::redis::helper::try_redis_fallback_db;
-use crate::redis::key::Key;
-use crate::redis::services::{RedisService, RedisServiceTrait};
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]

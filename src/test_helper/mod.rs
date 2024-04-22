@@ -17,4 +17,5 @@ pub mod general;
 pub mod error;
 
 #[cfg(test)]
+#[cfg(not(feature = "no-redis"))]
 pub mod redis;

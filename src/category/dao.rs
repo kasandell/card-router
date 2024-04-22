@@ -3,14 +3,18 @@ use std::sync::Arc;
 use crate::category::entity::{Category, MccMapping};
 use crate::error::data_error::DataError;
 use async_trait::async_trait;
-
-#[cfg(test)]
-use mockall::{automock, predicate::*};
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::key::Key;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::services::{
     RedisService,
     RedisServiceTrait
 };
+#[cfg(not(feature = "no-redis"))]
+use crate::redis::helper::try_redis_fallback_db;
+
+#[cfg(test)]
+use mockall::{automock, predicate::*};
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
@@ -27,7 +31,7 @@ pub trait MccMappingDaoTrait {
 pub struct CategoryDao{}
 
 pub struct MccMappingDao{
-    // TODO: can't dyn this due to type params. might not be an issue
+    #[cfg(not(feature = "no-redis"))]
     redis: Arc<RedisService>
 }
 
@@ -51,9 +55,17 @@ impl CategoryDaoTrait for CategoryDao {
 impl MccMappingDao {
     #[cfg_attr(feature="trace-detail", tracing::instrument)]
     pub fn new() -> Self {
-        Self{
-            redis: Arc::new(RedisService::new())
+        #[cfg(not(feature = "no-redis"))]
+        {
+            Self {
+                redis: Arc::new(RedisService::new())
+            }
         }
+        #[cfg(feature = "no-redis")]
+        {
+            Self {}
+        }
+
     }
 }
 
@@ -62,25 +74,18 @@ impl MccMappingDaoTrait for MccMappingDao {
 
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
     async fn get_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, DataError> {
-        let redis_response = self.redis.clone().get::<_, MccMapping>(&Key::MccMapping(mcc)).await;
-        match redis_response {
-            Ok(val) => {
-                tracing::info!("Returning from redis");
-                Ok(val)
-            },
-            Err(_) => {
-                let mcc_mapping = MccMapping::get_by_mcc(mcc).await?;
-                let redis_save = self.redis.clone().set::<_, MccMapping>(&Key::MccMapping(mcc), &mcc_mapping).await;
-                match redis_save {
-                    Ok(_) => {
-                        tracing::info!("Saved in redis");
-                    },
-                    Err(e) => {
-                        tracing::warn!("Error saving in redis {:?}", &e);
-                    }
-                }
-                Ok(mcc_mapping)
-            }
+        #[cfg(not(feature = "no-redis"))]
+        {
+            Ok(try_redis_fallback_db(
+                self.redis.clone(),
+                Key::MccMapping(mcc),
+                || async { MccMapping::get_by_mcc(mcc).await },
+                false
+            ).await?)
+        }
+        #[cfg(feature = "no-redis")]
+        {
+            Ok(MccMapping::get_by_mcc(mcc).await?)
         }
     }
 }

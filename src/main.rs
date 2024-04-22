@@ -25,7 +25,9 @@ use tracing_actix_web::TracingLogger;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry::global;
 use crate::error::data_error::DataError;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::key::Key;
+#[cfg(not(feature = "no-redis"))]
 use crate::redis::services::{
     RedisService,
     RedisServiceTrait
@@ -163,6 +165,11 @@ async fn main() -> std::io::Result<()> {
         .with(env_filter)
         .with(telemetry_layer)
         .with(stdout_log);
+
+    #[cfg(not(feature="logs-to-stdout"))]
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(telemetry_layer);
 
     set_global_default(subscriber).expect("Failed to set subscriber");
     tracing::warn!("TEST");
