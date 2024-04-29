@@ -5,5 +5,5 @@ pub mod error;
 mod helper;
 mod r#enum;
 mod constant;
-//mod tests;
+mod tests;
 mod from_client_error;

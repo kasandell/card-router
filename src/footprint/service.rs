@@ -73,19 +73,19 @@ impl FootprintServiceTrait for FootprintService {
         tracing::info!("Proxying payment request");
         // TODO: i'd like to move these into a testable location
         let number = Some(
-            to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::CardNumber))?
+            to_value(individual_request_part_for_customer_template(request.footprint_vault_id, request.payment_method_id, &CardPart::CardNumber))?
         );
         let cvc = Some(
-            to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::Cvc))?
+            to_value(individual_request_part_for_customer_template(request.footprint_vault_id, request.payment_method_id, &CardPart::Cvc))?
         );
         let expiry_month = Some(
-            to_value(individual_request_part_for_customer_with_prefix_template(request.customer_public_id, request.payment_method_id, &CardPart::Expiration))?
+            to_value(individual_request_part_for_customer_with_prefix_template(request.footprint_vault_id, request.payment_method_id, &CardPart::Expiration))?
         );
         let expiry_year = Some(
-            to_value(individual_request_part_for_customer_with_suffix_template(request.customer_public_id, request.payment_method_id, &CardPart::Expiration))?
+            to_value(individual_request_part_for_customer_with_suffix_template(request.footprint_vault_id, request.payment_method_id, &CardPart::Expiration))?
         );
         let name = Some(
-            to_value(individual_request_part_for_customer_template(request.customer_public_id, request.payment_method_id, &CardPart::Name))?
+            to_value(individual_request_part_for_customer_template(request.footprint_vault_id, request.payment_method_id, &CardPart::Name))?
         );
         let payment_request = Some(PaymentRequest {
             account_info: None,
@@ -125,7 +125,7 @@ impl FootprintServiceTrait for FootprintService {
             line_items: None,
             localized_shopper_statement: None,
             mandate: None,
-            mcc: Some(request.mcc.to_string()), // TODO: this causes txn to block
+            mcc: Some(request.mcc.to_string()), // TODO: this can only be 4121 right now for adyen
             merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
             merchant_order_reference: None,
             merchant_risk_indicator: None,

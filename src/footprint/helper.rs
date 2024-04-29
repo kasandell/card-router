@@ -39,7 +39,7 @@ pub fn individual_request_part_for_customer_with_prefix_template(customer_id: &s
 
 pub fn individual_request_part_for_customer_with_suffix_template(customer_id: &str, card_id: &str, part: &CardPart) -> String {
     // {{ CCCC.card.XXXXX.expiry | suffix(2) }} used for extracting year
-    return "{{ ".to_string().add(&customer_id).add(".card.").add(card_id).add(".").add(part.as_str()).add(" | suffix(2) }}");
+    return "{{ ".to_string().add(&customer_id).add(".card.").add(card_id).add(".").add(part.as_str()).add(" | suffix(4) }}");
 }
 
 pub fn get_scopes_for_request() -> Vec<String> {
@@ -130,7 +130,7 @@ mod helper_tests {
     fn test_individual_request_part_for_customer_template_suffix() {
         let card_id = "1234";
         let customer_id = "abc";
-        assert_eq!("{{ abc.card.1234.expiration | suffix(2) }}", &individual_request_part_for_customer_with_suffix_template(customer_id, card_id, &CardPart::Expiration));
+        assert_eq!("{{ abc.card.1234.expiration | suffix(4) }}", &individual_request_part_for_customer_with_suffix_template(customer_id, card_id, &CardPart::Expiration));
     }
 
     #[test]

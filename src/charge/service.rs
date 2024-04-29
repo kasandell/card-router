@@ -232,7 +232,8 @@ impl ChargeService {
                 amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32
                 mcc: &transaction_metadata.mcc,
                 payment_method_id: &card.payment_method_id,
-                customer_public_id: &user.public_id.to_string(),
+                customer_public_id: &user.public_id.to_string(), // needed to proxy the data in correctly. should change arg name
+                footprint_vault_id: &user.footprint_vault_id.to_string(), // needed to proxy the data in correctly. should change arg name
                 idempotency_key: &idempotency_key,
                 reference: &Uuid::new_v4().to_string(),
                 statement: &transaction_metadata.memo
