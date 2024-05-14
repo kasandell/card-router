@@ -17,17 +17,19 @@ use adyen_checkout::models::payment_request::{RecurringProcessingModel, ShopperI
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
+use secrecy::ExposeSecret;
 use serde_json::to_value;
 use uuid::Uuid;
+use crate::configuration::adyen::AdyenConfiguration;
 use crate::constant::financial_constant;
-use crate::environment::ENVIRONMENT;
 use super::error::CheckoutError;
 use crate::user::model::UserModel as User;
 use crate::util::api_call::wrap_api_call;
 use super::request::ChargeCardRequest;
 
 pub struct AdyenCheckoutService {
-    configuration: Configuration
+    configuration: Configuration,
+    client_configuration: AdyenConfiguration
 }
 
 #[cfg_attr(test, automock)]
@@ -56,18 +58,19 @@ pub trait AdyenChargeServiceTrait {
 }
 
 impl AdyenCheckoutService {
-    #[tracing::instrument]
-    pub fn new() -> Self {
+    #[tracing::instrument(skip_all)]
+    pub fn new(adyen_configuration: AdyenConfiguration) -> Self {
         Self {
             configuration: Configuration {
                 api_key: Some(
                     ApiKey {
                         prefix: None,
-                        key: ENVIRONMENT.adyen_api_key.clone()
+                        key: adyen_configuration.api_key.expose_secret().clone(),
                     }
                 ),
                 ..Default::default()
-            }
+            },
+            client_configuration: adyen_configuration
         }
     }
 }
@@ -119,7 +122,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
             localized_shopper_statement: None,
             mandate: None,
             mcc: None, //Some(request.mcc.to_string()), // TODO: this causes txn to block
-            merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
+            merchant_account: self.client_configuration.merchant_account_name.clone(),
             merchant_order_reference: None,
             merchant_risk_indicator: None,
             metadata: None,
@@ -153,7 +156,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
             platform_chargeback_logic: None,
             recurring_expiry: None,
             recurring_frequency: None,
-            recurring_processing_model: Some(adyen_checkout::models::payment_request::RecurringProcessingModel::UnscheduledCardOnFile),
+            recurring_processing_model: None,
             redirect_from_issuer_method: None,
             redirect_to_issuer_method: None,
             reference: request.reference.to_string(),
@@ -201,7 +204,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
                 Some(
                     PaymentCancelRequest {
                         application_info: None,
-                        merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
+                        merchant_account: self.client_configuration.merchant_account_name.clone(),
                         reference: Some(Uuid::new_v4().to_string()),
                     }
                 )
@@ -258,7 +261,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
             localized_shopper_statement: None,
             mandate: None,
             mcc: None,
-            merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
+            merchant_account: self.client_configuration.merchant_account_name.clone(),
             merchant_order_reference: None,
             merchant_risk_indicator: None,
             metadata: None,
@@ -271,7 +274,7 @@ impl AdyenChargeServiceTrait for AdyenCheckoutService {
             platform_chargeback_logic: None,
             recurring_expiry: None,
             recurring_frequency: None,
-            recurring_processing_model: Some(RecurringProcessingModel::UnscheduledCardOnFile),
+            recurring_processing_model: None,
             redirect_from_issuer_method: None,
             redirect_to_issuer_method: None,
             // this needs to be same as wallet match reference

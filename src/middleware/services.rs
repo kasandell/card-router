@@ -5,6 +5,7 @@ use crate::charge::service::ChargeService;
 use crate::user::service::{UserService, UserServiceTrait};
 use crate::adyen::checkout::service::AdyenCheckoutService as AdyenChargeService;
 use crate::category::service::{CategoryService, CategoryServiceTrait};
+use crate::configuration::configuration::Configuration;
 use crate::credit_card_type::service::{
     CreditCardServiceTrait,
     CreditCardService
@@ -35,21 +36,23 @@ pub struct Services {
 }
 
 impl Services {
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub fn new() -> Self {
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
+    pub fn new(configuration: Configuration) -> Self {
         tracing::info!("Instantiating all services");
         // TODO: these might need to be initialized in main
-        let lithic_service = Arc::new(LithicService::new());
+        let lithic_service = Arc::new(LithicService::new(&configuration.lithic));
         let credit_card_service = Arc::new(CreditCardService::new());
         #[cfg(feature = "fake-footprint")]
         let footprint_service = Arc::new(FakeFootprintService::new());
         #[cfg(not(feature = "fake-footprint"))]
-        let footprint_service = Arc::new(FootprintService::new());
+        let footprint_service = Arc::new(FootprintService::new(&configuration));
         let wallet_service = Arc::new(WalletService::new_with_services(
             credit_card_service.clone(),
             footprint_service.clone()
         ));
-        let passthrough_card_service = Arc::new(PassthroughCardService::new());
+        let passthrough_card_service = Arc::new(PassthroughCardService::new_with_services(
+           lithic_service.clone()
+        ));
         let ledger = Arc::new(LedgerEngine::new());
         let user_service = Arc::new(UserService::new_with_services(
             footprint_service.clone()

@@ -73,3 +73,6 @@ redis-derive = "0.1.7"
 itertools = "0.11.0"
 bb8-redis = "0.15.0"
 just = "1.25.2"
+config = "0.14.0"
+serde-aux = "4.5.0"
+

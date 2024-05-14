@@ -1,0 +1,8 @@
+application:
+  port: 8080
+
+redis:
+  url: "redis://localhost"
+  port: 6379
+
+

@@ -13,6 +13,8 @@ use jsonwebtoken::{
 use serde::Deserialize;
 use std::{collections::HashSet, future::Future, pin::Pin, env};
 use futures_util::TryStreamExt;
+use secrecy::ExposeSecret;
+use crate::configuration::configuration::get_configuration_sync;
 use crate::constant;
 use super::error::AuthError;
 
@@ -24,9 +26,10 @@ pub struct Auth0Config {
 
 impl Default for Auth0Config {
     fn default() -> Self {
+        let config = get_configuration_sync().expect("config should exist");
         Self {
-            audience: env::var(constant::env_key::AUTH0_AUDIENCE).expect("should exist"),
-            domain: env::var(constant::env_key::AUTH0_DOMAIN).expect("should exist"),
+            audience: config.auth0.audience.expose_secret().clone(),
+            domain: config.auth0.domain.expose_secret().clone(),
         }
     }
 }

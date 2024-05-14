@@ -1,7 +1,6 @@
 use std::time::Duration;
 use async_trait::async_trait;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use crate::environment::ENVIRONMENT;
 use diesel_async::{AsyncConnection, AsyncPgConnection};
 use diesel::{Connection, PgConnection};
 use diesel::prelude::*;
@@ -9,8 +8,10 @@ use diesel_async::pooled_connection::{bb8::{RunError, Pool}, AsyncDieselConnecti
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::CustomizeConnection as SyncCustomizeConnection;
 use bb8::{PooledConnection, CustomizeConnection};
+use secrecy::ExposeSecret;
 use tokio::sync::OnceCell;
 use tonic::codegen::tokio_stream::StreamExt;
+use crate::configuration::configuration::get_global_configuration;
 
 pub type ConnManage = AsyncDieselConnectionManager<AsyncPgConnection>;
 pub type DbConnection<'a> = PooledConnection<'a, ConnManage>;
@@ -27,24 +28,23 @@ static POOL: OnceCell<Pool<AsyncPgConnection>> = OnceCell::const_new();
 static SYNC_POOL: OnceCell<r2d2::Pool<ConnectionManager<PgConnection>>> = OnceCell::const_new();
 
 pub async fn init_db() -> Pool<AsyncPgConnection>{
-   let db_url = ENVIRONMENT.database_url.clone();
-   let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(db_url);
-   let pool_size = match cfg!(test) {
-       true => 1,
-       false => 50,
-   };
-   let mut builder = Pool::builder();
-    if cfg!(test) {
-        tracing::warn!("Running test pool");
-        builder = builder.connection_customizer(Box::new(TestConnectionCustomizer));
-    }
-   tracing::info!("Initializing connection pool with {} connections", pool_size);
-   builder.max_size(pool_size).connection_timeout(Duration::from_secs(2)).build(manager).await.expect("Failed to create db pool")
+    let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(get_database_url().await);
+    let pool_size = match cfg!(test) {
+        true => 1,
+        false => 50,
+    };
+    let mut builder = Pool::builder();
+     if cfg!(test) {
+         tracing::warn!("Running test pool");
+         builder = builder.connection_customizer(Box::new(TestConnectionCustomizer));
+     }
+    tracing::info!("Initializing connection pool with {} connections", pool_size);
+    builder.max_size(pool_size).connection_timeout(Duration::from_secs(2)).build(manager).await.expect("Failed to create db pool")
 }
 
 pub async fn init_sync_db() -> r2d2::Pool<ConnectionManager<PgConnection>> {
-    let db_url = ENVIRONMENT.database_url.clone();
-    let manager = ConnectionManager::<PgConnection>::new(db_url);
+
+    let manager = ConnectionManager::<PgConnection>::new(get_database_url().await);
     let pool_size = 1;
     let mut builder = r2d2::Pool::builder();
     if cfg!(test) {
@@ -61,6 +61,21 @@ pub async fn init() {
     let mut conn = SYNC_POOL.get_or_init(init_sync_db).await.get().expect("need sync connection");
     run_migration(&mut conn);
     tracing::info!("Initialized DB");
+}
+
+pub async fn get_database_url() -> String {
+    let config = &get_global_configuration().await.database;
+    // TODO: extract and test this
+    let url = format!(
+        "postgres://{}:{}@{}:{}/{}",
+        &config.username,
+        &config.password.expose_secret(),
+        &config.host,
+        &config.port,
+        &config.database_name
+    );
+
+    url
 }
 
 pub type ConnResult<'a> = Result<PooledConnection<'a, AsyncDieselConnectionManager<AsyncPgConnection>>, RunError>;

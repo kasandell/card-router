@@ -169,13 +169,6 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
 
 impl PassthroughCardService {
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
-    pub fn new() -> Self {
-        Self {
-            lithic_service: Arc::new(LithicService::new()),
-            passthrough_card_dao: Arc::new(PassthroughCardDao::new())
-        }
-    }
-    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     pub fn new_with_services(
         lithic_service: Arc<dyn LithicServiceTrait>,
     ) -> Self {

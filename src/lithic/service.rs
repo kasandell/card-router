@@ -15,7 +15,8 @@ use uuid::Uuid;
 use super::error::LithicError;
 use async_trait::async_trait;
 use base64::Engine;
-use crate::environment::ENVIRONMENT;
+use secrecy::ExposeSecret;
+use crate::configuration::lithic::LithicConfiguration;
 use crate::util::api_call::wrap_api_call;
 
 
@@ -48,11 +49,6 @@ pub trait LithicServiceTrait {
         state: Option<&'a PatchState>,
         pin: Option<&'a str>
     ) -> Result<Card, LithicError>;
-
-    // TODO: this is not actually how we enroll. see https://github.com/lithic-com/asa-demo-python/blob/main/scripts/enroll.py
-    async fn register_webhook(self: Arc<Self>, idempotency_key: &str) -> Result<EventSubscription, LithicError>;
-
-    async fn deregister_webhook(self: Arc<Self>, event_subscription_token: &str) -> Result<(), LithicError>;
 }
 
 pub struct LithicService {
@@ -60,10 +56,10 @@ pub struct LithicService {
 }
 
 impl LithicService {
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub fn new() -> Self {
+    #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
+    pub fn new(configuration: &LithicConfiguration) -> Self {
         let mut cfg = Configuration::new();
-        let base_path = match ENVIRONMENT.mode.as_str() {
+        let base_path = match configuration.mode.as_str() {
             "production" => "https://api.lithic.com/v1".to_owned(),
             _ => "https://sandbox.lithic.com/v1".to_owned(),
         };
@@ -71,10 +67,10 @@ impl LithicService {
 
         cfg.api_key = Some(ApiKey {
             prefix: None,
-            key: ENVIRONMENT.lithic_api_key.clone(),
+            key: configuration.api_key.expose_secret().clone(),
         });
 
-        let mut client = reqwest::Client::builder()
+        let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(10))
             .connect_timeout(Duration::from_secs(10))
             .connection_verbose(true)
@@ -176,41 +172,9 @@ impl LithicServiceTrait for LithicService {
                     spend_limit_duration: Some(SpendLimitDuration::Forever),
                     auth_rule_token: None,
                     state: state.copied(),
-                    //Some(encrypt_pin("1234".to_string())),
                     pin: None,
                     digital_card_art_token: None,
                 }
-            ).await)?
-        )
-    }
-
-    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
-    async fn register_webhook(self: Arc<Self>, idempotency_key: &str) -> Result<EventSubscription, LithicError> {
-        tracing::warn!("Registering webhook, deprecated");
-        Ok(
-            wrap_api_call(create_event_subscription(
-                &self.configuration.clone(), // TODO: Not sure
-                Some(serde_json::to_value(idempotency_key).expect("should work")),
-                Some(
-                    CreateEventSubscriptionRequest {
-                        description: Some("base event subscription".to_string()),
-                        disabled: Some(false),
-                        event_types: None,
-                        url: ENVIRONMENT.lithic_webhook_url.clone()
-                    }
-                )
-            ).await)?
-        )
-    }
-
-    #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
-    async fn deregister_webhook(self: Arc<Self>, event_subscription_token: &str) -> Result<(), LithicError> {
-        tracing::warn!("Deregister webhook, deprecated");
-        Ok(
-            wrap_api_call(delete_event_subscription(
-                &self.configuration.clone(),
-                event_subscription_token,
-                None
             ).await)?
         )
     }

@@ -19,7 +19,7 @@ Cargo.log
 *.pdb
 
 .vscode
-.env
+**.env
 api.lithic.com.pub.pem
 countlines.sh
 tarpaulin-report.html

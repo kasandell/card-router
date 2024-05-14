@@ -7,13 +7,13 @@ use async_trait::async_trait;
 
 use super::error::FootprintError;
 use footprint::apis::configuration::{ApiKey, BasicAuth, Configuration};
+use crate::configuration::configuration::Configuration as RouterConfiguration;
 use footprint::apis::default_api::{post_vault_proxy, create_user_vault, create_client_token, post_vault_proxy_jit};
 use footprint::models::{CreateClientTokenRequest, CreateClientTokenResponse, CreateUserVaultResponse};
 use mockall::automock;
 use rand::Rng;
+use secrecy::ExposeSecret;
 use serde_json::to_value;
-use crate::constant::env_key::{ADYEN_API_KEY, FOOTPRINT_SECRET_KEY, FOOTPRINT_VAULT_PROXY_ID};
-use crate::environment::ENVIRONMENT;
 use crate::footprint::helper::{card_request_parts_for_card_id, get_scopes_for_request, individual_request_part_for_customer_template, individual_request_part_for_customer_with_prefix_template, individual_request_part_for_customer_with_suffix_template};
 use crate::footprint::r#enum::CardPart;
 use crate::footprint::request::ChargeThroughProxyRequest;
@@ -21,6 +21,8 @@ use crate::constant::financial_constant;
 use crate::footprint::constant::Constant::{CONTENT_TYPE, PROXY_ACCESS_REASON, PROXY_METHOD, PROXY_URL, TTL};
 use crate::user::model::UserModel as User;
 use tokio::time::sleep;
+use tonic::transport::server::Router;
+use crate::configuration::adyen::AdyenConfiguration;
 use crate::util::api_call::wrap_api_call;
 
 
@@ -35,24 +37,26 @@ pub trait FootprintServiceTrait {
 
 pub struct FootprintService {
     configuration: Configuration,
-    adyen_proxy_id: String,
-    adyen_api_key: String
+    adyen_configuration: AdyenConfiguration
 }
 
 impl FootprintService {
-    #[tracing::instrument]
-    pub fn new() -> Self {
+    #[tracing::instrument(skip_all)]
+    pub fn new(configuration: &RouterConfiguration) -> Self {
         tracing::info!("initializing footprint service");
         let mut cfg = Configuration::new();
-        cfg.basic_auth = Some((env::var(FOOTPRINT_SECRET_KEY).expect("need key"), None));
+        cfg.basic_auth =
+            Some((
+                configuration.footprint.secret_key.expose_secret().clone(),
+                None
+                ));
         cfg.api_key = Some(ApiKey {
             prefix: None,
-            key: env::var(FOOTPRINT_SECRET_KEY).expect("need key"),
+            key: configuration.footprint.secret_key.expose_secret().clone(),
         });
         Self {
             configuration: cfg,
-            adyen_proxy_id: env::var(FOOTPRINT_VAULT_PROXY_ID).expect("Need a proxy id"),
-            adyen_api_key: env::var(ADYEN_API_KEY).expect("Need an api key"),
+            adyen_configuration: configuration.adyen.clone(),
         }
     }
 }
@@ -126,7 +130,7 @@ impl FootprintServiceTrait for FootprintService {
             localized_shopper_statement: None,
             mandate: None,
             mcc: Some(request.mcc.to_string()), // TODO: this can only be 4121 right now for adyen
-            merchant_account: ENVIRONMENT.adyen_merchant_account_name.clone(),
+            merchant_account: self.adyen_configuration.merchant_account_name.clone(),
             merchant_order_reference: None,
             merchant_risk_indicator: None,
             metadata: None,
@@ -206,7 +210,7 @@ impl FootprintServiceTrait for FootprintService {
             PROXY_URL,
             PROXY_METHOD,
             PROXY_ACCESS_REASON,
-            &self.adyen_api_key,
+            &self.adyen_configuration.api_key.expose_secret().clone(),
             Some(
                 to_value(payment_request)?
             )
