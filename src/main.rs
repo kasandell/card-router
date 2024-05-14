@@ -121,7 +121,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let configuration = get_configuration_sync().expect("gets configuration");
-        let services = middleware::services::Services::new(configuration);
+        let services = middleware::services::Services::new(&configuration);
         let auth0_config = Auth0Config::default();
         App::new()
             .wrap(TracingLogger::default())

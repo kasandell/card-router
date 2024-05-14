@@ -7,6 +7,7 @@ mod tests {
     use crate::footprint::helper::{card_request_parts_for_card_id, get_scopes_for_request};
     use std::sync::Arc;
     use uuid::Uuid;
+    use crate::configuration::configuration::get_configuration_sync;
     use crate::footprint::request::ChargeThroughProxyRequest;
     use crate::test_helper::general::init;
 
@@ -14,7 +15,8 @@ mod tests {
     #[ignore]
     pub async fn test_token() {
         init();
-        let svc = Arc::new(FootprintService::new());
+        let configuration = get_configuration_sync().expect("should config");
+        let svc = Arc::new(FootprintService::new(&configuration));
         let mut user = create_mock_user();
         user.footprint_vault_id = "dont show this in githhb".to_string();
         let card_id = "1234";
@@ -34,7 +36,8 @@ mod tests {
     #[ignore]
     pub async fn test_vaults_ok() {
         init();
-        let svc = Arc::new(FootprintService::new());
+        let configuration = get_configuration_sync().expect("should config");
+        let svc = Arc::new(FootprintService::new(&configuration));
         let mut user = create_mock_user();
         user.footprint_vault_id = "dont show this in github".to_string();
         let card_id = "test_card_id";
@@ -54,7 +57,8 @@ mod tests {
     #[test]
     pub async fn test_proxy_jit() {
         init();
-        let svc = Arc::new(FootprintService::new());
+        let configuration = get_configuration_sync().expect("should config");
+        let svc = Arc::new(FootprintService::new(&configuration));
         let mut user = create_mock_user();
         user.footprint_vault_id = "fp_id_test_f9yiM0ApjGAmzV8omL0VyV".to_string();//"fp_id_test_bbuDykRYNy0fltERAR79RP".to_string();
         let res = svc.clone().proxy_adyen_payment_request(

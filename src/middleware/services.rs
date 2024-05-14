@@ -37,7 +37,7 @@ pub struct Services {
 
 impl Services {
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
-    pub fn new(configuration: Configuration) -> Self {
+    pub fn new(configuration: &Configuration) -> Self {
         tracing::info!("Instantiating all services");
         // TODO: these might need to be initialized in main
         let lithic_service = Arc::new(LithicService::new(&configuration.lithic));
@@ -89,10 +89,11 @@ impl Services {
 
 #[cfg(test)]
 mod test {
+    use crate::configuration::configuration::get_configuration_sync;
     use crate::middleware::services::Services;
 
     #[test]
     fn test_services_create() {
-        let svc_middleware = Services::new();
+        let svc_middleware = Services::new(&get_configuration_sync().expect("should config"));
     }
 }
