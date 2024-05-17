@@ -11,5 +11,6 @@ pub fn config(cfg: &mut web::ServiceConfig) -> () {
                 .service(controller::list_cards)
                 .service(controller::register_new_card_attempt)
                 .service(controller::match_card)
+                .service(controller::update_status)
         );
 }

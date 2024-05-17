@@ -20,8 +20,10 @@ mod tests {
     use crate::test_helper::user::create_user;
     use crate::test_helper::wallet::create_mock_wallet_attempt;
     use crate::util::db;
-    use crate::wallet::constant::WalletCardAttemptStatus;
-    use crate::wallet::entity::{UpdateCardAttempt, Wallet, WalletCardAttempt};
+    use crate::util::transaction::transactional;
+    use crate::wallet::constant::{WalletCardAttemptStatus, WalletStatus};
+    use crate::wallet::dao::WalletStatusHistoryDao;
+    use crate::wallet::entity::{UpdateCardAttempt, Wallet, WalletCardAttempt, WalletStatusHistory};
     use crate::wallet::error::WalletError;
     use crate::wallet::service::{WalletService, WalletServiceTrait};
     use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
@@ -273,6 +275,13 @@ mod tests {
         assert_eq!(created_card.payment_method_id, attempt_in_db.expected_reference_id.to_string());
         assert_eq!(created_card.wallet_card_attempt_id, attempt_in_db.id);
         assert_eq!(attempt_in_db.status, WalletCardAttemptStatus::Matched);
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(1, history.len());
+        let item = history.get(0).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Active, item.current_status);
+
     }
 
     #[test]
@@ -369,6 +378,12 @@ mod tests {
         assert_eq!(attempt_in_db.updated_at, attempt_updated_at);
         assert_eq!(card.created_at, created_at);
         assert_eq!(card.updated_at, updated_at);
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(1, history.len());
+        let item = history.get(0).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Active, item.current_status);
     }
 
     #[test]
@@ -522,12 +537,15 @@ mod tests {
         let created_at = card.created_at;
         let updated_at = card.updated_at;
         
-        let attempt_in_db_pending = WalletCardAttempt::update_card(
-            attempt_in_db.id,
-            &UpdateCardAttempt {
-                status: WalletCardAttemptStatus::Pending,
-            }
-        ).await.expect("should update");
+        let attempt_in_db_pending = transactional(|txn| async move {
+            WalletCardAttempt::update_card(
+                txn.clone(),
+                attempt_in_db.id,
+                &UpdateCardAttempt {
+                    status: WalletCardAttemptStatus::Pending,
+                }
+            ).await
+        }).await.map_err(|e: DataError| WalletError::Unexpected(e.into())).expect("should update");
         assert_eq!(attempt_in_db_pending.status, WalletCardAttemptStatus::Pending);
 
         let error = wallet_engine.clone().match_card(
@@ -554,5 +572,230 @@ mod tests {
         assert_eq!(card.payment_method_id, attempt_in_db.expected_reference_id);
         assert_eq!(card.created_at, created_at);
         assert_eq!(card.updated_at, updated_at);
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(1, history.len());
+        let item = history.get(0).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Active, item.current_status);
+    }
+
+    #[test]
+    async fn test_update_status() {
+        crate::test_helper::general::init();
+        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut footprint_service = MockFootprintServiceTrait::new();
+
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let cc_cloned = cc.clone();
+        credit_card_service.expect_find_by_public_id()
+            .times(1)
+            .with(eq(CREDIT_CARD_PUBLIC_ID))
+            .return_once(
+                move |_| Ok(cc_cloned)
+            );
+
+        footprint_service.expect_create_client_token()
+            .once()
+            .return_once(move |_, _|
+                Ok(CreateClientTokenResponse {
+                    expires_at: None,
+                    token: TOKEN.to_string(),
+                })
+            );
+
+        let user = create_user().await;
+
+        let wallet_engine = Arc::new(WalletService::new_with_services(
+            Arc::new(credit_card_service),
+            Arc::new(footprint_service)
+        ));
+
+        let attempt = wallet_engine.clone().register_new_attempt(
+            &user,
+            &RegisterAttemptRequest {
+                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+            }
+        ).await.expect("creates ok");
+
+        let created_card = wallet_engine.clone().match_card(
+            &user,
+            &MatchRequest {
+                reference_id: attempt.reference_id.clone()
+            }
+        ).await.expect("should be ok");
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(1, history.len());
+        let item = history.get(0).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Active, item.current_status);
+
+        let card = wallet_engine.clone().update_card_status(
+            &user,
+            &created_card.public_id,
+            WalletStatus::Paused
+        ).await.expect("card gotten");
+        assert_eq!(WalletStatus::Paused, card.status);
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(2, history.len());
+        let item = history.get(1).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Paused, item.current_status);
+    }
+
+    #[test]
+    async fn test_update_status_several() {
+        crate::test_helper::general::init();
+        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut footprint_service = MockFootprintServiceTrait::new();
+
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let cc_cloned = cc.clone();
+        credit_card_service.expect_find_by_public_id()
+            .times(1)
+            .with(eq(CREDIT_CARD_PUBLIC_ID))
+            .return_once(
+                move |_| Ok(cc_cloned)
+            );
+
+        footprint_service.expect_create_client_token()
+            .once()
+            .return_once(move |_, _|
+                Ok(CreateClientTokenResponse {
+                    expires_at: None,
+                    token: TOKEN.to_string(),
+                })
+            );
+
+        let user = create_user().await;
+
+        let wallet_engine = Arc::new(WalletService::new_with_services(
+            Arc::new(credit_card_service),
+            Arc::new(footprint_service)
+        ));
+
+        let attempt = wallet_engine.clone().register_new_attempt(
+            &user,
+            &RegisterAttemptRequest {
+                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+            }
+        ).await.expect("creates ok");
+
+        let created_card = wallet_engine.clone().match_card(
+            &user,
+            &MatchRequest {
+                reference_id: attempt.reference_id.clone()
+            }
+        ).await.expect("should be ok");
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(1, history.len());
+        let item = history.get(0).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Active, item.current_status);
+
+        let card = wallet_engine.clone().update_card_status(
+            &user,
+            &created_card.public_id,
+            WalletStatus::Paused
+        ).await.expect("card gotten");
+        assert_eq!(WalletStatus::Paused, card.status);
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(2, history.len());
+        let item = history.get(1).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Paused, item.current_status);
+
+        let card = wallet_engine.clone().update_card_status(
+            &user,
+            &created_card.public_id,
+            WalletStatus::Active
+        ).await.expect("card gotten");
+        assert_eq!(WalletStatus::Active, card.status);
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(3, history.len());
+        let item = history.get(2).expect("has item");
+        assert_eq!(WalletStatus::Paused, item.prior_status);
+        assert_eq!(WalletStatus::Active, item.current_status);
+    }
+
+    #[test]
+    async fn test_update_status_close_cant_reopen() {
+        crate::test_helper::general::init();
+        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut footprint_service = MockFootprintServiceTrait::new();
+
+        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let cc_cloned = cc.clone();
+        credit_card_service.expect_find_by_public_id()
+            .times(1)
+            .with(eq(CREDIT_CARD_PUBLIC_ID))
+            .return_once(
+                move |_| Ok(cc_cloned)
+            );
+
+        footprint_service.expect_create_client_token()
+            .once()
+            .return_once(move |_, _|
+                Ok(CreateClientTokenResponse {
+                    expires_at: None,
+                    token: TOKEN.to_string(),
+                })
+            );
+
+        let user = create_user().await;
+
+        let wallet_engine = Arc::new(WalletService::new_with_services(
+            Arc::new(credit_card_service),
+            Arc::new(footprint_service)
+        ));
+
+        let attempt = wallet_engine.clone().register_new_attempt(
+            &user,
+            &RegisterAttemptRequest {
+                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+            }
+        ).await.expect("creates ok");
+
+        let created_card = wallet_engine.clone().match_card(
+            &user,
+            &MatchRequest {
+                reference_id: attempt.reference_id.clone()
+            }
+        ).await.expect("should be ok");
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(1, history.len());
+        let item = history.get(0).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Active, item.current_status);
+
+        let card = wallet_engine.clone().update_card_status(
+            &user,
+            &created_card.public_id,
+            WalletStatus::Closed
+        ).await.expect("card gotten");
+        assert_eq!(WalletStatus::Closed, card.status);
+
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(2, history.len());
+        let item = history.get(1).expect("has item");
+        assert_eq!(WalletStatus::Active, item.prior_status);
+        assert_eq!(WalletStatus::Closed, item.current_status);
+
+        let err = wallet_engine.clone().update_card_status(
+            &user,
+            &created_card.public_id,
+            WalletStatus::Active
+        ).await.expect_err("card gotten");
+        assert_eq!(WalletError::NotAcceptable("test".into()), err);
+        let card = Wallet::find_by_public_id(&created_card.public_id).await.expect("gets card");
+        assert_eq!(WalletStatus::Closed, card.status);
+        let history = WalletStatusHistory::get_by_wallet_id(created_card.id).await.expect("history");
+        assert_eq!(2, history.len());
     }
 }

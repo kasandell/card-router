@@ -7,12 +7,13 @@ use crate::adyen::checkout::service::{AdyenChargeServiceTrait, AdyenCheckoutServ
 use crate::credit_card_type::service::CreditCardServiceTrait;
 use crate::error::data_error::DataError;
 use crate::user::model::UserModel as User;
-use crate::wallet::constant::WalletCardAttemptStatus;
-use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait};
-use crate::wallet::entity::{InsertableCardAttempt, InsertableCard, UpdateCardAttempt, Wallet, WalletCardAttempt, WalletDetail};
+use crate::wallet::constant::{WalletCardAttemptStatus, WalletStatus};
+use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait, WalletStatusHistoryDao, WalletStatusHistoryDaoTrait};
+use crate::wallet::entity::{InsertableCardAttempt, InsertableCard, UpdateCardAttempt, Wallet, WalletCardAttempt, WalletDetail, UpdateWalletStatus, InsertableWalletStatusHistory};
 use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
 
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
+use crate::util::transaction::transactional;
 use crate::wallet::error::WalletError;
 use crate::wallet::model::{WalletModel, WalletWithExtraInfoModel};
 use crate::wallet::response::WalletCardAttemptResponse;
@@ -34,7 +35,16 @@ pub trait WalletServiceTrait {
     ) -> Result<WalletCardAttemptResponse, WalletError>;
 
     async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError>;
+
+    async fn find_all_active_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError>;
     async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError>;
+
+    async fn update_card_status(
+        self: Arc<Self>,
+        user: &User,
+        public_id: &Uuid,
+        new_status: WalletStatus
+    ) -> Result<WalletModel, WalletError>;
 }
 
 // TODO: now that we make the api calls from the backend, we can consolidate the wallet card attempt creation
@@ -43,6 +53,7 @@ pub struct WalletService {
     credit_card_service: Arc<dyn CreditCardServiceTrait>,
     wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
     wallet_dao: Arc<dyn WalletDaoTrait>,
+    wallet_status_history_dao: Arc<dyn WalletStatusHistoryDaoTrait>,
     footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
@@ -56,6 +67,7 @@ impl WalletService {
             credit_card_service,
             wallet_card_attempt_dao: Arc::new(WalletCardAttemptDao::new()),
             wallet_dao: Arc::new(WalletDao::new()),
+            wallet_status_history_dao: Arc::new(WalletStatusHistoryDao::new()),
             footprint_service
         }
     }
@@ -123,20 +135,33 @@ impl WalletServiceTrait for WalletService {
         }
 
         tracing::info!("Creating card");
-        let created_card = self.wallet_dao.clone().insert_card(
-            &InsertableCard {
-                user_id: card_attempt.user_id,
-                payment_method_id: &request.reference_id,
-                credit_card_id: card_attempt.credit_card_id,
-                wallet_card_attempt_id: card_attempt.id,
-            }
-        ).await?;
-        tracing::info!("Created card: {}", &created_card.public_id);
-        let update = self.wallet_card_attempt_dao.clone().update_card(card_attempt.id, &UpdateCardAttempt {
-            status: WalletCardAttemptStatus::Matched
-        }).await?;
-        tracing::info!("Updated to matched: {}", &update.status);
-        Ok(created_card.into())
+        transactional(|conn| async move {
+            let created_card = self.wallet_dao.clone().insert_card(
+                conn.clone(),
+                &InsertableCard {
+                    user_id: card_attempt.user_id,
+                    payment_method_id: &request.reference_id,
+                    credit_card_id: card_attempt.credit_card_id,
+                    wallet_card_attempt_id: card_attempt.id,
+                }
+            ).await?;
+            let status_history = self.wallet_status_history_dao.clone().insert(
+                conn.clone(),
+                &InsertableWalletStatusHistory {
+                wallet_id: created_card.id,
+                prior_status: WalletStatus::Active,
+                current_status: WalletStatus::Active,
+            }).await?;
+            tracing::info!("Created card: {}", &created_card.public_id);
+            let update = self.wallet_card_attempt_dao.clone().update_card(
+                conn.clone(),
+                card_attempt.id, &UpdateCardAttempt {
+                status: WalletCardAttemptStatus::Matched
+            }).await?;
+            tracing::info!("Updated to matched: {}", &update.status);
+            Ok(created_card.into())
+
+        }).await
     }
 
     #[tracing::instrument(skip(self))]
@@ -151,6 +176,19 @@ impl WalletServiceTrait for WalletService {
     }
 
     #[tracing::instrument(skip(self))]
+    async fn find_all_active_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError> {
+        tracing::info!("Finding all cards for user_id={}", &user.id);
+        // TODO: should this call a dao method, or just filter the results
+        Ok(
+            self.wallet_dao.clone().find_all_for_user(user).await?
+                .into_iter()
+                .map(|e| e.into())
+                .filter(|e: &WalletModel| e.status == WalletStatus::Active)
+                .collect()
+        )
+    }
+
+    #[tracing::instrument(skip(self))]
     async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError> {
         tracing::info!("Finding all cards with extra info for user_id={}", &user.id);
         Ok(
@@ -159,6 +197,48 @@ impl WalletServiceTrait for WalletService {
                 .map(|e| e.into())
                 .collect()
         )
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn update_card_status(
+        self: Arc<Self>,
+        user: &User,
+        public_id: &Uuid,
+        new_status: WalletStatus
+    ) -> Result<WalletModel, WalletError> {
+        let card = self.wallet_dao.clone()
+            .find_by_public_id(public_id).await?;
+
+        if card.user_id != user.id {
+            return Err(WalletError::Unauthorized("User is not owner of card".into()))
+        }
+
+        if !card.status.can_transition(&new_status) {
+            return Err(WalletError::NotAcceptable("illegal state transition".into()))
+        }
+        let prior_status = card.status.clone();
+
+        transactional(|conn| async move {
+            let card = self.wallet_dao.clone().update_card_status(
+                conn.clone(),
+                card.id,
+                &UpdateWalletStatus {
+                status: new_status.clone()
+            }).await?;
+
+            let status_history = self.wallet_status_history_dao.clone().insert(
+                conn.clone(),
+                &InsertableWalletStatusHistory {
+                    wallet_id: card.id,
+                    prior_status: prior_status,
+                    current_status: new_status
+                }
+            ).await?;
+
+            Ok(card.into())
+
+        }).await
+
     }
 
 }

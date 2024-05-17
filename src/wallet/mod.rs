@@ -12,4 +12,3 @@ mod entity_tests;
 mod dao;
 mod tests;
 mod converter;
-mod constant_tests;

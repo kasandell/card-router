@@ -10,6 +10,8 @@ pub enum WalletError {
     NotFound(#[source] Box<dyn std::error::Error>),
     #[error("Card already matched")]
     Conflict(#[source] Box<dyn std::error::Error>),
+    #[error("Unacceptable action")]
+    NotAcceptable(#[source] Box<dyn std::error::Error>),
     #[error("Unexpected")]
     Unexpected(#[source] Box<dyn std::error::Error>)
 }
@@ -21,6 +23,7 @@ impl ResponseError for WalletError {
             WalletError::NotFound(_) => StatusCode::NOT_FOUND,
             WalletError::Conflict(_) => StatusCode::CONFLICT,
             WalletError::Unexpected(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            WalletError::NotAcceptable(_) => StatusCode::NOT_ACCEPTABLE,
         }
     }
 }
@@ -43,6 +46,7 @@ impl PartialEq for WalletError {
             (WalletError::Conflict(_), WalletError::Conflict(_))
             | (WalletError::NotFound(_), WalletError::NotFound(_))
             | (WalletError::Unexpected(_), WalletError::Unexpected(_))
+            | (WalletError::NotAcceptable(_), WalletError::NotAcceptable(_))
             | (WalletError::Unauthorized(_), WalletError::Unauthorized(_)) => true,
             _ => false
         }
@@ -72,5 +76,6 @@ mod test {
         assert_eq!(StatusCode::UNAUTHORIZED, WalletError::Unauthorized(BASE_ERROR.into()).status_code());
         assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, WalletError::Unexpected(BASE_ERROR.into()).status_code());
         assert_eq!(StatusCode::CONFLICT, WalletError::Conflict(BASE_ERROR.into()).status_code());
+        assert_eq!(StatusCode::NOT_ACCEPTABLE, WalletError::NotAcceptable(BASE_ERROR.into()).status_code());
     }
 }

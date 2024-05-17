@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::NaiveDateTime;
+use crate::wallet::constant::WalletStatus;
 use crate::wallet::model::WalletWithExtraInfoModel;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -14,6 +15,12 @@ pub struct WalletCardAttemptResponse {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WalletAddCardSuccessResponse {
     pub public_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UpdateStatusResponse {
+    pub public_id: Uuid,
+    pub status: WalletStatus,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

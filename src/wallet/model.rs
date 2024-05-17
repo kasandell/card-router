@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use uuid::Uuid;
-use crate::wallet::constant::WalletCardAttemptStatus;
+use crate::wallet::constant::{WalletCardAttemptStatus, WalletStatus};
 use crate::wallet::entity::{Wallet, WalletCardAttempt, WalletWithExtraInfo};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -12,6 +12,7 @@ pub struct WalletModel {
     pub created_at: NaiveDateTime,
     pub credit_card_id: i32,
     pub wallet_card_attempt_id: i32,
+    pub status: WalletStatus
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -30,6 +31,7 @@ pub struct WalletCardAttemptModel {
 pub struct WalletWithExtraInfoModel {
     pub id: i32,
     pub public_id: Uuid,
+    pub status: WalletStatus,
     pub created_at: NaiveDateTime,
     pub card_name: String,
     pub issuer_name: String,
@@ -47,7 +49,8 @@ impl From<Wallet> for WalletModel {
             payment_method_id: value.payment_method_id,
             created_at: value.created_at,
             credit_card_id: value.credit_card_id,
-            wallet_card_attempt_id: value.wallet_card_attempt_id
+            wallet_card_attempt_id: value.wallet_card_attempt_id,
+            status: value.status
         }
     }
 }
@@ -73,6 +76,7 @@ impl From<WalletWithExtraInfo> for WalletWithExtraInfoModel {
         WalletWithExtraInfoModel {
             id: value.id,
             public_id: value.public_id,
+            status: value.status,
             created_at: value.created_at,
             card_name: value.card_name,
             issuer_name: value.issuer_name,

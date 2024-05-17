@@ -9,7 +9,7 @@ use super::error::WalletError;
 use crate::middleware::services::Services;
 use crate::user::model::UserModel as User;
 use crate::wallet::service::{WalletService, WalletServiceTrait};
-use crate::wallet::response::DisplayableCardInfo;
+use crate::wallet::response::{DisplayableCardInfo, UpdateStatusResponse};
 use crate::wallet::response::WalletAddCardSuccessResponse;
 use super::{
     request, 
@@ -65,4 +65,28 @@ async fn list_cards(
         .map(|card| card.into())
         .collect();
     Ok(HttpResponse::Ok().json(cards))
+}
+
+
+#[post("/update_status/")]
+async fn update_status(
+    user: web::ReqData<User>,
+    info: web::Json<request::UpdateStatusRequest>,
+    services: web::Data<Services>
+) -> Result<HttpResponse, WalletError> {
+    let user = user.into_inner();
+    let info = info.into_inner();
+    tracing::info!("{:?}", &info);
+    let card = services.wallet_service.clone().update_card_status(
+        &user,
+        &info.wallet_card_public_id,
+        info.status
+    ).await?;
+
+    Ok(HttpResponse::Ok().json(
+        UpdateStatusResponse{
+            public_id: card.public_id.clone(),
+            status: card.status.clone()
+        }
+    ))
 }

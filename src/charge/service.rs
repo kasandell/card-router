@@ -213,20 +213,7 @@ impl ChargeService {
         registered_transaction: &RegisteredTransaction
     ) -> Result<(ChargeCardAttemptResult, Option<InnerChargeLedger>), ChargeError> {
         tracing::info!("Charging card with cleanup for user={} card={}", &user.id, card.id);
-        /*
-        let resp = self.charge_service.clone().charge_card_on_file(
-            &ChargeCardRequest {
-                amount_cents: transaction_metadata.amount_cents,
-                mcc: &transaction_metadata.mcc,
-                payment_method_id: &card.payment_method_id,
-                customer_public_id: &user.public_id,
-                idempotency_key: &idempotency_key,
-                reference: &Uuid::new_v4().to_string(),
-                statement: &transaction_metadata.memo,
-            }
-        ).await;
 
-         */
         let resp = self.footprint_service.clone().proxy_adyen_payment_request(
             &ChargeThroughProxyRequest {
                 amount_cents: transaction_metadata.amount_cents as i32, // TODO: edit model to be i32

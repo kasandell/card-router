@@ -7,7 +7,7 @@ use crate::credit_card_type::service::MockCreditCardServiceTrait;
 use crate::footprint::service::MockFootprintServiceTrait;
 use crate::test_helper::credit_card::create_mock_credit_card;
 use crate::user::model::UserModel;
-use crate::wallet::constant::WalletCardAttemptStatus;
+use crate::wallet::constant::{WalletCardAttemptStatus, WalletStatus};
 use crate::wallet::model::{
     WalletModel as Wallet,
     WalletCardAttemptModel as WalletCardAttempt
@@ -25,6 +25,7 @@ pub fn create_mock_wallet() -> Wallet {
         created_at: Default::default(),
         credit_card_id: 0,
         wallet_card_attempt_id: 0,
+        status: WalletStatus::Active,
     }
 }
 
@@ -40,7 +41,8 @@ pub fn create_mock_wallet_with_args(
         payment_method_id: Uuid::new_v4().to_string(),
         created_at: Utc::now().naive_utc(),
         credit_card_id: credit_card_id,
-        wallet_card_attempt_id: 0
+        wallet_card_attempt_id: 0,
+        status: WalletStatus::Active,
     }
 }
 

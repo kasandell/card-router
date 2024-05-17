@@ -75,4 +75,4 @@ bb8-redis = "0.15.0"
 just = "1.25.2"
 config = "0.14.0"
 serde-aux = "4.5.0"
-
+parking_lot = { version = "0.12.2", features = ["send_guard"] }

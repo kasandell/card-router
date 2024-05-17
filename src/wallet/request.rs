@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::wallet::constant::WalletStatus;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterAttemptRequest {
@@ -23,6 +24,12 @@ pub struct MatchAttemptRequest {
 pub struct AddCardRequest {
     pub credit_card_type_public_id: Uuid,
     pub payment_method: PaymentMethod
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateStatusRequest {
+    pub wallet_card_public_id: Uuid,
+    pub status: WalletStatus
 }
 
 

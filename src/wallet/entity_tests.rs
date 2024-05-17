@@ -5,6 +5,8 @@ mod entity_tests {
     use crate::error::data_error::DataError;
     use crate::wallet::entity::{Wallet, WalletCardAttempt, InsertableCardAttempt, InsertableCard};
     use crate::test_helper::user::create_user;
+    use crate::util::transaction::{Transaction, transactional};
+    use crate::wallet::error::WalletError;
 
     const EXPECTED_REFERENCE_ID: &str = "EXP_REF_123";
 
@@ -23,14 +25,16 @@ mod entity_tests {
         ).await;
         let attempt = attempt.expect("attempt should exist");
 
-        let card = Wallet::insert_card(
-            &InsertableCard {
-                user_id: user.id,
-                payment_method_id: stripe_pmt_id,
-                credit_card_id: CreditCardTypeEnum::ChaseSapphirePreferred.into(),
-                wallet_card_attempt_id: attempt.id
-            }
-        ).await;
+        let card = transactional(|txn| async move {
+            Wallet::insert_card(
+                txn.clone(),
+                &InsertableCard {
+                    user_id: user.id,
+                    payment_method_id: stripe_pmt_id,
+                    credit_card_id: CreditCardTypeEnum::ChaseSapphirePreferred.into(),
+                    wallet_card_attempt_id: attempt.id
+                }).await
+        }).await.map_err(|e: DataError| WalletError::Unexpected(e.into()));
         assert!(card.is_ok());
         let card = card.expect("Card should be ok");
         assert_eq!(stripe_pmt_id, card.payment_method_id);

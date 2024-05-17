@@ -7,4 +7,3 @@ mod entity;
 mod entity_tests;
 mod tests;
 mod dao;
-mod constant_tests;

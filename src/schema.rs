@@ -175,6 +175,8 @@ diesel::table! {
         updated_at -> Timestamp,
         credit_card_id -> Int4,
         wallet_card_attempt_id -> Int4,
+        #[max_length = 20]
+        status -> Varchar,
     }
 }
 
@@ -188,6 +190,20 @@ diesel::table! {
         expected_reference_id -> Varchar,
         #[max_length = 255]
         status -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    wallet_status_history (id) {
+        id -> Int4,
+        public_id -> Uuid,
+        wallet_id -> Int4,
+        #[max_length = 20]
+        prior_status -> Varchar,
+        #[max_length = 20]
+        current_status -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
@@ -214,6 +230,7 @@ diesel::joinable!(wallet -> users (user_id));
 diesel::joinable!(wallet -> wallet_card_attempt (wallet_card_attempt_id));
 diesel::joinable!(wallet_card_attempt -> credit_card (credit_card_id));
 diesel::joinable!(wallet_card_attempt -> users (user_id));
+diesel::joinable!(wallet_status_history -> wallet (wallet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     category,
@@ -230,4 +247,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     users,
     wallet,
     wallet_card_attempt,
+    wallet_status_history,
 );

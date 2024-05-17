@@ -45,7 +45,7 @@ impl RuleServiceTrait for RuleService {
         })?;
         // TODO: move this to service level call
         tracing::info!("Finding all cards for user");
-        let cards = self.wallet_service.clone().find_all_for_user(user)
+        let cards = self.wallet_service.clone().find_all_active_for_user(user)
             .await.map_err(|e| {
             tracing::error!("Error retrieving cards for user_id={} error={:?}", &user.id, &e);
             RuleError::Unexpected(e.into())

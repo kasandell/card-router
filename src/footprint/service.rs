@@ -201,7 +201,6 @@ impl FootprintServiceTrait for FootprintService {
                 to_value(payment_request)?
             )
         ).await?; // post vault proxy response error needed
-
          */
 
         let response = wrap_api_call(post_vault_proxy_jit(

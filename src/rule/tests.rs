@@ -19,6 +19,7 @@ mod tests {
     use crate::category::service::MockCategoryServiceTrait;
     use crate::credit_card_type::constant::CreditCardTypeEnum;
     use crate::test_helper::user::create_mock_user;
+    use crate::wallet::constant::WalletStatus;
     use crate::wallet::service::MockWalletServiceTrait;
 
     const RULE_CATEGORY: i32 = 1;
@@ -116,6 +117,7 @@ mod tests {
             created_at: Default::default(),
             credit_card_id: CreditCardTypeEnum::ChaseSapphirePreferred.into(),
             wallet_card_attempt_id: 1,
+            status: WalletStatus::Active,
         };
         let card_2 = WalletModel {
             id: card_2_id,
@@ -125,6 +127,7 @@ mod tests {
             created_at: Default::default(),
             credit_card_id: CreditCardTypeEnum::ChaseSapphireReserve.into(),
             wallet_card_attempt_id: 1,
+            status: WalletStatus::Active,
         };
 
         let should_be_filtered_rule = Rule::create(
