@@ -54,7 +54,7 @@ impl RuleServiceTrait for RuleService {
         tracing::info!("Filtering rulse for cards");
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
         tracing::info!("Using {} rules", rules.len());
-        let ordered_cards = self.clone().get_card_order_from_rules(&mut cards, &rules, amount).await?;
+        let ordered_cards = self.clone().order_cards_from_rules_and_attach_rule_id_in_place(&mut cards, &rules, amount).await?;
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
 
@@ -75,7 +75,7 @@ impl RuleService {
 
     // TODO: this lifteime needs to be at class level
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
-    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a mut Vec<WalletModelWithRule>, rules: &Vec<Rule>, amount_cents: i32) -> Result<&'a Vec<Wallet>, RuleError> {
+    pub async fn order_cards_from_rules_and_attach_rule_id_in_place<'a>(self: Arc<Self>, cards: &'a mut Vec<WalletModelWithRule>, rules: &Vec<Rule>, amount_cents: i32) -> Result<&'a Vec<Wallet>, RuleError> {
         tracing::info!("Getting card order from rules");
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get

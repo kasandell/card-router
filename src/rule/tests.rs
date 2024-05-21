@@ -48,7 +48,7 @@ mod tests {
             create_mock_rule_dateless_mcc_points(2, 2, 3)
         );
 
-        let wallet_returned = rule_engine.get_card_order_from_rules(&cards, &rules, amount_cents).await.expect("wallet should come back");
+        let wallet_returned = rule_engine.order_cards_from_rules_and_attach_rule_id_in_place(&mut cards, &rules, amount_cents).await.expect("wallet should come back");
         assert_eq!(wallet_returned[0].credit_card_id, 2);
         assert_eq!(wallet_returned[1].credit_card_id, 1);
         assert_eq!(wallet_returned.len(), 2);
@@ -79,7 +79,7 @@ mod tests {
             Arc::new(wallet_service)
         ));
 
-        let wallet_returned = rule_engine.get_card_order_from_rules(&cards, &rules, amount_cents).await.expect("wallet should come back");
+        let wallet_returned = rule_engine.order_cards_from_rules_and_attach_rule_id_in_place(&mut cards, &rules, amount_cents).await.expect("wallet should come back");
         assert_eq!(wallet_returned[0].credit_card_id, 2);
         assert_eq!(wallet_returned[1].credit_card_id, 1);
         assert_eq!(wallet_returned.len(), 2);
