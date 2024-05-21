@@ -4,7 +4,7 @@ use actix_web::{
     post,
     HttpResponse,
 };
-
+use uuid::Uuid;
 use super::error::WalletError;
 use crate::middleware::services::Services;
 use crate::user::model::UserModel as User;
@@ -67,8 +67,22 @@ async fn list_cards(
     Ok(HttpResponse::Ok().json(cards))
 }
 
+#[get("/card/{public_id}/")]
+async fn get_card_detail(
+    user: web::ReqData<User>, // should extract from extensions
+    public_id: web::Path<Uuid>,
+    services: web::Data<Services>
+) -> Result<HttpResponse, WalletError> {
+    let user = user.into_inner();
+    let card: DisplayableCardInfo = services.wallet_service.clone().find_by_public_id_for_user_with_card_info(
+        &user,
+        &public_id
+    ).await?.into();
+    Ok(HttpResponse::Ok().json(card))
+}
 
-#[post("/update_status/")]
+
+#[post("/update-status/")]
 async fn update_status(
     user: web::ReqData<User>,
     info: web::Json<request::UpdateStatusRequest>,

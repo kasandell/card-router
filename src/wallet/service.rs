@@ -38,6 +38,7 @@ pub trait WalletServiceTrait {
 
     async fn find_all_active_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError>;
     async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError>;
+    async fn find_by_public_id_for_user_with_card_info(self: Arc<Self>, user: &User, public_id: &Uuid) -> Result<WalletWithExtraInfoModel, WalletError>;
     async fn find_by_public_id(self: Arc<Self>, public_id: &Uuid) -> Result<WalletModel, WalletError>;
 
     async fn update_card_status(
@@ -207,8 +208,11 @@ impl WalletServiceTrait for WalletService {
         public_id: &Uuid,
         new_status: WalletStatus
     ) -> Result<WalletModel, WalletError> {
+        tracing::info!("Finding card by public_id={} to update", public_id);
         let card = self.wallet_dao.clone()
             .find_by_public_id(public_id).await?;
+
+        tracing::info!("Found card by public_id={} to update", public_id);
 
         if card.user_id != user.id {
             return Err(WalletError::Unauthorized("User is not owner of card".into()))
@@ -232,9 +236,11 @@ impl WalletServiceTrait for WalletService {
                 &InsertableWalletStatusHistory {
                     wallet_id: card.id,
                     prior_status: prior_status,
-                    current_status: new_status
+                    current_status: new_status.clone()
                 }
             ).await?;
+
+            tracing::info!("Updated card successfully to status={}", new_status);
 
             Ok(card.into())
 
@@ -242,8 +248,22 @@ impl WalletServiceTrait for WalletService {
 
     }
 
+    #[tracing::instrument(skip(self))]
     async fn find_by_public_id(self: Arc<Self>, public_id: &Uuid) -> Result<WalletModel, WalletError> {
         Ok(self.wallet_dao.clone().find_by_public_id(public_id).await?.into())
+    }
+
+    #[tracing::instrument(skip(self))]
+    async fn find_by_public_id_for_user_with_card_info(self: Arc<Self>, user: &User, public_id: &Uuid) -> Result<WalletWithExtraInfoModel, WalletError> {
+        // TODO: getting whole list might be very inefficient
+        let mut cards = self.clone().find_all_for_user_with_card_info(&user).await?;
+        cards = cards.into_iter().filter(|card| card.public_id == *public_id).collect();
+
+        return match cards.get(0).clone() {
+            None => Err(WalletError::NotFound("Card with public id not found".into())),
+            Some(card) => Ok(card.clone())
+
+        }
     }
 
 }

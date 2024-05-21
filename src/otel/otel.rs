@@ -7,6 +7,7 @@ pub fn create_otlp_tracer(otel_configuration: &OtelConfiguration) -> Option<open
     let tracer = opentelemetry_otlp::new_pipeline().tracing();
     let headers = parse_otlp_headers_from_config(otel_configuration);
 
+
     let tracer = match protocol.as_str() {
         "grpc" => {
             let mut exporter = opentelemetry_otlp::new_exporter()
@@ -54,7 +55,7 @@ fn parse_otlp_headers_from_config(otel_configuration: &OtelConfiguration) -> Vec
 
     let team_name = otel_configuration.honeycomb_team.clone();
     headers.push(
-        ("x-honeycomb-team".to_string(), team_name)
+        ("x-honeycomb-team".into(), team_name.into())
     );
     headers
 }

@@ -31,6 +31,7 @@ pub struct DisplayableCardInfo {
     pub issuer_name: String,
     pub card_type: String,
     pub card_image_url: String,
+    pub status: WalletStatus
 }
 
 impl From<WalletWithExtraInfoModel> for DisplayableCardInfo {
@@ -41,7 +42,8 @@ impl From<WalletWithExtraInfoModel> for DisplayableCardInfo {
             card_name: value.card_name,
             issuer_name: value.issuer_name,
             card_type: value.card_type,
-            card_image_url: value.card_image_url
+            card_image_url: value.card_image_url,
+            status: value.status
         }
     }
 }
