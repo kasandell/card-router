@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use uuid::Uuid;
+use crate::category::constant::Category;
 use crate::ledger::constant::ChargeStatus;
 use crate::ledger::entity::{InnerChargeLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
 
@@ -36,6 +37,7 @@ pub struct InnerChargeLedgerModel {
     pub status: ChargeStatus,
     pub is_success: Option<bool>,
     pub created_at: NaiveDateTime,
+    pub rule_id: Option<i32>,
 }
 
 #[derive(Clone, Debug)]
@@ -43,8 +45,10 @@ pub struct TransactionLedgerModel {
     pub id: i32,
     pub registered_transaction_id: i32,
     pub inner_charge_ledger_id: i32,
-    pub outer_charge_ledger_id: i32
+    pub outer_charge_ledger_id: i32,
+    pub rule_id: Option<i32>,
 }
+
 
 
 impl From<RegisteredTransaction> for RegisteredTransactionModel {
@@ -85,7 +89,8 @@ impl From<InnerChargeLedger> for InnerChargeLedgerModel {
             amount_cents: value.amount_cents,
             status: value.status,
             is_success: value.is_success,
-            created_at: value.created_at
+            created_at: value.created_at,
+            rule_id: value.rule_id,
         }
     }
 }
@@ -97,6 +102,7 @@ impl From<TransactionLedger> for TransactionLedgerModel {
             registered_transaction_id: value.registered_transaction_id,
             inner_charge_ledger_id: value.inner_charge_ledger_id,
             outer_charge_ledger_id: value.outer_charge_ledger_id,
+            rule_id: value.rule_id,
         }
     }
 }

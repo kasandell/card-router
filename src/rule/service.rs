@@ -9,7 +9,7 @@ use crate::rule::dao::{RuleDao, RuleDaoTrait};
 use crate::rule::error::RuleError;
 use crate::user::model::UserModel as User;
 use crate::util::date::adjust_recurring_to_date;
-use crate::wallet::model::{WalletModel as Wallet, WalletModel};
+use crate::wallet::model::{WalletModel, WalletModelWithRule as Wallet, WalletModelWithRule};
 use crate::wallet::service::{WalletService, WalletServiceTrait};
 use super::entity::Rule;
 
@@ -45,11 +45,11 @@ impl RuleServiceTrait for RuleService {
         })?;
         // TODO: move this to service level call
         tracing::info!("Finding all cards for user");
-        let cards = self.wallet_service.clone().find_all_active_for_user(user)
+        let cards: Vec<Wallet> = self.wallet_service.clone().find_all_active_for_user(user)
             .await.map_err(|e| {
             tracing::error!("Error retrieving cards for user_id={} error={:?}", &user.id, &e);
             RuleError::Unexpected(e.into())
-        })?;
+        })?.into_iter().map(|e| e.into()).collect();
         let card_type_ids = cards.iter().map(|card_with_info| card_with_info.credit_card_id).collect();
         tracing::info!("Filtering rulse for cards");
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
@@ -75,7 +75,7 @@ impl RuleService {
 
     // TODO: this lifteime needs to be at class level
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
-    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletModel>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
+    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletModelWithRule>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
         tracing::info!("Getting card order from rules");
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
@@ -94,7 +94,7 @@ impl RuleService {
             }
 
         }
-        let mut cards_only: Vec<&WalletModel> = cards.iter().map(|card_detail| card_detail).collect();
+        let mut cards_only: Vec<&Wallet> = cards.iter().map(|card_detail| card_detail).collect();
         tracing::info!("Sorting cards");
         cards_only.sort_by(|a_card, b_card| {
             let a_score = match max_reward_map.entry(a_card.credit_card_id) {

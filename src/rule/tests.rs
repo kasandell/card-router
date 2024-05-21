@@ -8,7 +8,7 @@ mod tests {
         RuleService,
         RuleServiceTrait,
     };
-    use crate::wallet::model::{WalletModel as Wallet, WalletModel};
+    use crate::wallet::model::{WalletModel as Wallet, WalletModel, WalletModelWithRule};
     use crate::rule::entity::Rule;
     use crate::asa::request::create_example_asa;
     use chrono::Utc;
@@ -28,7 +28,7 @@ mod tests {
     async fn test_filter_rules() {
         crate::test_helper::general::init();
         let amount_cents = 30000;
-        let mut cards: Vec<Wallet> = Vec::new();
+        let mut cards: Vec<WalletModelWithRule> = Vec::new();
 
         let category_service = MockCategoryServiceTrait::new();
         let wallet_service = MockWalletServiceTrait::new();
@@ -36,9 +36,9 @@ mod tests {
             Arc::new(category_service),
             Arc::new(wallet_service)
         ));
-        cards.push(create_mock_wallet_with_args(1, 1, 1));
+        cards.push(create_mock_wallet_with_args(1, 1, 1).into());
 
-       cards.push(create_mock_wallet_with_args(2, 1, 2));
+       cards.push(create_mock_wallet_with_args(2, 1, 2).into());
 
         let mut rules: Vec<Rule> = Vec::new();
         rules.push(
@@ -59,10 +59,10 @@ mod tests {
     async fn test_filter_rules_cashback_and_points() {
         crate::test_helper::general::init();
         let amount_cents = 30000;
-        let mut cards: Vec<Wallet> = Vec::new();
-        cards.push(create_mock_wallet_with_args(1, 1, 1));
+        let mut cards: Vec<WalletModelWithRule> = Vec::new();
+        cards.push(create_mock_wallet_with_args(1, 1, 1).into());
 
-       cards.push(create_mock_wallet_with_args(2, 1, 2));
+       cards.push(create_mock_wallet_with_args(2, 1, 2).into());
 
         let mut rules: Vec<Rule> = Vec::new();
         rules.push(

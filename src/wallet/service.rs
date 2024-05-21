@@ -38,6 +38,7 @@ pub trait WalletServiceTrait {
 
     async fn find_all_active_for_user(self: Arc<Self>, user: &User) -> Result<Vec<WalletModel>, WalletError>;
     async fn find_all_for_user_with_card_info(self: Arc<Self>, user: &User) -> Result<Vec<WalletWithExtraInfoModel>, WalletError>;
+    async fn find_by_public_id(self: Arc<Self>, public_id: &Uuid) -> Result<WalletModel, WalletError>;
 
     async fn update_card_status(
         self: Arc<Self>,
@@ -239,6 +240,10 @@ impl WalletServiceTrait for WalletService {
 
         }).await
 
+    }
+
+    async fn find_by_public_id(self: Arc<Self>, public_id: &Uuid) -> Result<WalletModel, WalletError> {
+        Ok(self.wallet_dao.clone().find_by_public_id(public_id).await?.into())
     }
 
 }

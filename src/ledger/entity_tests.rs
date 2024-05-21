@@ -93,8 +93,8 @@ mod entity_tests {
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Fail,
-                is_success: None
-
+                is_success: None,
+                rule_id: None,
             }
         ).await.expect("should create");
 
@@ -134,7 +134,8 @@ mod entity_tests {
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Fail,
-                is_success: None
+                is_success: None,
+                rule_id: None,
             }
         ).await.expect("should create");
 
@@ -152,7 +153,8 @@ mod entity_tests {
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Fail,
-                is_success: None
+                is_success: None,
+                rule_id: None,
             }
         ).await.expect("should create");
 
@@ -191,7 +193,8 @@ mod entity_tests {
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Success,
-                is_success: Some(true)
+                is_success: Some(true),
+                rule_id: None
 
             }
         ).await.expect("should create");
@@ -210,7 +213,8 @@ mod entity_tests {
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Success,
-                is_success: Some(true)
+                is_success: Some(true),
+                rule_id: None
 
             }
         ).await.expect_err("should create error");
@@ -232,7 +236,8 @@ mod entity_tests {
                 wallet_card_id: card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Success,
-                is_success: Some(true)
+                is_success: Some(true),
+                rule_id: None
 
             }
         ).await.expect_err("should create error");
@@ -371,7 +376,8 @@ mod entity_tests {
                 wallet_card_id: wallet_card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Success,
-                is_success: Some(true)
+                is_success: Some(true),
+                rule_id: None
 
             }
         ).await.expect("should create");
@@ -406,7 +412,8 @@ mod entity_tests {
             &InsertableTransactionLedger {
                 registered_transaction_id: rtx.id,
                 inner_charge_ledger_id: inner_charge.id,
-                outer_charge_ledger_id: outer_charge.id
+                outer_charge_ledger_id: outer_charge.id,
+                rule_id: None
             }
         ).await.expect("should create txn");
 
@@ -445,7 +452,8 @@ mod entity_tests {
                 wallet_card_id: wallet_card.id,
                 amount_cents: TEST_AMOUNT,
                 status: ChargeStatus::Success,
-                is_success: Some(true)
+                is_success: Some(true),
+                rule_id: None
 
             }
         ).await.expect("should create");
@@ -480,7 +488,8 @@ mod entity_tests {
             &InsertableTransactionLedger {
                 registered_transaction_id: rtx.id,
                 inner_charge_ledger_id: inner_charge.id,
-                outer_charge_ledger_id: outer_charge.id
+                outer_charge_ledger_id: outer_charge.id,
+                rule_id: None
             }
         ).await.expect("should create txn");
 
@@ -498,6 +507,7 @@ mod entity_tests {
                 registered_transaction_id: rtx.id,
                 inner_charge_ledger_id: inner_charge.id,
                 outer_charge_ledger_id: outer_charge.id,
+                rule_id: None
             }
         ).await.expect_err("should throw");
         assert_eq!(DataError::Conflict("test".into()), error);

@@ -62,6 +62,7 @@ mod common;
 mod redis;
 mod configuration;
 mod otel;
+mod user_transaction;
 
 
 async fn health_check() -> impl Responder {
@@ -133,6 +134,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::scope("/webhook").configure(webhooks::config::config))
             .service(web::scope("/passthrough").configure(passthrough_card::config::config))
             .service(web::scope("/credit-card-type").configure(credit_card_type::config::config))
+            .service(web::scope("/transactions").configure(user_transaction::config::config))
             .service(
                 web::scope("/")
             )

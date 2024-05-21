@@ -1,12 +1,14 @@
 use chrono::NaiveDateTime;
-use crate::schema::{inner_charge_ledger, outer_charge_ledger, registered_transactions, transaction_ledger};
+use crate::schema::{inner_charge_ledger, outer_charge_ledger, registered_transactions, rule, transaction_ledger, credit_card, credit_card_issuer, credit_card_type, category, wallet};
 use diesel::{BoolExpressionMethods, Identifiable, Insertable, Queryable, Selectable};
+use diesel::associations::HasTable;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::util::db;
 use crate::wallet::model::WalletModel as Wallet;
 use diesel::prelude::*;
+use crate::category::constant::Category;
 use crate::error::data_error::DataError;
 use crate::ledger::constant::ChargeStatus;
 
@@ -79,7 +81,8 @@ pub struct InnerChargeLedger {
     pub status: ChargeStatus,
     pub is_success: Option<bool>,
     pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime
+    pub updated_at: NaiveDateTime,
+    pub rule_id: Option<i32>,
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
@@ -94,6 +97,7 @@ pub struct InsertableInnerChargeLedger {
     pub amount_cents: i32,
     pub status: ChargeStatus,
     pub is_success: Option<bool>,
+    pub rule_id: Option<i32>,
 }
 
 #[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
@@ -105,7 +109,8 @@ pub struct TransactionLedger {
     pub id: i32,
     pub registered_transaction_id: i32,
     pub inner_charge_ledger_id: i32,
-    pub outer_charge_ledger_id: i32
+    pub outer_charge_ledger_id: i32,
+    pub rule_id: Option<i32>,
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
@@ -116,9 +121,9 @@ pub struct TransactionLedger {
 pub struct InsertableTransactionLedger {
     pub registered_transaction_id: i32,
     pub inner_charge_ledger_id: i32,
-    pub outer_charge_ledger_id: i32
+    pub outer_charge_ledger_id: i32,
+    pub rule_id: Option<i32>,
 }
-
 
 
 
@@ -205,6 +210,7 @@ impl InnerChargeLedger {
             .first(&mut conn).await?;
         Ok(txn)
     }
+
 }
 
 impl OuterChargeLedger {
@@ -278,3 +284,4 @@ impl TransactionLedger {
         Ok(txn)
     }
 }
+

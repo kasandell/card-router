@@ -8,14 +8,9 @@ use super::error::LedgerError;
 use crate::ledger::constant::ChargeStatus;
 use crate::ledger::dao::{LedgerDao, LedgerDaoTrait};
 use crate::ledger::entity::{InnerChargeLedger, InsertableInnerChargeLedger, InsertableOuterChargeLedger, InsertableRegisteredTransaction, InsertableTransactionLedger, OuterChargeLedger, RegisteredTransaction, TransactionLedger};
-use crate::ledger::model::{
-    InnerChargeLedgerModel,
-    OuterChargeLedgerModel,
-    RegisteredTransactionModel,
-    TransactionLedgerModel
-};
+use crate::ledger::model::{InnerChargeLedgerModel, OuterChargeLedgerModel, RegisteredTransactionModel, TransactionLedgerModel};
 use crate::user::model::UserModel as User;
-use crate::wallet::model::WalletModel as Wallet;
+use crate::wallet::model::WalletModelWithRule as Wallet;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
@@ -113,6 +108,7 @@ impl LedgerServiceTrait for LedgerService {
                     amount_cents: metadata.amount_cents,
                     status: ChargeStatus::Fail,
                     is_success: None,
+                    rule_id: card.rule_id,
                 }
             ).await?.into()
         )
@@ -136,6 +132,7 @@ impl LedgerServiceTrait for LedgerService {
                     amount_cents: metadata.amount_cents,
                     status: ChargeStatus::Success,
                     is_success: Some(true),
+                    rule_id: card.rule_id,
                 }
             ).await?.into()
         )
@@ -201,7 +198,8 @@ impl LedgerServiceTrait for LedgerService {
                 &InsertableTransactionLedger {
                     registered_transaction_id: registered_transaction.id,
                     inner_charge_ledger_id: successful_inner_charge.id,
-                    outer_charge_ledger_id: successful_outer_charge.id
+                    outer_charge_ledger_id: successful_outer_charge.id,
+                    rule_id: successful_inner_charge.rule_id,
                 }
             ).await?.into()
         )

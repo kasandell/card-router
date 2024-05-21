@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::future::Future;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
@@ -9,6 +10,12 @@ use crate::util::db::{connection, DbConnection};
 #[derive(derive_more::Deref, derive_more::DerefMut)]
 pub struct Transaction<'a> {
     conn: Arc<Mutex<DbConnection<'a>>>
+}
+
+impl <'a> Debug for Transaction<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Transaction")
+    }
 }
 
 impl <'a> Transaction<'a> {

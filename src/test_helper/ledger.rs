@@ -39,6 +39,7 @@ pub fn create_mock_failed_inner_charge() -> InnerChargeLedger {
         status: ChargeStatus::Fail,
         is_success: None,
         created_at: Utc::now().naive_utc(),
+        rule_id: None
     }
 }
 
@@ -52,6 +53,7 @@ pub fn create_mock_success_inner_charge() -> InnerChargeLedger {
         status: ChargeStatus::Success,
         is_success: Some(true),
         created_at: Utc::now().naive_utc(),
+        rule_id: None,
     }
 }
 
@@ -87,5 +89,6 @@ pub fn create_mock_full_transaction() -> TransactionLedger {
         registered_transaction_id: 1,
         inner_charge_ledger_id: 1,
         outer_charge_ledger_id: 1,
+        rule_id: None,
     }
 }

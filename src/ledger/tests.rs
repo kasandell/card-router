@@ -11,7 +11,7 @@ mod service_tests {
     use crate::test_helper::passthrough_card::{create_mock_passthrough_card, create_passthrough_card};
     use crate::test_helper::user::create_user;
     use crate::test_helper::wallet::{create_mock_wallet, create_wallet};
-    use crate::wallet::model::WalletModel;
+    use crate::wallet::model::{WalletModel, WalletModelWithRule};
 
     #[test]
     async fn test_register_transaction() {
@@ -33,7 +33,7 @@ mod service_tests {
     async fn test_register_failed_inner() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
         let rtx = ledger.clone().register_transaction_for_user(
@@ -57,7 +57,7 @@ mod service_tests {
     async fn test_register_failed_inner_rtx_not_found() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
         let rtx = create_mock_registered_transaction(&metadata);
@@ -73,7 +73,7 @@ mod service_tests {
     async fn test_register_failed_inner_card_not_found() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_mock_wallet();
+        let wallet = WalletModelWithRule::from(create_mock_wallet());
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
         let rtx = ledger.clone().register_transaction_for_user(
@@ -92,7 +92,7 @@ mod service_tests {
     async fn test_register_success_inner() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
         let rtx = ledger.clone().register_transaction_for_user(
@@ -116,7 +116,7 @@ mod service_tests {
     async fn test_register_success_inner_rtx_not_found() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
         let rtx = create_mock_registered_transaction(&metadata);
@@ -132,7 +132,7 @@ mod service_tests {
     async fn test_register_success_inner_card_not_found() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_mock_wallet();
+        let wallet = WalletModelWithRule::from(create_mock_wallet());
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
         let rtx = ledger.clone().register_transaction_for_user(
@@ -151,7 +151,7 @@ mod service_tests {
     async fn test_register_success_inner_throws_dupe() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
         let rtx = ledger.clone().register_transaction_for_user(
@@ -362,7 +362,7 @@ mod service_tests {
     async fn test_register_full() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let pc = create_passthrough_card(&user).await;
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
@@ -395,7 +395,7 @@ mod service_tests {
     async fn test_register_full_throws_dupe() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let pc = create_passthrough_card(&user).await;
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
@@ -439,7 +439,7 @@ mod service_tests {
     async fn test_register_full_rtx_not_found() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let pc = create_passthrough_card(&user).await;
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
@@ -470,7 +470,7 @@ mod service_tests {
     async fn test_register_full_inner_not_found() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let pc = create_passthrough_card(&user).await;
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());
@@ -497,7 +497,7 @@ mod service_tests {
     async fn test_register_full_outer_not_found() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let wallet = create_wallet(&user).await;
+        let wallet = WalletModelWithRule::from(create_wallet(&user).await);
         let pc = create_passthrough_card(&user).await;
         let metadata = default_transaction_metadata();
         let ledger = Arc::new(LedgerService::new());

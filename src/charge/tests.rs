@@ -43,6 +43,7 @@ mod tests {
     use crate::footprint::service::MockFootprintServiceTrait;
     use crate::schema::inner_charge_ledger::dsl::inner_charge_ledger;
     use crate::test_helper::ledger::create_mock_full_transaction;
+    use crate::test_helper::wallet::create_mock_wallet_with_rule;
 
     const USER_ID: i32 = 1;
 
@@ -50,7 +51,7 @@ mod tests {
     async fn test_single_charge_fails_on_error() {
         let mut metadata = default_transaction_metadata();
         let user = create_mock_user();
-        let wallet = create_mock_wallet();
+        let wallet = create_mock_wallet_with_rule();
         let rtx = create_mock_registered_transaction(&metadata);
 
         let mut user_mock = MockUserServiceTrait::new();
@@ -85,7 +86,7 @@ mod tests {
     async fn test_single_charge_succeeds() {
         let metadata = default_transaction_metadata();
         let user = create_mock_user();
-        let wallet = create_mock_wallet();
+        let wallet = create_mock_wallet_with_rule();
         let rtx = create_mock_registered_transaction(&metadata);
 
         let user_mock = MockUserServiceTrait::new();
@@ -120,7 +121,7 @@ mod tests {
     async fn test_single_charge_needs_cancel_and_succeeds() {
         let mut metadata = default_transaction_metadata();
         let user = create_mock_user();
-        let wallet = create_mock_wallet();
+        let wallet = create_mock_wallet_with_rule();
         let rtx = create_mock_registered_transaction(&metadata);
 
 
@@ -169,7 +170,7 @@ mod tests {
     async fn test_single_charge_does_not_go_through() {
         let mut metadata = default_transaction_metadata();
         let user = create_mock_user();
-        let wallet = create_mock_wallet();
+        let wallet = create_mock_wallet_with_rule();
         let rtx = create_mock_registered_transaction(&metadata);
 
         let mut user_mock = MockUserServiceTrait::new();
@@ -252,7 +253,7 @@ mod tests {
         ));
         let (res, ledger) = engine.clone().charge_wallet(
             &user,
-            &vec![card_1.clone(), card_2.clone()],
+            &vec![card_1.clone().into(), card_2.clone().into()],
             &metadata,
             &rtx
         ).await.expect("NO error");
@@ -363,7 +364,7 @@ mod tests {
         ));
         let (res, ledger) = engine.clone().charge_wallet(
             &user,
-            &vec![card_1.clone(), card_2.clone()],
+            &vec![card_1.clone().into(), card_2.clone().into()],
             &metadata,
             &rtx
         ).await.expect("NO error");
@@ -466,7 +467,7 @@ mod tests {
         asa.token = Some(pc.token.to_string());
         let (res, l) = engine.clone().charge_from_asa_request(
             &asa,
-            &vec![card_1.clone(), card_2.clone()],
+            &vec![card_1.clone().into(), card_2.clone().into()],
             &pc,
             &user
         ).await.expect("no error");
@@ -555,7 +556,7 @@ mod tests {
         ));
         let (res, ledger) = engine.clone().charge_wallet(
             &user,
-            &vec![card_1.clone(), card_2.clone()],
+            &vec![card_1.clone().into(), card_2.clone().into()],
             &metadata,
             &rtx
         ).await.expect("NO error");

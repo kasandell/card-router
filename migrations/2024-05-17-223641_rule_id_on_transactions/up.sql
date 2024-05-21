@@ -1,0 +1,2 @@
+ALTER TABLE inner_charge_ledger ADD COLUMN rule_id INTEGER DEFAULT NULL REFERENCES rule(id);
+ALTER TABLE transaction_ledger ADD COLUMN rule_id INTEGER DEFAULT NULL REFERENCES rule(id);

@@ -60,6 +60,7 @@ diesel::table! {
         is_success -> Nullable<Bool>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+        rule_id -> Nullable<Int4>,
     }
 }
 
@@ -148,6 +149,7 @@ diesel::table! {
         registered_transaction_id -> Int4,
         inner_charge_ledger_id -> Int4,
         outer_charge_ledger_id -> Int4,
+        rule_id -> Nullable<Int4>,
     }
 }
 
@@ -212,6 +214,7 @@ diesel::table! {
 diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
 diesel::joinable!(inner_charge_ledger -> registered_transactions (registered_transaction_id));
+diesel::joinable!(inner_charge_ledger -> rule (rule_id));
 diesel::joinable!(inner_charge_ledger -> users (user_id));
 diesel::joinable!(inner_charge_ledger -> wallet (wallet_card_id));
 diesel::joinable!(mcc_mapping -> category (category_id));
@@ -225,6 +228,7 @@ diesel::joinable!(rule -> credit_card (credit_card_id));
 diesel::joinable!(transaction_ledger -> inner_charge_ledger (inner_charge_ledger_id));
 diesel::joinable!(transaction_ledger -> outer_charge_ledger (outer_charge_ledger_id));
 diesel::joinable!(transaction_ledger -> registered_transactions (registered_transaction_id));
+diesel::joinable!(transaction_ledger -> rule (rule_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 diesel::joinable!(wallet -> wallet_card_attempt (wallet_card_attempt_id));

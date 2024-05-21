@@ -14,6 +14,7 @@ use crate::footprint::service::{FakeFootprintService, FootprintService};
 use crate::passthrough_card::service::{PassthroughCardService, PassthroughCardServiceTrait};
 use crate::rule::service::RuleService;
 use crate::ledger::service::LedgerService as LedgerEngine;
+use crate::user_transaction::service::UserTransactionService;
 use crate::wallet::{
     service::WalletService
 };
@@ -33,6 +34,7 @@ pub struct Services {
     pub footprint_service: Arc<FakeFootprintService>,
     #[cfg(not(feature = "fake-footprint"))]
     pub footprint_service: Arc<FootprintService>,
+    pub user_transaction_service: Arc<UserTransactionService>
 }
 
 impl Services {
@@ -67,6 +69,9 @@ impl Services {
             category_service.clone(),
             wallet_service.clone()
         ));
+        let user_transaction_service = Arc::new(UserTransactionService::new_with_services(
+            wallet_service.clone()
+        ));
         Self {
             passthrough_card_service: Arc::new(PassthroughCardService::new_with_services(
                 lithic_service.clone(),
@@ -82,7 +87,8 @@ impl Services {
             user_service: user_service.clone(),
             credit_card_service: credit_card_service.clone(),
             rule_service: rule_service.clone(),
-            footprint_service: footprint_service.clone()
+            footprint_service: footprint_service.clone(),
+            user_transaction_service: user_transaction_service.clone()
         }
     }
 }
