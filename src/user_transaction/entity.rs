@@ -66,6 +66,7 @@ impl InnerCardChargeWithDetail {
                 registered_transactions::transaction_id, registered_transactions::memo,
                 registered_transactions::mcc
             ))
+            .order(inner_charge_ledger::id.desc())
             .load::<InnerCardChargeWithDetail>(&mut conn).await?;
         Ok(txns)
     }
@@ -103,6 +104,7 @@ impl TransactionWithDetail {
                 rule::points_multiplier.nullable(), rule::cashback_percentage_bips.nullable(),
                 inner_charge_ledger::created_at
             ))
+            .order(transaction_ledger::id.desc())
             .load::<TransactionWithDetail>(&mut conn).await?;
         Ok(txn)
     }

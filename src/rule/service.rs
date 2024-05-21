@@ -45,7 +45,7 @@ impl RuleServiceTrait for RuleService {
         })?;
         // TODO: move this to service level call
         tracing::info!("Finding all cards for user");
-        let cards: Vec<Wallet> = self.wallet_service.clone().find_all_active_for_user(user)
+        let mut cards: Vec<Wallet> = self.wallet_service.clone().find_all_active_for_user(user)
             .await.map_err(|e| {
             tracing::error!("Error retrieving cards for user_id={} error={:?}", &user.id, &e);
             RuleError::Unexpected(e.into())
@@ -54,7 +54,7 @@ impl RuleServiceTrait for RuleService {
         tracing::info!("Filtering rulse for cards");
         let rules = self.clone().find_and_filter_rules(&request, &card_type_ids).await?;
         tracing::info!("Using {} rules", rules.len());
-        let ordered_cards = self.clone().get_card_order_from_rules(&cards, &rules, amount).await?;
+        let ordered_cards = self.clone().get_card_order_from_rules(&mut cards, &rules, amount).await?;
         Ok(ordered_cards.into_iter().map(|card| card.to_owned()).collect())
     }
 
@@ -75,39 +75,49 @@ impl RuleService {
 
     // TODO: this lifteime needs to be at class level
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
-    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a Vec<WalletModelWithRule>, rules: &Vec<Rule>, amount_cents: i32) -> Result<Vec<&'a Wallet>, RuleError> {
+    pub async fn get_card_order_from_rules<'a>(self: Arc<Self>, cards: &'a mut Vec<WalletModelWithRule>, rules: &Vec<Rule>, amount_cents: i32) -> Result<&'a Vec<Wallet>, RuleError> {
         tracing::info!("Getting card order from rules");
         /*
         Order ever card in the users wallet based on the maximal reward amount we can get
         Precondition: expect rules to be pre-filtered
          */
-        let mut max_reward_map: HashMap<i32, i32> = HashMap::new();
+        // map from card id to (amount, rule id)
+        let mut max_reward_map: HashMap<i32, (i32, i32)> = HashMap::new();
         for rule in rules {
             let reward_amount = rule.get_reward_amount_unitless(amount_cents);
             match max_reward_map.entry(rule.credit_card_id) {
-                Entry::Vacant(e) => {e.insert(reward_amount);}
+                Entry::Vacant(e) => {e.insert((reward_amount, rule.id));}
                 Entry::Occupied(mut e) => {
-                    if *e.get() < reward_amount {
-                        e.insert(reward_amount);
+                    if (*e.get()).0 < reward_amount {
+                        e.insert((reward_amount, rule.id));
                     }
                 }
             }
 
         }
-        let mut cards_only: Vec<&Wallet> = cards.iter().map(|card_detail| card_detail).collect();
         tracing::info!("Sorting cards");
-        cards_only.sort_by(|a_card, b_card| {
+        cards.sort_by(|a_card, b_card| {
             let a_score = match max_reward_map.entry(a_card.credit_card_id) {
                 Entry::Vacant(_) => 0,
-                Entry::Occupied(e) => *e.get()
+                Entry::Occupied(e) => (*e.get()).0
             };
             let b_score = match max_reward_map.entry(b_card.credit_card_id) {
                 Entry::Vacant(_) => 0,
-                Entry::Occupied(e) => *e.get()
+                Entry::Occupied(e) => (*e.get()).0
             };
             b_score.cmp(&a_score)
         });
-        Ok(cards_only)
+
+        for mut card in cards.iter_mut() {
+            match max_reward_map.entry(card.credit_card_id)  {
+                Entry::Vacant(_) => {},
+                Entry::Occupied(e) => {
+                    card.rule_id = Some((*e.get()).1);
+                }
+            }
+
+        }
+        Ok(cards)
     }
 
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
