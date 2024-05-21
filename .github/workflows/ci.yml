@@ -1,0 +1,39 @@
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  test_phaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Update local toolchain
+        run: |
+          rustup update
+          rustup component add clippy
+          rustup install 1.76.0
+
+      - name: Toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+          cargo clippy --version          
+
+      #- name: Lint
+      #  run: |
+      #    cd phaser
+      #    cargo fmt -- --check
+      #    cargo clippy -- -D warnings          
+
+      # TODO: need in mem db + redis for this
+      - name: Test
+        run: |
+          cargo check
+          cargo test --all --nocapture --test-threads=1
+
+      # - name: Build
+      #   run: |
+      #     cd phaser
+      #     cargo build --release
