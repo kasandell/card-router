@@ -196,6 +196,8 @@ impl WalletServiceTrait for WalletService {
         Ok(
             self.wallet_dao.clone().find_all_for_user_with_card_info(user).await?
                 .into_iter()
+                // TODO: this is brittle
+                .filter(|e| e.status != WalletStatus::Closed)
                 .map(|e| e.into())
                 .collect()
         )

@@ -1,3 +1,6 @@
+# CI
+https://github.com/peter-evans/docker-compose-actions-workflow
+need something like this, and need to get an ssh key in here somehow to access private repos
 # Dockerizing 
 ```
 docker build --tag card_router --file Dockerfile --ssh default=$HOME/.ssh/key_name .
