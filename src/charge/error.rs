@@ -36,7 +36,7 @@ mod test {
     #[test]
     pub fn test_from_ledger_error() {
         let base_error = "test";
-        assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::Unexpected(base_error.clone().into())));
+        assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::UnexpectedLedgerError(base_error.clone().into())));
         assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::DuplicateTransaction(base_error.clone().into())));
     }
 

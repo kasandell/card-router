@@ -1,11 +1,11 @@
 use chrono::Utc;
 use crate::common::model::TransactionMetadata;
-use crate::charge::constant::ChargeStatus;
-use crate::charge::model::{
-    WalletCardChargeModel,
-    PassthroughCardChargeModel,
+use crate::ledger::constant::ChargeStatus;
+use crate::ledger::model::{
+    InnerChargeLedgerModel as InnerChargeLedger,
+    OuterChargeLedgerModel as OuterChargeLedger,
     RegisteredTransactionModel as RegisteredTransaction,
-    SuccessfulEndToEndChargeModel
+    TransactionLedgerModel as TransactionLedger
 };
 
 pub fn create_mock_registered_transaction(
@@ -29,8 +29,8 @@ pub fn default_transaction_metadata() -> TransactionMetadata {
     }
 }
 
-pub fn create_mock_failed_wallet_charge() -> WalletCardChargeModel {
-    WalletCardChargeModel {
+pub fn create_mock_failed_inner_charge() -> InnerChargeLedger {
+    InnerChargeLedger {
         id: 1,
         registered_transaction_id: 1,
         user_id: 1,
@@ -43,8 +43,8 @@ pub fn create_mock_failed_wallet_charge() -> WalletCardChargeModel {
     }
 }
 
-pub fn create_mock_success_wallet_charge() -> WalletCardChargeModel {
-    WalletCardChargeModel {
+pub fn create_mock_success_inner_charge() -> InnerChargeLedger {
+    InnerChargeLedger {
         id: 1,
         registered_transaction_id: 1,
         user_id: 1,
@@ -57,8 +57,8 @@ pub fn create_mock_success_wallet_charge() -> WalletCardChargeModel {
     }
 }
 
-pub fn create_mock_failed_passthrough_card_charge() -> PassthroughCardChargeModel {
-    PassthroughCardChargeModel {
+pub fn create_mock_failed_outer_charge() -> OuterChargeLedger {
+    OuterChargeLedger {
         id: 1,
         registered_transaction_id: 1,
         user_id: 1,
@@ -70,8 +70,8 @@ pub fn create_mock_failed_passthrough_card_charge() -> PassthroughCardChargeMode
     }
 }
 
-pub fn create_mock_success_passthrough_card_charge() -> PassthroughCardChargeModel {
-    PassthroughCardChargeModel {
+pub fn create_mock_success_outer_charge() -> OuterChargeLedger {
+    OuterChargeLedger {
         id: 1,
         registered_transaction_id: 1,
         user_id: 1,
@@ -83,11 +83,12 @@ pub fn create_mock_success_passthrough_card_charge() -> PassthroughCardChargeMod
     }
 }
 
-pub fn create_mock_full_transaction() -> SuccessfulEndToEndChargeModel {
-    SuccessfulEndToEndChargeModel {
+pub fn create_mock_full_transaction() -> TransactionLedger {
+    TransactionLedger {
         id: 1,
         registered_transaction_id: 1,
         inner_charge_ledger_id: 1,
         outer_charge_ledger_id: 1,
+        rule_id: None,
     }
 }

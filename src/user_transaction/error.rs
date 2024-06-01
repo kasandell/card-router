@@ -55,8 +55,8 @@ mod test {
     #[test]
     pub fn from_data_error() {
         assert_eq!(LedgerError::DuplicateTransaction(BASE_ERROR.into()), LedgerError::from(DataError::Conflict(BASE_ERROR.into())));
-        assert_eq!(LedgerError::Unexpected(BASE_ERROR.into()), LedgerError::from(DataError::Format(BASE_ERROR.into())));
-        assert_eq!(LedgerError::Unexpected(BASE_ERROR.into()), LedgerError::from(DataError::NotFound(BASE_ERROR.into())));
-        assert_eq!(LedgerError::Unexpected(BASE_ERROR.into()), LedgerError::from(DataError::Unexpected(BASE_ERROR.into())));
+        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::Format(BASE_ERROR.into())));
+        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::NotFound(BASE_ERROR.into())));
+        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::Unexpected(BASE_ERROR.into())));
     }
 }

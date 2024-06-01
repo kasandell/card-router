@@ -27,10 +27,10 @@ pub struct TransactionWithDetailModel {
 impl From<InnerCardChargeWithDetail> for InnerCardChargeWithDetailModel {
     fn from(value: InnerCardChargeWithDetail) -> Self {
         InnerCardChargeWithDetailModel {
-            id: value.wallet_card_charge_registered_transaction_id,
+            id: value.inner_charge_ledger_registered_transaction_id,
             memo: value.registered_transaction_memo,
-            amount_cents: value.wallet_card_charge_amount_cents,
-            created_at: value.wallet_card_charge_created_at
+            amount_cents: value.inner_charge_ledger_amount_cents,
+            created_at: value.inner_charge_ledger_created_at
         }
     }
 }
@@ -38,7 +38,7 @@ impl From<InnerCardChargeWithDetail> for InnerCardChargeWithDetailModel {
 impl From<TransactionWithDetail> for TransactionWithDetailModel {
     fn from(value: TransactionWithDetail) -> Self {
         TransactionWithDetailModel {
-            id: value.successful_end_to_end_charge_id,
+            id: value.transaction_ledger_id,
             memo: value.registered_transaction_memo,
             amount_cents: value.registered_transaction_amount_cents,
             category: value.category_name,
@@ -47,7 +47,7 @@ impl From<TransactionWithDetail> for TransactionWithDetailModel {
             credit_card_name: value.credit_card_name,
             points_multiplier: value.rule_points_multiplier,
             cashback_percentage_bips: value.rule_cashback_percentage_bips,
-            created_at: value.wallet_card_charge_created_at,
+            created_at: value.inner_charge_ledger_created_at,
         }
     }
 }

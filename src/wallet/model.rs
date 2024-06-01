@@ -114,18 +114,3 @@ impl From<WalletModel> for WalletModelWithRule {
         }
     }
 }
-
-impl From<WalletModelWithRule> for WalletModel {
-    fn from(value: WalletModelWithRule) -> Self {
-        WalletModel {
-            id: value.id,
-            public_id: value.public_id,
-            user_id: value.user_id,
-            payment_method_id: value.payment_method_id,
-            created_at: value.created_at,
-            credit_card_id: value.credit_card_id,
-            wallet_card_attempt_id: value.wallet_card_attempt_id,
-            status: value.status,
-        }
-    }
-}

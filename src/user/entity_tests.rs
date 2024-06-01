@@ -203,8 +203,6 @@ mod test {
     }
 
     #[test]
-    #[ignore]
-    // test reliant on data setup
     async fn test_find_internal_does_not_find() {
         crate::test_helper::general::init();
         let dao = UserDao::new();

@@ -3,7 +3,6 @@ use std::future::Future;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use bb8::RunError;
-use diesel_async::AsyncConnection;
 use parking_lot::{Mutex, MutexGuard};
 use crate::error::data_error::DataError;
 use crate::util::db::{connection, DbConnection};
@@ -52,13 +51,6 @@ pub async fn transactional<'a, F, Fut, R, E>(f: F) -> Result<R, E>
         R: Send + 'a,
         E: From<DataError>
 {
-    /*
-    let conn = connection().await.map_err(RunError::into)?;
-    conn.transaction(|_conn| async move {
-
-    })
-     */
-    // TODO: this doesn't actually guard a txn
     let mut conn = Arc::new(Mutex::new(connection().await.map_err(RunError::into)?));
     let txn = Arc::new(Transaction::new(conn.clone()));
     f(txn.clone()).await.map_err(DataError::into)

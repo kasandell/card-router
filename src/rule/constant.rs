@@ -9,6 +9,8 @@ use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSql};
 use diesel::serialize::{self, ToSql, Output, IsNull};
 use diesel::sql_types::*;
+use crate::ledger::constant::ChargeStatus;
+use crate::rule::constant::RuleStatus::Inactive;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone, AsExpression, FromSqlRow)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

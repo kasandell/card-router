@@ -1,36 +1,8 @@
 application:
   port: 8080
 
-adyen:
-#api_key: $APP_ADYEN__API_KEY
-#merchant_account_name: $APP_ADYEN__MERCHANT_ACCOUNT_NAME
-
-auth0:
-#authority: $APP_AUTHO__AUTHORITY
-#audience: $APP_AUTHO__AUDIENCE
-#domain: $APP_AUTHO__DOMAIN
-#client_origin_url: $APP_ADYEN__CLIENT_ORIGIN_URL
-
-database:
-  port: 5432
-  host: localhost
-  database_name: router
-  #username: $APP_DATABASE__USERNAME
-  #password: $APP_DATABASE__USERNAME
-
-footprint:
-#secret_key: $APP_FOOTPRINT__SECRET_KEY
-
-lithic:
-  mode: "sandbox"
-  #api_key: $APP_LITHIC__API_KEY
-
-otel:
-  #honeycomb_team: $APP_OTEL__HONEYCOMB_TEAM
-  otlp_endpoint: "https://api.honeycomb.io:443"
-  otlp_protocol: "grpc"
-  service_name: "test"
-
 redis:
   url: "redis://localhost"
   port: 6379
+
+

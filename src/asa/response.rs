@@ -1,5 +1,5 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use crate::charge::constant::ChargeEngineResult;
+use crate::charge::entity::ChargeEngineResult;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AsaResponseResult {
