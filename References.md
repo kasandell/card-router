@@ -1,3 +1,5 @@
+# Random thoughts
+How am i going to do corrections if ledger needs to be tied to a registered transaction?
 # CI
 https://github.com/peter-evans/docker-compose-actions-workflow
 need something like this, and need to get an ssh key in here somehow to access private repos

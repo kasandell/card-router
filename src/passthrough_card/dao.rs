@@ -24,7 +24,7 @@ pub trait PassthroughCardDaoTrait {
     async fn get(self: Arc<Self>, id: i32) -> Result<PassthroughCard, DataError>;
     async fn get_by_token(self: Arc<Self>, token: &str) -> Result<PassthroughCard, DataError>;
     async fn find_cards_for_user(self: Arc<Self>, user_id: i32) -> Result<Vec<PassthroughCard>, DataError>;
-    async fn update_status(self: Arc<Self>, id: i32, status: PassthroughCardStatus) -> Result<PassthroughCard, DataError>;
+    async fn update_status(self: Arc<Self>, card: &PassthroughCard, status: PassthroughCardStatus) -> Result<PassthroughCard, DataError>;
     async fn find_card_for_user_in_status(
         self: Arc<Self>,
         user_id: i32,
@@ -99,7 +99,15 @@ impl PassthroughCardDaoTrait for PassthroughCardDao {
     }
 
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip(self)))]
-    async fn update_status(self: Arc<Self>, id: i32, status: PassthroughCardStatus) -> Result<PassthroughCard, DataError> {
-        PassthroughCard::update_status(id, status).await
+    async fn update_status(self: Arc<Self>, card: &PassthroughCard, status: PassthroughCardStatus) -> Result<PassthroughCard, DataError> {
+        #[cfg(not(feature = "no-redis"))]
+        {
+            self.redis.clone().expire_now(&Key::PassthroughCardByToken(card.token.as_str())).await;
+            PassthroughCard::update_status(card.id, status).await
+        }
+        #[cfg(feature = "no-redis")]
+        {
+            PassthroughCard::update_status(card.id, status).await
+        }
     }
 }

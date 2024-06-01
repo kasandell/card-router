@@ -113,7 +113,7 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
         tracing::info!("Found card={} for userId={}", card.id, user.id);
 
         let updated = self.passthrough_card_dao.clone().update_status(
-            card.id,
+            &card,
             status
         ).await?;
 
@@ -140,7 +140,7 @@ impl PassthroughCardServiceTrait for PassthroughCardService {
                 // will figure out later. for now logs
                 tracing::error!("Error applying status update to lithic card for cardId={} token={}", updated.id, updated.token);
                 let rollback = self.passthrough_card_dao.clone().update_status(
-                    updated.id,
+                    &updated,
                     previous_status
                 ).await;
 

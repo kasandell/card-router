@@ -8,7 +8,7 @@ pub mod wallet;
 #[cfg(test)]
 pub mod passthrough_card;
 #[cfg(test)]
-pub mod ledger;
+pub mod charge;
 #[cfg(test)]
 pub mod credit_card;
 #[cfg(test)]

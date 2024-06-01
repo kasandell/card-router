@@ -1,287 +1,187 @@
+use std::sync::Arc;
 use chrono::NaiveDateTime;
-use crate::schema::{inner_charge_ledger, outer_charge_ledger, registered_transactions, rule, transaction_ledger, credit_card, credit_card_issuer, credit_card_type, category, wallet};
-use diesel::{BoolExpressionMethods, Identifiable, Insertable, Queryable, Selectable};
+use crate::schema::{
+    pending_passthrough_card_transaction_ledger,
+    settled_passthrough_card_transaction_ledger,
+    pending_wallet_transaction_ledger,
+    settled_wallet_transaction_ledger
+};
+use diesel::{Identifiable, Insertable, Queryable, Selectable};
 use diesel::associations::HasTable;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use crate::util::db;
-use crate::wallet::model::WalletModel as Wallet;
 use diesel::prelude::*;
-use crate::category::constant::Category;
 use crate::error::data_error::DataError;
-use crate::ledger::constant::ChargeStatus;
-
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[diesel(belongs_to(User))]
-#[diesel(table_name = registered_transactions)]
-pub struct InsertableRegisteredTransaction<'a> {
-    pub user_id: i32,
-    //pub transaction_id: Uuid,
-    pub memo: &'a str,
-    pub amount_cents: i32,
-    pub mcc: &'a str
-}
-
-#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
-#[diesel(belongs_to(User))]
-#[diesel(table_name = registered_transactions)]
-pub struct RegisteredTransaction {
-    pub id: i32,
-    pub user_id: i32,
-    pub transaction_id: Uuid,
-    pub memo: String,
-    pub amount_cents: i32,
-    pub mcc: String
-}
+use crate::ledger::constant::{MoneyMovementDirection, MoneyMovementType};
+use crate::util::transaction::Transaction;
 
 
-#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
-#[diesel(belongs_to(RegisteredTransaction))]
-#[diesel(belongs_to(User))]
-#[diesel(belongs_to(PassthroughCard))]
-#[diesel(table_name = outer_charge_ledger)]
-pub struct OuterChargeLedger {
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
+#[diesel(table_name = pending_passthrough_card_transaction_ledger)]
+pub struct PendingPassthroughCardTransactionLedger {
     pub id: i32,
     pub registered_transaction_id: i32,
     pub user_id: i32,
     pub passthrough_card_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
     pub amount_cents: i32,
-    pub status: ChargeStatus,
-    pub is_success: Option<bool>,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime
-}
-
-#[derive(Debug, Insertable)]
-#[diesel(belongs_to(RegisteredTransaction))]
-#[diesel(belongs_to(User))]
-#[diesel(belongs_to(PassthroughCard))]
-#[diesel(table_name = outer_charge_ledger)]
-pub struct InsertableOuterChargeLedger {
-    pub registered_transaction_id: i32,
-    pub user_id: i32,
-    pub passthrough_card_id: i32,
-    pub amount_cents: i32,
-    pub status: ChargeStatus,
-    pub is_success: Option<bool>,
-}
-
-#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
-#[diesel(belongs_to(RegisteredTransaction))]
-#[diesel(belongs_to(User))]
-#[diesel(belongs_to(Wallet))]
-#[diesel(table_name = inner_charge_ledger)]
-pub struct InnerChargeLedger {
-    pub id: i32,
-    pub registered_transaction_id: i32,
-    pub user_id: i32,
-    pub wallet_card_id: i32,
-    pub amount_cents: i32,
-    pub status: ChargeStatus,
-    pub is_success: Option<bool>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-    pub rule_id: Option<i32>,
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
-#[diesel(belongs_to(RegisteredTransaction))]
-#[diesel(belongs_to(User))]
-#[diesel(belongs_to(Wallet))]
-#[diesel(table_name = inner_charge_ledger)]
-pub struct InsertableInnerChargeLedger {
+#[derive(Serialize, Deserialize, Insertable, AsChangeset)]
+#[diesel(table_name = pending_passthrough_card_transaction_ledger)]
+pub struct InsertablePendingPassthroughCardTransactionLedger {
     pub registered_transaction_id: i32,
     pub user_id: i32,
-    pub wallet_card_id: i32,
+    pub passthrough_card_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
     pub amount_cents: i32,
-    pub status: ChargeStatus,
-    pub is_success: Option<bool>,
-    pub rule_id: Option<i32>,
 }
 
-#[derive(Debug, Identifiable, Serialize, Deserialize, Queryable, Selectable)]
-#[diesel(belongs_to(RegisteredTransaction))]
-#[diesel(belongs_to(InnerChargeLedger))]
-#[diesel(belongs_to(OuterChargeLedger))]
-#[diesel(table_name = transaction_ledger)]
-pub struct TransactionLedger {
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
+#[diesel(table_name = settled_passthrough_card_transaction_ledger)]
+pub struct SettledPassthroughCardTransactionLedger {
     pub id: i32,
     pub registered_transaction_id: i32,
-    pub inner_charge_ledger_id: i32,
-    pub outer_charge_ledger_id: i32,
-    pub rule_id: Option<i32>,
+    pub user_id: i32,
+    pub passthrough_card_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
+    pub amount_cents: i32,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]
-#[diesel(belongs_to(RegisteredTransaction))]
-#[diesel(belongs_to(InnerChargeLedger))]
-#[diesel(belongs_to(OuterChargeLedger))]
-#[diesel(table_name = transaction_ledger)]
-pub struct InsertableTransactionLedger {
+#[derive(Serialize, Deserialize, Insertable, AsChangeset)]
+#[diesel(table_name = settled_passthrough_card_transaction_ledger)]
+pub struct InsertableSettledPassthroughCardTransactionLedger {
     pub registered_transaction_id: i32,
-    pub inner_charge_ledger_id: i32,
-    pub outer_charge_ledger_id: i32,
-    pub rule_id: Option<i32>,
+    pub user_id: i32,
+    pub passthrough_card_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
+    pub amount_cents: i32,
 }
 
 
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
+#[diesel(table_name = pending_wallet_transaction_ledger)]
+pub struct PendingWalletTransactionLedger {
+    pub id: i32,
+    pub registered_transaction_id: i32,
+    pub user_id: i32,
+    pub wallet_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
+    pub amount_cents: i32,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}
 
-impl RegisteredTransaction {
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn insert<'a>(transaction: &InsertableRegisteredTransaction<'a>) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
-            let txn = diesel::insert_into(registered_transactions::table)
-                .values(transaction)
-                .get_result(&mut _conn).await?;
-            Ok(txn)
+#[derive(Serialize, Deserialize, Insertable, AsChangeset)]
+#[diesel(table_name = pending_wallet_transaction_ledger)]
+pub struct InsertablePendingWalletTransactionLedger {
+    pub registered_transaction_id: i32,
+    pub user_id: i32,
+    pub wallet_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
+    pub amount_cents: i32,
+}
 
-        })).await?;
-        Ok(res)
-    }
-
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_by_transaction_id(id: &Uuid) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = registered_transactions::table.filter(
-            registered_transactions::transaction_id.eq(id)
-        ).first::<RegisteredTransaction>(&mut conn).await?;
-        Ok(txn)
-    }
-
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = registered_transactions::table.filter(
-            registered_transactions::id.eq(id)
-        ).first::<RegisteredTransaction>(&mut conn).await?;
-        Ok(txn)
-    }
+#[derive(Identifiable, Serialize, Deserialize, Queryable, Debug, Selectable, Clone, PartialEq)]
+#[diesel(table_name = settled_wallet_transaction_ledger)]
+pub struct SettledWalletTransactionLedger {
+    pub id: i32,
+    pub registered_transaction_id: i32,
+    pub user_id: i32,
+    pub wallet_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
+    pub amount_cents: i32,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 
-impl InnerChargeLedger {
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn insert(transaction: &InsertableInnerChargeLedger) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
-            let txn = diesel::insert_into(inner_charge_ledger::table)
-                .values(transaction)
-                .get_result(&mut _conn).await?;
-            Ok(txn)
-        })).await?;
-        Ok(res)
-    }
+#[derive(Serialize, Deserialize, Insertable, AsChangeset)]
+#[diesel(table_name = settled_wallet_transaction_ledger)]
+pub struct InsertableSettledWalletTransactionLedger {
+    pub registered_transaction_id: i32,
+    pub user_id: i32,
+    pub wallet_id: i32,
+    pub money_movement_direction: MoneyMovementDirection,
+    pub money_movement_type: MoneyMovementType,
+    pub amount_cents: i32,
+}
 
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_inner_charges_by_registered_transaction(registered_transaction: i32) -> Result<Vec<Self>, DataError> {
-        let mut conn = db::connection().await?;
-        let txns = inner_charge_ledger::table
-            .filter(
-                inner_charge_ledger::registered_transaction_id.eq(registered_transaction)
-            )
-            .load::<InnerChargeLedger>(&mut conn).await?;
-        Ok(txns)
-    }
 
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_successful_inner_charge_by_registered_transaction(registered_transaction: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = inner_charge_ledger::table
-            .filter(
-                inner_charge_ledger::registered_transaction_id.eq(registered_transaction)
-                    .and(
-                        inner_charge_ledger::is_success.eq(Some(true))
-                    )
-            )
-            .first(&mut conn).await?;
-        Ok(txn)
+impl PendingPassthroughCardTransactionLedger {
+    pub async fn insert<'a>(transaction: Arc<Transaction<'a>>, ledger: &InsertablePendingPassthroughCardTransactionLedger) -> Result<Self, DataError> {
+        let record = diesel::insert_into(pending_passthrough_card_transaction_ledger::table)
+            .values(ledger)
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
 
     }
+    pub async fn get<'a>(transaction: Arc<Transaction<'a>>, id: i32) -> Result<Self, DataError> {
+        let record = pending_passthrough_card_transaction_ledger::table
+            .filter(pending_passthrough_card_transaction_ledger::id.eq(id))
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
 
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = inner_charge_ledger::table
-            .filter(
-                inner_charge_ledger::id.eq(id)
-            )
-            .first(&mut conn).await?;
-        Ok(txn)
+    }
+}
+
+impl SettledPassthroughCardTransactionLedger {
+    pub async fn insert<'a>(transaction: Arc<Transaction<'a>>, ledger: &InsertableSettledPassthroughCardTransactionLedger) -> Result<Self, DataError> {
+        let record = diesel::insert_into(settled_passthrough_card_transaction_ledger::table)
+            .values(ledger)
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
+    }
+    pub async fn get<'a>(transaction: Arc<Transaction<'a>>, id: i32) -> Result<Self, DataError> {
+        let record = settled_passthrough_card_transaction_ledger::table
+            .filter(settled_passthrough_card_transaction_ledger::id.eq(id))
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
     }
 
 }
 
-impl OuterChargeLedger {
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn insert(transaction: &InsertableOuterChargeLedger) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
-            let txn = diesel::insert_into(outer_charge_ledger::table)
-                .values(transaction)
-                .get_result(&mut _conn).await?;
-            Ok(txn)
-        })).await?;
-        Ok(res)
+impl PendingWalletTransactionLedger {
+    pub async fn insert<'a>(transaction: Arc<Transaction<'a>>, ledger: &InsertablePendingWalletTransactionLedger) -> Result<Self, DataError> {
+        let record = diesel::insert_into(pending_wallet_transaction_ledger::table)
+            .values(ledger)
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
+
+    }
+    pub async fn get<'a>(transaction: Arc<Transaction<'a>>, id: i32) -> Result<Self, DataError> {
+        let record = pending_wallet_transaction_ledger::table
+            .filter(pending_wallet_transaction_ledger::id.eq(id))
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
     }
 
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_outer_charge_by_registered_transaction(registered_transaction: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = outer_charge_ledger::table
-            .filter(
-                outer_charge_ledger::registered_transaction_id.eq(registered_transaction)
-            )
-            .first(&mut conn).await?;
-        Ok(txn)
-    }
-
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = outer_charge_ledger::table
-            .filter(
-                outer_charge_ledger::id.eq(id)
-            )
-            .first(&mut conn).await?;
-        Ok(txn)
-    }
 }
 
-impl TransactionLedger {
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn insert(transaction: &InsertableTransactionLedger) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let res = conn.transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
-            let txn = diesel::insert_into(transaction_ledger::table)
-                .values(transaction)
-                .get_result(&mut _conn).await?;
-            Ok(txn)
-        })).await?;
-        Ok(res)
+impl SettledWalletTransactionLedger {
+    pub async fn insert<'a>(transaction: Arc<Transaction<'a>>, ledger: &InsertableSettledWalletTransactionLedger) -> Result<Self, DataError> {
+        let record = diesel::insert_into(settled_wallet_transaction_ledger::table)
+            .values(ledger)
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
+
+    }
+    pub async fn get<'a>(transaction: Arc<Transaction<'a>>, id: i32) -> Result<Self, DataError> {
+        let record = settled_wallet_transaction_ledger::table
+            .filter(settled_wallet_transaction_ledger::id.eq(id))
+            .get_result::<Self>(&mut transaction.lock()).await?;
+        Ok(record)
     }
 
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_by_registered_transaction_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = transaction_ledger::table
-            .filter(
-                transaction_ledger::registered_transaction_id.eq(id)
-            )
-            .first(&mut conn).await?;
-        Ok(txn)
-    }
-
-    #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn get_by_id(id: i32) -> Result<Self, DataError> {
-        let mut conn = db::connection().await?;
-        let txn = transaction_ledger::table
-            .filter(
-                transaction_ledger::id.eq(id)
-            )
-            .first(&mut conn).await?;
-        Ok(txn)
-    }
 }
-

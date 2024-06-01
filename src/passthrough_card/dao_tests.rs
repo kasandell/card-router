@@ -81,7 +81,7 @@ mod tests {
         assert!(created_card.is_active.expect("should be here and true"));
 
         let mut updated_card = dao.clone().update_status(
-            created_card.id,
+            &created_card,
             PassthroughCardStatus::Paused
         ).await.expect("should update");
 
@@ -93,7 +93,7 @@ mod tests {
         assert!(updated_card.is_active.expect("should be here and true"));
 
         updated_card = dao.clone().update_status(
-            created_card.id,
+            &created_card,
             PassthroughCardStatus::Closed
         ).await.expect("should update");
 
@@ -197,7 +197,7 @@ mod tests {
         let insertable_card = InsertablePassthroughCard::try_from((card, &user)).expect("converts");
         let created_card1 = dao.clone().create(insertable_card).await.expect("creates");
 
-        let updated_card = dao.clone().update_status(created_card1.id, PassthroughCardStatus::Closed).await.expect("updates");
+        let updated_card = dao.clone().update_status(&created_card1, PassthroughCardStatus::Closed).await.expect("updates");
         assert!(updated_card.is_active.is_none());
         assert_eq!(updated_card.passthrough_card_status, PassthroughCardStatus::Closed);
 

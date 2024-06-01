@@ -10,6 +10,7 @@ extern crate num_derive;
 extern crate console_subscriber;
 extern crate uuidv7;
 
+use std::fmt;
 use std::fmt::Debug;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -98,7 +99,13 @@ async fn main() -> std::io::Result<()> {
     #[cfg(feature="logs-to-stdout")]
     let stdout_log = tracing_subscriber::fmt::layer()
         .with_span_events(FmtSpan::CLOSE)
-        .compact();
+        .with_target(false) // Do not print the target (module path)
+        .with_level(false)  // Do not print the log level
+        .with_thread_ids(false) // Do not print thread IDs
+        .with_thread_names(false) // Do not print thread names
+        .event_format(
+            tracing_subscriber::fmt::format().without_time().pretty()
+        ); // Do not print timestamp
 
     #[cfg(feature="logs-to-stdout")]
     let subscriber = Registry::default()

@@ -1,4 +1,3 @@
-use crate::rule::constant::DayOfMonth;
 use std::{fmt, io};
 use std::io::Write;
 use diesel::deserialize::FromSqlRow;
@@ -7,57 +6,88 @@ use diesel::pg::Pg;
 use diesel::sql_types::Text;
 use serde::{Deserialize, Serialize};
 use diesel::backend::Backend;
-use diesel::deserialize::{self, FromSql};
-use diesel::serialize::{self, ToSql, Output, IsNull};
+use diesel::deserialize::{FromSql};
+use diesel::serialize::{ToSql, Output, IsNull};
 use diesel::sql_types::*;
+use std::fmt::{Display, Formatter};
+use serde::{Serializer};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone, AsExpression, FromSqlRow)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[diesel(sql_type = Text)]
-pub enum ChargeStatus {
-    Fail,
-    Success
+pub enum MoneyMovementType {
+    PassthroughCardReserve,
+    PassthroughCardSettle,
+    PassthroughCardRelease,
+    WalletReserve,
+    WalletSettle,
+    WalletRelease
 }
 
-impl ToSql<Text, Pg> for ChargeStatus {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone, AsExpression, FromSqlRow)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[diesel(sql_type = Text)]
+pub enum MoneyMovementDirection {
+    Debit, // debits are for any money INTO an account
+    Credit // credits are for any money OUT of an account
+}
+
+impl ToSql<Text, Pg> for MoneyMovementType {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> diesel::serialize::Result {
         out.write_all(self.to_string().as_bytes())?;
         Ok(IsNull::No)
     }
 }
-impl FromSql<Text, Pg> for ChargeStatus {
-    fn from_sql(bytes: <Pg as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
-        match bytes.as_bytes() {
-            b"FAIL" => Ok(ChargeStatus::Fail),
-            b"SUCCESS" => Ok(ChargeStatus::Success),
-            v => Err(format!("Unknown value for ChargeStatus found").into()),
 
+impl FromSql<Text, Pg> for MoneyMovementType {
+    fn from_sql(bytes: <Pg as Backend>::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        match bytes.as_bytes() {
+            b"PASSTHROUGH_CARD_RESERVE" => Ok(MoneyMovementType::PassthroughCardReserve),
+            b"PASSTHROUGH_CARD_RELEASE" => Ok(MoneyMovementType::PassthroughCardReserve),
+            b"PASSTHROUGH_CARD_SETTLE" => Ok(MoneyMovementType::PassthroughCardReserve),
+            b"WALLET_RESERVE" => Ok(MoneyMovementType::WalletReserve),
+            b"WALLET_RELEASE" => Ok(MoneyMovementType::WalletRelease),
+            b"WALLET_SETTLE" => Ok(MoneyMovementType::WalletSettle),
+            v => Err(format!("Unknown value for MoneyMovementType found").into()),
         }
     }
 }
 
-impl fmt::Display for ChargeStatus {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl fmt::Display for MoneyMovementType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", match *self {
-            ChargeStatus::Fail => "FAIL",
-            ChargeStatus::Success => "SUCCESS"
+            MoneyMovementType::PassthroughCardReserve => "PASSTHROUGH_CARD_RESERVE",
+            MoneyMovementType::PassthroughCardSettle => "PASSTHROUGH_CARD_SETTLE",
+            MoneyMovementType::PassthroughCardRelease => "PASSTHROUGH_CARD_RELEASE",
+            MoneyMovementType::WalletReserve => "WALLET_RESERVE",
+            MoneyMovementType::WalletSettle => "WALLET_SETTLE",
+            MoneyMovementType::WalletRelease => "WALLET_RELEASE",
         })
     }
 }
 
-impl ChargeStatus {
-    pub fn as_str(&self) -> String {
-        match self {
-            ChargeStatus::Fail => "FAIL".to_string(),
-            ChargeStatus::Success => "SUCCESS".to_string(),
+impl ToSql<Text, Pg> for MoneyMovementDirection {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> diesel::serialize::Result {
+        out.write_all(self.to_string().as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<Text, Pg> for MoneyMovementDirection {
+    fn from_sql(bytes: <Pg as Backend>::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        match bytes.as_bytes() {
+            b"CREDIT" => Ok(MoneyMovementDirection::Credit),
+            b"DEBIT" => Ok(MoneyMovementDirection::Debit),
+            v => Err(format!("Unknown value for MoneyMovementDirection found").into()),
         }
     }
+}
 
-    pub fn from_str(str: &str) -> Self {
-        match str {
-            "FAIL" => ChargeStatus::Fail,
-            "SUCCESS" => ChargeStatus::Success,
-            _ => ChargeStatus::Fail
-        }
+impl fmt::Display for MoneyMovementDirection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match *self {
+            MoneyMovementDirection::Credit => "CREDIT",
+            MoneyMovementDirection::Debit => "DEBIT",
+        })
     }
 }

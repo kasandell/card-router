@@ -6,10 +6,11 @@ use crate::charge::service::{ChargeService, ChargeServiceTrait};
 use crate::asa::request::AsaRequest;
 use crate::rule::service::RuleService;
 use crate::rule::service::RuleServiceTrait;
-use crate::asa::response::{AsaResponse, AsaResponseResult};
+use crate::asa::response::{AsaResponse, AsaResponseResult, AvsResponseResult};
 
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::ledger::service::LedgerServiceTrait;
+use crate::passthrough_card::constant::PassthroughCardStatus;
 use crate::passthrough_card::service::PassthroughCardServiceTrait;
 use crate::user::service::UserServiceTrait;
 use super::error::LithicHandlerError;
@@ -49,6 +50,26 @@ impl LithicHandler {
         )?;
         let passthrough_card = self.passthrough_card_service.clone().get_by_token(&token).await
             .map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
+
+
+
+        if passthrough_card.passthrough_card_status != PassthroughCardStatus::Open {
+            let result = match passthrough_card.passthrough_card_status {
+                PassthroughCardStatus::Closed => AsaResponseResult::CardClosed,
+                PassthroughCardStatus::Paused => AsaResponseResult::CardPaused,
+                PassthroughCardStatus::PendingActivation => AsaResponseResult::AccountInactive,
+                PassthroughCardStatus::PendingFulfillment => AsaResponseResult::AccountInactive,
+                _ => AsaResponseResult::AccountInactive
+            };
+            return Ok(
+                AsaResponse {
+                    token,
+                    result: result,
+                    avs_result: None,
+                    balance: None,
+                }
+            )
+        }
         let user = self.user_service.clone().find_by_internal_id(passthrough_card.user_id).await
             .map_err(|e| LithicHandlerError::Unexpected(e.into()))?;
 
@@ -60,7 +81,7 @@ impl LithicHandler {
         tracing::info!("Got {} cards for userId={}", cards.len(), user.id);
         tracing::info!("Attempting to charge userId={}", user.id);
 
-        let (result, ledger) = self.charge_service.clone().charge_from_asa_request(
+        let result = self.charge_service.clone().charge_from_asa_request(
             &request,
             &cards,
             &passthrough_card,
@@ -72,7 +93,7 @@ impl LithicHandler {
         Ok(
             AsaResponse {
                 token,
-                result: AsaResponseResult::from(result),
+                result,
                 avs_result: None,
                 balance: None,
             }
