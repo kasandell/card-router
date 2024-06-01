@@ -179,23 +179,19 @@ impl Wallet {
     }
 
     #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn insert_card<'a>(transaction: Arc<Transaction<'a>>, card: &InsertableCard<'a>) -> Result<Self, DataError> {
-        let res = transaction.lock().transaction::<_, diesel::result::Error, _>(|mut _conn| Box::pin(async move {
-            let inserted_card = diesel::insert_into(wallet::table)
-                .values(card)
-                .get_result::<Wallet>(&mut _conn).await?;
-            Ok(inserted_card)
-
-        })).await?;
-        Ok(res)
+    pub async fn insert_card<'a>(transaction: &mut Transaction<'_, '_>, card: &InsertableCard<'a>) -> Result<Self, DataError> {
+        let inserted_card = diesel::insert_into(wallet::table)
+            .values(card)
+            .get_result::<Wallet>(transaction).await?;
+        Ok(inserted_card)
     }
 
     #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn update_card_status<'a>(transaction: Arc<Transaction<'a>>, id: i32, status_update: &UpdateWalletStatus) -> Result<Self, DataError> {
+    pub async fn update_card_status<'a>(transaction: &mut Transaction<'_, '_>, id: i32, status_update: &UpdateWalletStatus) -> Result<Self, DataError> {
         let wallet = diesel::update(wallet::table)
             .filter(wallet::id.eq(id))
             .set(status_update)
-            .get_result::<Wallet>(&mut transaction.lock()).await?;
+            .get_result::<Wallet>(transaction).await?;
         Ok(wallet)
     }
 
@@ -243,12 +239,12 @@ impl WalletCardAttempt {
     }
 
     #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn update_card<'a>(transaction: Arc<Transaction<'a>>, id: i32, card: &UpdateCardAttempt) -> Result<Self, DataError> {
+    pub async fn update_card<'a>(transaction: &mut Transaction<'_, '_>, id: i32, card: &UpdateCardAttempt) -> Result<Self, DataError> {
 
         let wallet = diesel::update(wallet_card_attempt::table)
             .filter(wallet_card_attempt::id.eq(id))
             .set(card)
-            .get_result::<WalletCardAttempt>(&mut transaction.lock()).await?;
+            .get_result::<WalletCardAttempt>(transaction).await?;
         Ok(wallet)
     }
 
@@ -274,10 +270,10 @@ impl WalletCardAttempt {
 
 impl WalletStatusHistory {
     #[cfg_attr(feature="trace-detail", tracing::instrument)]
-    pub async fn insert_status_update<'a>(transaction: Arc<Transaction<'a>>, history: &InsertableWalletStatusHistory) -> Result<Self, DataError> {
+    pub async fn insert_status_update<'a>(transaction: &mut Transaction<'_, '_>, history: &InsertableWalletStatusHistory) -> Result<Self, DataError> {
             let inserted_history = diesel::insert_into(wallet_status_history::table)
                 .values(history)
-                .get_result::<WalletStatusHistory>(&mut transaction.lock()).await?;
+                .get_result::<WalletStatusHistory>(transaction).await?;
             Ok(inserted_history)
     }
 

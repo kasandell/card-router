@@ -7,7 +7,7 @@ pub struct RegisterAttemptRequest {
     pub credit_card_type_public_id: Uuid,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MatchRequest {
     pub reference_id: String,
 }

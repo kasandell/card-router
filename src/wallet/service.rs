@@ -11,7 +11,6 @@ use crate::wallet::constant::{WalletCardAttemptStatus, WalletStatus};
 use crate::wallet::dao::{WalletCardAttemptDao, WalletCardAttemtDaoTrait, WalletDao, WalletDaoTrait, WalletStatusHistoryDao, WalletStatusHistoryDaoTrait};
 use crate::wallet::entity::{InsertableCardAttempt, InsertableCard, UpdateCardAttempt, Wallet, WalletCardAttempt, WalletDetail, UpdateWalletStatus, InsertableWalletStatusHistory};
 use crate::wallet::request::{MatchRequest, RegisterAttemptRequest};
-
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::util::transaction::transactional;
 use crate::wallet::error::WalletError;
@@ -53,9 +52,9 @@ pub trait WalletServiceTrait {
 // and make the network call in one
 pub struct WalletService {
     credit_card_service: Arc<dyn CreditCardServiceTrait>,
-    wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait>,
-    wallet_dao: Arc<dyn WalletDaoTrait>,
-    wallet_status_history_dao: Arc<dyn WalletStatusHistoryDaoTrait>,
+    wallet_card_attempt_dao: Arc<dyn WalletCardAttemtDaoTrait + Send + Sync>,
+    wallet_dao: Arc<dyn WalletDaoTrait + Send + Sync>,
+    wallet_status_history_dao: Arc<dyn WalletStatusHistoryDaoTrait + Send + Sync>,
     footprint_service: Arc<dyn FootprintServiceTrait>
 }
 
@@ -137,32 +136,38 @@ impl WalletServiceTrait for WalletService {
         }
 
         tracing::info!("Creating card");
-        transactional(|conn| async move {
-            let created_card = self.wallet_dao.clone().insert_card(
-                conn.clone(),
-                &InsertableCard {
-                    user_id: card_attempt.user_id,
-                    payment_method_id: &request.reference_id,
-                    credit_card_id: card_attempt.credit_card_id,
-                    wallet_card_attempt_id: card_attempt.id,
-                }
-            ).await?;
-            let status_history = self.wallet_status_history_dao.clone().insert(
-                conn.clone(),
-                &InsertableWalletStatusHistory {
-                wallet_id: created_card.id,
-                prior_status: WalletStatus::Active,
-                current_status: WalletStatus::Active,
-            }).await?;
-            tracing::info!("Created card: {}", &created_card.public_id);
-            let update = self.wallet_card_attempt_dao.clone().update_card(
-                conn.clone(),
-                card_attempt.id, &UpdateCardAttempt {
-                status: WalletCardAttemptStatus::Matched
-            }).await?;
-            tracing::info!("Updated to matched: {}", &update.status);
-            Ok(created_card.into())
 
+        let wallet_dao = self.wallet_dao.clone();
+        let wallet_status_history_dao = self.wallet_status_history_dao.clone();
+        let wallet_card_attempt_dao = self.wallet_card_attempt_dao.clone();
+        let request = request.clone();
+        transactional(move |conn| {
+            Box::pin(async move {
+                let created_card = wallet_dao.clone().insert_card(
+                    conn,
+                    &InsertableCard {
+                        user_id: card_attempt.user_id,
+                        payment_method_id: &request.reference_id,
+                        credit_card_id: card_attempt.credit_card_id,
+                        wallet_card_attempt_id: card_attempt.id,
+                    }
+                ).await?;
+                let status_history = wallet_status_history_dao.clone().insert(
+                    conn,
+                    &InsertableWalletStatusHistory {
+                        wallet_id: created_card.id,
+                        prior_status: WalletStatus::Active,
+                        current_status: WalletStatus::Active,
+                    }).await?;
+                tracing::info!("Created card: {}", &created_card.public_id);
+                let update = wallet_card_attempt_dao.clone().update_card(
+                    conn,
+                    card_attempt.id, &UpdateCardAttempt {
+                        status: WalletCardAttemptStatus::Matched
+                    }).await?;
+                tracing::info!("Updated to matched: {}", &update.status);
+                Ok(created_card.into())
+            })
         }).await
     }
 
@@ -225,27 +230,30 @@ impl WalletServiceTrait for WalletService {
         }
         let prior_status = card.status.clone();
 
-        transactional(|conn| async move {
-            let card = self.wallet_dao.clone().update_card_status(
-                conn.clone(),
-                card.id,
-                &UpdateWalletStatus {
-                status: new_status.clone()
-            }).await?;
+        let wallet_dao = self.wallet_dao.clone();
+        let wallet_status_history_dao = self.wallet_status_history_dao.clone();
+        transactional(move |conn| {
+            Box::pin(async move {
+                let card = wallet_dao.clone().update_card_status(
+                    conn,
+                    card.id,
+                    &UpdateWalletStatus {
+                        status: new_status.clone()
+                    }).await?;
 
-            let status_history = self.wallet_status_history_dao.clone().insert(
-                conn.clone(),
-                &InsertableWalletStatusHistory {
-                    wallet_id: card.id,
-                    prior_status: prior_status,
-                    current_status: new_status.clone()
-                }
-            ).await?;
+                let status_history = wallet_status_history_dao.clone().insert(
+                    conn,
+                    &InsertableWalletStatusHistory {
+                        wallet_id: card.id,
+                        prior_status: prior_status,
+                        current_status: new_status.clone()
+                    }
+                ).await?;
 
-            tracing::info!("Updated card successfully to status={}", new_status);
+                tracing::info!("Updated card successfully to status={}", new_status);
 
-            Ok(card.into())
-
+                Ok(card.into())
+            })
         }).await
 
     }

@@ -6,29 +6,29 @@ use std::error::Error as StdErr;
 #[derive(thiserror::Error, Debug)]
 pub enum ApiError {
     #[error("Unauthorized")]
-    Unauthorized(#[source] Box<dyn std::error::Error>),
+    Unauthorized(#[source] Box<dyn std::error::Error + Send + Sync>),
 
     #[error("Not found")]
-    NotFound(#[source] Box<dyn std::error::Error>),
+    NotFound(#[source] Box<dyn std::error::Error + Send + Sync>),
 
     #[error("BadRequest")]
-    BadRequest(#[source] Box<dyn std::error::Error>),
+    BadRequest(#[source] Box<dyn std::error::Error + Send + Sync>),
 
     #[error("Conflict")]
-    Conflict(#[source] Box<dyn std::error::Error>),
+    Conflict(#[source] Box<dyn std::error::Error + Send + Sync>),
 
     #[error("Internal Server error")]
-    InternalServerError(#[source] Box<dyn std::error::Error>),
+    InternalServerError(#[source] Box<dyn std::error::Error + Send + Sync>),
 
 
     #[error("Timeout")]
-    Timeout(#[source] Box<dyn std::error::Error>),
+    Timeout(#[source] Box<dyn std::error::Error + Send + Sync>),
 
     #[error("Unexpected API Error")]
-    Unexpected(#[source] Box<dyn std::error::Error>),
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
-fn api_error_for_status_code(status: StatusCode, error: Box<dyn std::error::Error>) -> ApiError {
+fn api_error_for_status_code(status: StatusCode, error: Box<dyn std::error::Error + Send + Sync>) -> ApiError {
     match status {
         StatusCode::CONFLICT => ApiError::Conflict(error),
         StatusCode::BAD_REQUEST => ApiError::BadRequest(error),
@@ -74,8 +74,8 @@ impl From<std::io::Error> for ApiError {
     }
 }
 
-impl From<(StatusCode, Box<dyn std::error::Error>)> for ApiError {
-    fn from(value: (StatusCode, Box<dyn StdErr>)) -> Self {
+impl From<(StatusCode, Box<dyn std::error::Error + Send + Sync>)> for ApiError {
+    fn from(value: (StatusCode, Box<dyn StdErr + Send + Sync>)) -> Self {
         let code = value.0;
         let error = value.1;
         tracing::info!("ApiError from status_code={:?}, error={:?}", &code, &error);

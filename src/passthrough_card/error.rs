@@ -5,15 +5,15 @@ use crate::error::data_error::DataError;
 #[derive(thiserror::Error, Debug)]
 pub enum PassthroughCardError {
     #[error("Active card already exists")]
-    ActiveCardExists(#[source] Box<dyn std::error::Error>),
+    ActiveCardExists(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unable to issue card")]
-    IssueCard(#[source] Box<dyn std::error::Error>),
+    IssueCard(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unable to transition status")]
-    StatusUpdate(#[source] Box<dyn std::error::Error>),
+    StatusUpdate(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Card not found")]
-    CardNotFound(#[source] Box<dyn std::error::Error>),
+    CardNotFound(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected error")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl ResponseError for PassthroughCardError {

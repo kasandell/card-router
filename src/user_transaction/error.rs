@@ -5,12 +5,12 @@ use crate::error::data_error::DataError;
 #[derive(thiserror::Error, Debug)]
 pub enum UserTransactionError {
     #[error("Not found")]
-    NotFound(#[source] Box<dyn std::error::Error>),
+    NotFound(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Not found")]
-    Unauthorized(#[source] Box<dyn std::error::Error>),
+    Unauthorized(#[source] Box<dyn std::error::Error + Send + Sync>),
     // should add one for registering a transaction without a child
     #[error("Unexpected ledger error")]
-    UnexpectedError(#[source] Box<dyn std::error::Error>)
+    UnexpectedError(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl ResponseError for UserTransactionError {
@@ -55,8 +55,8 @@ mod test {
     #[test]
     pub fn from_data_error() {
         assert_eq!(LedgerError::DuplicateTransaction(BASE_ERROR.into()), LedgerError::from(DataError::Conflict(BASE_ERROR.into())));
-        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::Format(BASE_ERROR.into())));
-        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::NotFound(BASE_ERROR.into())));
-        assert_eq!(LedgerError::UnexpectedLedgerError(BASE_ERROR.into()), LedgerError::from(DataError::Unexpected(BASE_ERROR.into())));
+        assert_eq!(LedgerError::Unexpected(BASE_ERROR.into()), LedgerError::from(DataError::Format(BASE_ERROR.into())));
+        assert_eq!(LedgerError::Unexpected(BASE_ERROR.into()), LedgerError::from(DataError::NotFound(BASE_ERROR.into())));
+        assert_eq!(LedgerError::Unexpected(BASE_ERROR.into()), LedgerError::from(DataError::Unexpected(BASE_ERROR.into())));
     }
 }

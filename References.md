@@ -1,3 +1,11 @@
+# Random thoughts
+How am i going to do corrections if ledger needs to be tied to a registered transaction?
+https://users.rust-lang.org/t/lifetime-may-not-live-long-enough-for-an-async-closure/62489
+https://quinedot.github.io/rust-learning/pf-shared-nested.html
+https://quinedot.github.io/rust-learning/pf-borrow-forever.html
+https://users.rust-lang.org/t/fnonce-async-lifetime-struggles/99930/10
+
+
 # CI
 https://github.com/peter-evans/docker-compose-actions-workflow
 need something like this, and need to get an ssh key in here somehow to access private repos

@@ -49,18 +49,15 @@ diesel::table! {
 }
 
 diesel::table! {
-    inner_charge_ledger (id) {
+    expected_wallet_charge_reference (id) {
         id -> Int4,
         registered_transaction_id -> Int4,
+        reference_id -> Uuid,
         user_id -> Int4,
         wallet_card_id -> Int4,
         amount_cents -> Int4,
-        #[max_length = 255]
-        status -> Varchar,
-        is_success -> Nullable<Bool>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
-        rule_id -> Nullable<Int4>,
     }
 }
 
@@ -71,21 +68,6 @@ diesel::table! {
         #[max_length = 4]
         mcc_code -> Varchar,
         category_id -> Int4,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    outer_charge_ledger (id) {
-        id -> Int4,
-        registered_transaction_id -> Int4,
-        user_id -> Int4,
-        passthrough_card_id -> Int4,
-        amount_cents -> Int4,
-        #[max_length = 255]
-        status -> Varchar,
-        is_success -> Nullable<Bool>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
@@ -112,7 +94,54 @@ diesel::table! {
 }
 
 diesel::table! {
-    registered_transactions (id) {
+    passthrough_card_charge (id) {
+        id -> Int4,
+        registered_transaction_id -> Int4,
+        user_id -> Int4,
+        passthrough_card_id -> Int4,
+        amount_cents -> Int4,
+        #[max_length = 255]
+        status -> Varchar,
+        is_success -> Nullable<Bool>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    pending_passthrough_card_transaction_ledger (id) {
+        id -> Int4,
+        registered_transaction_id -> Int4,
+        user_id -> Int4,
+        passthrough_card_id -> Int4,
+        #[max_length = 20]
+        money_movement_direction -> Varchar,
+        #[max_length = 40]
+        money_movement_type -> Varchar,
+        amount_cents -> Int4,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    pending_wallet_transaction_ledger (id) {
+        id -> Int4,
+        registered_transaction_id -> Int4,
+        user_id -> Int4,
+        wallet_id -> Int4,
+        #[max_length = 20]
+        money_movement_direction -> Varchar,
+        #[max_length = 40]
+        money_movement_type -> Varchar,
+        amount_cents -> Int4,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    registered_transaction (id) {
         id -> Int4,
         user_id -> Int4,
         transaction_id -> Uuid,
@@ -121,6 +150,17 @@ diesel::table! {
         amount_cents -> Int4,
         #[max_length = 255]
         mcc -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    registered_transaction_metadata (registered_transaction_id) {
+        registered_transaction_id -> Int4,
+        body -> Nullable<Text>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
@@ -144,12 +184,43 @@ diesel::table! {
 }
 
 diesel::table! {
-    transaction_ledger (id) {
+    settled_passthrough_card_transaction_ledger (id) {
         id -> Int4,
         registered_transaction_id -> Int4,
-        inner_charge_ledger_id -> Int4,
-        outer_charge_ledger_id -> Int4,
-        rule_id -> Nullable<Int4>,
+        user_id -> Int4,
+        passthrough_card_id -> Int4,
+        #[max_length = 20]
+        money_movement_direction -> Varchar,
+        #[max_length = 40]
+        money_movement_type -> Varchar,
+        amount_cents -> Int4,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    settled_wallet_transaction_ledger (id) {
+        id -> Int4,
+        registered_transaction_id -> Int4,
+        user_id -> Int4,
+        wallet_id -> Int4,
+        #[max_length = 20]
+        money_movement_direction -> Varchar,
+        #[max_length = 40]
+        money_movement_type -> Varchar,
+        amount_cents -> Int4,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    successful_end_to_end_charge (id) {
+        id -> Int4,
+        registered_transaction_id -> Int4,
+        wallet_card_charge_id -> Int4,
+        passthrough_card_charge_id -> Int4,
     }
 }
 
@@ -198,6 +269,29 @@ diesel::table! {
 }
 
 diesel::table! {
+    wallet_card_charge (id) {
+        id -> Int4,
+        registered_transaction_id -> Int4,
+        user_id -> Int4,
+        wallet_card_id -> Int4,
+        amount_cents -> Int4,
+        rule_id -> Nullable<Int4>,
+        expected_wallet_charge_reference_id -> Int4,
+        #[max_length = 255]
+        resolved_charge_status -> Varchar,
+        #[max_length = 255]
+        psp_reference -> Nullable<Varchar>,
+        #[max_length = 255]
+        returned_reference -> Nullable<Varchar>,
+        #[max_length = 30]
+        returned_charge_status -> Nullable<Varchar>,
+        is_success -> Nullable<Bool>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     wallet_status_history (id) {
         id -> Int4,
         public_id -> Uuid,
@@ -213,27 +307,43 @@ diesel::table! {
 
 diesel::joinable!(credit_card -> credit_card_issuer (credit_card_issuer_id));
 diesel::joinable!(credit_card -> credit_card_type (credit_card_type_id));
-diesel::joinable!(inner_charge_ledger -> registered_transactions (registered_transaction_id));
-diesel::joinable!(inner_charge_ledger -> rule (rule_id));
-diesel::joinable!(inner_charge_ledger -> users (user_id));
-diesel::joinable!(inner_charge_ledger -> wallet (wallet_card_id));
+diesel::joinable!(expected_wallet_charge_reference -> registered_transaction (registered_transaction_id));
+diesel::joinable!(expected_wallet_charge_reference -> users (user_id));
+diesel::joinable!(expected_wallet_charge_reference -> wallet (wallet_card_id));
 diesel::joinable!(mcc_mapping -> category (category_id));
-diesel::joinable!(outer_charge_ledger -> passthrough_card (passthrough_card_id));
-diesel::joinable!(outer_charge_ledger -> registered_transactions (registered_transaction_id));
-diesel::joinable!(outer_charge_ledger -> users (user_id));
 diesel::joinable!(passthrough_card -> users (user_id));
-diesel::joinable!(registered_transactions -> users (user_id));
+diesel::joinable!(passthrough_card_charge -> passthrough_card (passthrough_card_id));
+diesel::joinable!(passthrough_card_charge -> registered_transaction (registered_transaction_id));
+diesel::joinable!(passthrough_card_charge -> users (user_id));
+diesel::joinable!(pending_passthrough_card_transaction_ledger -> passthrough_card (passthrough_card_id));
+diesel::joinable!(pending_passthrough_card_transaction_ledger -> registered_transaction (registered_transaction_id));
+diesel::joinable!(pending_passthrough_card_transaction_ledger -> users (user_id));
+diesel::joinable!(pending_wallet_transaction_ledger -> registered_transaction (registered_transaction_id));
+diesel::joinable!(pending_wallet_transaction_ledger -> users (user_id));
+diesel::joinable!(pending_wallet_transaction_ledger -> wallet (wallet_id));
+diesel::joinable!(registered_transaction -> users (user_id));
+diesel::joinable!(registered_transaction_metadata -> registered_transaction (registered_transaction_id));
 diesel::joinable!(rule -> category (rule_category_id));
 diesel::joinable!(rule -> credit_card (credit_card_id));
-diesel::joinable!(transaction_ledger -> inner_charge_ledger (inner_charge_ledger_id));
-diesel::joinable!(transaction_ledger -> outer_charge_ledger (outer_charge_ledger_id));
-diesel::joinable!(transaction_ledger -> registered_transactions (registered_transaction_id));
-diesel::joinable!(transaction_ledger -> rule (rule_id));
+diesel::joinable!(settled_passthrough_card_transaction_ledger -> passthrough_card (passthrough_card_id));
+diesel::joinable!(settled_passthrough_card_transaction_ledger -> registered_transaction (registered_transaction_id));
+diesel::joinable!(settled_passthrough_card_transaction_ledger -> users (user_id));
+diesel::joinable!(settled_wallet_transaction_ledger -> registered_transaction (registered_transaction_id));
+diesel::joinable!(settled_wallet_transaction_ledger -> users (user_id));
+diesel::joinable!(settled_wallet_transaction_ledger -> wallet (wallet_id));
+diesel::joinable!(successful_end_to_end_charge -> passthrough_card_charge (passthrough_card_charge_id));
+diesel::joinable!(successful_end_to_end_charge -> registered_transaction (registered_transaction_id));
+diesel::joinable!(successful_end_to_end_charge -> wallet_card_charge (wallet_card_charge_id));
 diesel::joinable!(wallet -> credit_card (credit_card_id));
 diesel::joinable!(wallet -> users (user_id));
 diesel::joinable!(wallet -> wallet_card_attempt (wallet_card_attempt_id));
 diesel::joinable!(wallet_card_attempt -> credit_card (credit_card_id));
 diesel::joinable!(wallet_card_attempt -> users (user_id));
+diesel::joinable!(wallet_card_charge -> expected_wallet_charge_reference (expected_wallet_charge_reference_id));
+diesel::joinable!(wallet_card_charge -> registered_transaction (registered_transaction_id));
+diesel::joinable!(wallet_card_charge -> rule (rule_id));
+diesel::joinable!(wallet_card_charge -> users (user_id));
+diesel::joinable!(wallet_card_charge -> wallet (wallet_card_id));
 diesel::joinable!(wallet_status_history -> wallet (wallet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -241,15 +351,21 @@ diesel::allow_tables_to_appear_in_same_query!(
     credit_card,
     credit_card_issuer,
     credit_card_type,
-    inner_charge_ledger,
+    expected_wallet_charge_reference,
     mcc_mapping,
-    outer_charge_ledger,
     passthrough_card,
-    registered_transactions,
+    passthrough_card_charge,
+    pending_passthrough_card_transaction_ledger,
+    pending_wallet_transaction_ledger,
+    registered_transaction,
+    registered_transaction_metadata,
     rule,
-    transaction_ledger,
+    settled_passthrough_card_transaction_ledger,
+    settled_wallet_transaction_ledger,
+    successful_end_to_end_charge,
     users,
     wallet,
     wallet_card_attempt,
+    wallet_card_charge,
     wallet_status_history,
 );

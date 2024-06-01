@@ -5,7 +5,7 @@ use crate::error::data_error::DataError;
 #[derive(thiserror::Error, Debug)]
 pub enum CreditCardTypeError {
    #[error("Unexpected Error")]
-   Unexpected(#[source] Box<dyn std::error::Error>)
+   Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl From<DataError> for CreditCardTypeError {

@@ -7,13 +7,13 @@ pub enum LithicError {
     #[error("Not implemented")]
     NotImplemented,
     #[error("Unauthorized footprint request")]
-    Unauthorized(#[source] Box<dyn std::error::Error>),
+    Unauthorized(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Conflicting footprint request")]
-    Conflict(#[source] Box<dyn std::error::Error>),
+    Conflict(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Footprint request not found")]
-    NotFound(#[source] Box<dyn std::error::Error>),
+    NotFound(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected footprint error")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 
 }
 

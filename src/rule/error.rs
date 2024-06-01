@@ -4,9 +4,9 @@ use actix_web::ResponseError;
 #[derive(thiserror::Error, Debug)]
 pub enum RuleError {
     #[error("No amount provided")]
-    NoAmount(#[source] Box<dyn std::error::Error>),
+    NoAmount(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected Error")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl ResponseError for RuleError {

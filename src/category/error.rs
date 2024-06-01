@@ -3,7 +3,7 @@ use crate::error::data_error::DataError;
 #[derive(thiserror::Error, Debug)]
 pub enum CategoryError {
     #[error("Unexpected")]
-    Unexpected(#[source] Box<dyn std::error::Error>),
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
 impl From<DataError> for CategoryError {

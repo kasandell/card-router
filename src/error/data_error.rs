@@ -12,13 +12,13 @@ use thiserror;
 #[derive(thiserror::Error, Debug)]
 pub enum DataError {
     #[error("Conflict")]
-    Conflict(#[source] Box<dyn std::error::Error>),
+    Conflict(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Not Found")]
-    NotFound(#[source] Box<dyn std::error::Error>),
+    NotFound(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Format")]
-    Format(#[source] Box<dyn std::error::Error>),
+    Format(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected error")]
-    Unexpected(#[source] Box<dyn std::error::Error>),
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
 impl From<R2D2Error> for DataError {

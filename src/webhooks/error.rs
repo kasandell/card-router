@@ -6,7 +6,7 @@ use crate::wallet::error::WalletError;
 #[derive(thiserror::Error, Debug)]
 pub enum LithicHandlerError {
     #[error("Unexpected error")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl ResponseError for LithicHandlerError {

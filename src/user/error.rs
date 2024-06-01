@@ -5,11 +5,11 @@ use crate::error::data_error::DataError;
 #[derive(thiserror::Error, Debug)]
 pub enum UserError {
     #[error("Unauthorized User")]
-    Unauthorized(#[source] Box<dyn std::error::Error>),
+    Unauthorized(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Not found")]
-    NotFound(#[source] Box<dyn std::error::Error>),
+    NotFound(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected user error")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl ResponseError for UserError {

@@ -17,8 +17,8 @@ pub async fn try_redis_fallback_db<T, K, F, Fut>(
     db_operation: F,
     renew_ttl: bool
 ) -> Result<T, DataError>
-where T: Serialize + DeserializeOwned, K: StableRedisKey, F: FnOnce() -> Fut,
-    Fut: Future<Output=Result<T, DataError>>
+where T: Serialize + DeserializeOwned + Send + Sync, K: StableRedisKey, F: FnOnce() -> Fut,
+    Fut: Future<Output=Result<T, DataError>> + Send
 {
     let redis_response: Result<T, RedisError> = redis_service.clone().get::<_, T>(&key).await;
     match redis_response {

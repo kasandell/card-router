@@ -5,15 +5,15 @@ use crate::error::data_error::DataError;
 #[derive(thiserror::Error, Debug)]
 pub enum WalletError {
     #[error("User is not the owner of specified card")]
-    Unauthorized(#[source] Box<dyn std::error::Error>),
+    Unauthorized(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Wallet not found")]
-    NotFound(#[source] Box<dyn std::error::Error>),
+    NotFound(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Card already matched")]
-    Conflict(#[source] Box<dyn std::error::Error>),
+    Conflict(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unacceptable action")]
-    NotAcceptable(#[source] Box<dyn std::error::Error>),
+    NotAcceptable(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl ResponseError for WalletError {

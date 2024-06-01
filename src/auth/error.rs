@@ -4,9 +4,9 @@ use actix_web::ResponseError;
 #[derive(thiserror::Error, Debug)]
 pub enum AuthError {
     #[error("Authorization error")]
-    Unauthorized(#[source] Box<dyn std::error::Error>),
+    Unauthorized(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected auth error")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 

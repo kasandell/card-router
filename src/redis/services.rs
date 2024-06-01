@@ -13,14 +13,14 @@ use serde::de::DeserializeOwned;
 use crate::redis::client::get_connection;
 
 /// Trait Representable for any Redis Service to implement
-#[async_trait(?Send)]
+#[async_trait]
 pub trait RedisServiceTrait {
     async fn get<K, T>(self: Arc<Self>, key: &K) -> Result<T, RedisError>
        where T: DeserializeOwned, K: StableRedisKey;
     async fn get_primitive<K, T>(self: Arc<Self>, key: &K) -> Result<T, RedisError>
         where T: FromRedisValue, K: StableRedisKey;
     async fn set<K, T>(self: Arc<Self>, key: &K, val: &T) -> Result<(), RedisError>
-        where T: Serialize, K: StableRedisKey;
+        where T: Serialize + Send + Sync, K: StableRedisKey;
     async fn set_primitive<K, T>(self: Arc<Self>, key: &K, val: T) -> Result<(), RedisError>
         where T: ToRedisArgs + Send + Sync, K: StableRedisKey;
     async fn expire_in<K>(self: Arc<Self>, key: &K, time: Duration) -> Result<(), RedisError>
@@ -42,7 +42,7 @@ impl RedisService {
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait]
 impl RedisServiceTrait for RedisService {
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
     async fn get<K, T>(self: Arc<Self>, key: &K) -> Result<T, RedisError> where T: DeserializeOwned, K: StableRedisKey {
@@ -61,7 +61,7 @@ impl RedisServiceTrait for RedisService {
     }
 
     #[cfg_attr(feature="trace-detail", tracing::instrument(skip_all))]
-    async fn set<K, T>(self: Arc<Self>, key: &K, val: &T) -> Result<(), RedisError> where T: Serialize, K: StableRedisKey {
+    async fn set<K, T>(self: Arc<Self>, key: &K, val: &T) -> Result<(), RedisError> where T: Serialize + Send + Sync, K: StableRedisKey {
         let mut conn = get_connection().await?;
 
         let serialized = serde_json::to_string(&val)?;

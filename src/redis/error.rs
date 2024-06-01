@@ -6,9 +6,9 @@ use serde_json::Error as SerdeError;
 #[derive(thiserror::Error, Debug)]
 pub enum RedisError {
     #[error("Not found for type in redis")]
-    NotFound(Box<dyn std::error::Error>),
+    NotFound(Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected error occurred")]
-    Unexpected(Box<dyn std::error::Error>)
+    Unexpected(Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl From<SerdeError> for RedisError {

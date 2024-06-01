@@ -6,11 +6,11 @@ use crate::error::api_error::ApiError;
 #[derive(thiserror::Error, Debug)]
 pub enum CheckoutError {
     #[error("Unauthorized checkout attempt")]
-    UnauthorizedCheckoutAttempt(#[source] Box<dyn std::error::Error>),
+    UnauthorizedCheckoutAttempt(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Duplicate checkout attempts")]
-    DuplicateCheckoutError(#[source] Box<dyn std::error::Error>),
+    DuplicateCheckoutError(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("Unexpected checkout error")]
-    UnexpectedCheckoutError(#[source] Box<dyn std::error::Error>)
+    UnexpectedCheckoutError(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl From<ApiError> for CheckoutError {

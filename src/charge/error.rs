@@ -6,7 +6,7 @@ pub enum ChargeError {
     #[error("No card present to charge in the request")]
     NoCardInRequest,
     #[error("Unexpected charge error")]
-    Unexpected(#[source] Box<dyn std::error::Error>)
+    Unexpected(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl From<LedgerError> for ChargeError {
@@ -36,7 +36,7 @@ mod test {
     #[test]
     pub fn test_from_ledger_error() {
         let base_error = "test";
-        assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::UnexpectedLedgerError(base_error.clone().into())));
+        assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::Unexpected(base_error.clone().into())));
         assert_eq!(ChargeError::Unexpected(base_error.clone().into()), ChargeError::from(LedgerError::DuplicateTransaction(base_error.clone().into())));
     }
 

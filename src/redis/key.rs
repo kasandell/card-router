@@ -1,6 +1,6 @@
 use itertools::Itertools;
 /// A trait representation that implements stable redis key names for common uses
-pub trait StableRedisKey {
+pub trait StableRedisKey: Send + Sync {
     fn to_key(&self) -> String;
 }
 
