@@ -133,3 +133,14 @@ openapi anyof is forcing some of the api parameters to show as required even tho
 bad request from it. need to make a custom api schema probably.
 
 make all daos and internal services private members of struct
+
+
+# Pagination
+https://slack.engineering/evolving-api-pagination-at-slack/
+
+# Load Test
+```
+bombardier -H 'Content-Type: application/json' \
+-f bombard.json -m POST -c 150 -d 10s -l \
+http://127.0.0.1:8080/webhook/lithic-asa-webhook/
+```

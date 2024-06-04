@@ -131,12 +131,19 @@ impl RuleService {
             })?;
         let Some(merchant) = request.merchant.clone() else { return Ok(Vec::new()); };
         let Some(request_mcc) = merchant.mcc.clone() else { return Ok(Vec::new()); };
-        let mcc_mapping = self.category_service.clone().get_mcc_mapping_by_mcc(&request_mcc).await
-            .map_err(|e| RuleError::Unexpected(e.into()))?;
+        let mcc_mapping = self.category_service.clone().get_mcc_mapping_by_mcc(&request_mcc).await;
+        //.map_err(|e| RuleError::Unexpected(e.into()));
         let mut filtered_rules: Vec<Rule> = Vec::new();
-        for rule in rules.into_iter() {
-            if rule.is_valid() && self.clone().filter_rule_for_request(&rule, &request, &mcc_mapping).await {
-                filtered_rules.push(rule)
+        match mcc_mapping {
+            Ok(mapping) => {
+                for rule in rules.into_iter() {
+                    if rule.is_valid() && self.clone().filter_rule_for_request(&rule, &request, &mapping).await {
+                        filtered_rules.push(rule)
+                    }
+                }
+            }
+            Err(e) => {
+                // bypass on failed category
             }
         }
         Ok( filtered_rules )
