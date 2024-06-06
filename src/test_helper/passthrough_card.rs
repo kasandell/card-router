@@ -16,7 +16,7 @@ use crate::user::model::UserModel;
 
 pub fn create_mock_passthrough_card() -> PassthroughCard {
     PassthroughCard {
-        id: 0,
+        id: -1,
         public_id: Default::default(),
         passthrough_card_status: PassthroughCardStatus::Open,
         is_active: Some(true),

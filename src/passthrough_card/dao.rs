@@ -13,11 +13,8 @@ use crate::redis::services::{
     RedisServiceTrait
 };
 
-#[cfg(test)]
-use mockall::{automock, predicate::*};
 
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait PassthroughCardDaoTrait {
     async fn create(self: Arc<Self>, card: InsertablePassthroughCard) -> Result<PassthroughCard, DataError>;

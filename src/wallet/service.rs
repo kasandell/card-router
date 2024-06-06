@@ -1,7 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use async_trait::async_trait;
-use mockall::automock;
 use uuid::Uuid;
 use crate::adyen::checkout::service::{AdyenChargeServiceTrait, AdyenCheckoutService};
 use crate::credit_card_type::service::CreditCardServiceTrait;
@@ -18,7 +17,6 @@ use crate::wallet::model::{WalletModel, WalletWithExtraInfoModel};
 use crate::wallet::response::WalletCardAttemptResponse;
 
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait WalletServiceTrait {
     async fn match_card(

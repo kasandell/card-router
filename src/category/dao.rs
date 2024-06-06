@@ -13,16 +13,12 @@ use crate::redis::services::{
 #[cfg(not(feature = "no-redis"))]
 use crate::redis::helper::try_redis_fallback_db;
 
-#[cfg(test)]
-use mockall::{automock, predicate::*};
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait CategoryDaoTrait {
     async fn get_by_name(self: Arc<Self>, name: &str) -> Result<Category, DataError>;
 }
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait MccMappingDaoTrait {
     async fn get_by_mcc(self: Arc<Self>, mcc: &str) -> Result<MccMapping, DataError>;

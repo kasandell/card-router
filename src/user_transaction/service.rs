@@ -1,6 +1,5 @@
 use std::sync::Arc;
 use async_trait::async_trait;
-use mockall::automock;
 use uuid::Uuid;
 use crate::user::model::UserModel;
 use crate::user_transaction::dao::{UserTransactionDao, UserTransactionDaoTrait};
@@ -8,7 +7,6 @@ use crate::user_transaction::error::UserTransactionError;
 use crate::user_transaction::model::{InnerCardChargeWithDetailModel, TransactionWithDetailModel};
 use crate::wallet::service::{WalletService, WalletServiceTrait};
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait UserTransactionServiceTrait {
     async fn get_successful_transactions_for_user_with_detail(

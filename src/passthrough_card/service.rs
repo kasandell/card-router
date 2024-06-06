@@ -4,8 +4,6 @@ use crate::user::model::UserModel as User;
 use crate::passthrough_card::constant::{PassthroughCardStatus, PassthroughCardType};
 use crate::passthrough_card::entity::{InsertablePassthroughCard, PassthroughCard};
 use lithic_client::models::card::Card;
-#[cfg(test)]
-use mockall::automock;
 
 use async_trait::async_trait;
 use super::error::PassthroughCardError;
@@ -18,7 +16,6 @@ use crate::passthrough_card::crypto::encrypt_pin;
 use crate::passthrough_card::dao::{PassthroughCardDao, PassthroughCardDaoTrait};
 use crate::passthrough_card::model::PassthroughCardModel;
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait PassthroughCardServiceTrait {
     async fn issue_card_to_user(

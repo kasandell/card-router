@@ -43,8 +43,8 @@ impl FromSql<Text, Pg> for MoneyMovementType {
     fn from_sql(bytes: <Pg as Backend>::RawValue<'_>) -> diesel::deserialize::Result<Self> {
         match bytes.as_bytes() {
             b"PASSTHROUGH_CARD_RESERVE" => Ok(MoneyMovementType::PassthroughCardReserve),
-            b"PASSTHROUGH_CARD_RELEASE" => Ok(MoneyMovementType::PassthroughCardReserve),
-            b"PASSTHROUGH_CARD_SETTLE" => Ok(MoneyMovementType::PassthroughCardReserve),
+            b"PASSTHROUGH_CARD_RELEASE" => Ok(MoneyMovementType::PassthroughCardRelease),
+            b"PASSTHROUGH_CARD_SETTLE" => Ok(MoneyMovementType::PassthroughCardSettle),
             b"WALLET_RESERVE" => Ok(MoneyMovementType::WalletReserve),
             b"WALLET_RELEASE" => Ok(MoneyMovementType::WalletRelease),
             b"WALLET_SETTLE" => Ok(MoneyMovementType::WalletSettle),

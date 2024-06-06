@@ -12,7 +12,7 @@ pub fn create_mock_registered_transaction(
     metadata: &TransactionMetadata
 ) -> RegisteredTransaction {
     RegisteredTransaction {
-        id: 1,
+        id: -1,
         user_id: 1,
         transaction_id: Default::default(),
         memo: metadata.memo.clone(),

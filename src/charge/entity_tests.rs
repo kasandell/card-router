@@ -20,7 +20,7 @@ mod entity_tests {
     async fn test_registered_txn_create() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let txn_res = transactional::<_, _, _, DataError>(|conn| async move {
+        let txn_res = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -30,7 +30,7 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await;
+        })).await;
 
         let txn = txn_res.expect("ledger should be ok");
         assert_eq!(txn.user_id, user.id);
@@ -47,7 +47,7 @@ mod entity_tests {
     async fn test_registered_txn_create_fails_dupe() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let txn_res = transactional::<_, _, _, DataError>(|conn| async move {
+        let txn_res = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -57,14 +57,14 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await;
+        })).await;
 
         let txn = txn_res.expect("ledger should be ok");
         assert_eq!(txn.user_id, user.id);
         assert_eq!(txn.memo, TEST_MEMO);
         assert_eq!(txn.amount_cents, TEST_AMOUNT);
         assert_eq!(txn.mcc, TEST_MCC);
-        let err = transactional::<_, _, _, DataError>(|conn| async move {
+        let err = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -74,7 +74,7 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect_err("Expect data error");
+        })).await.expect_err("Expect data error");
         assert_eq!(DataError::Conflict("test".into()), err);
     }
 
@@ -82,7 +82,7 @@ mod entity_tests {
     async fn test_inner_charge_creates() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -92,14 +92,14 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
 
         let card = create_wallet(
             &user
         ).await;
 
-        let inner_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let reference = ExpectedWalletChargeReference::insert(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -125,7 +125,7 @@ mod entity_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, card.id);
@@ -144,7 +144,7 @@ mod entity_tests {
     async fn test_inner_charge_creates_several() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -154,12 +154,12 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
 
         let card = create_wallet(&user).await;
 
-        let inner_charge1 = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge1 = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let reference = ExpectedWalletChargeReference::insert(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -186,7 +186,7 @@ mod entity_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
@@ -195,7 +195,7 @@ mod entity_tests {
         assert_eq!(inner_charge1.is_success, None);
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
-        let inner_charge2 = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge2 = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let reference = ExpectedWalletChargeReference::insert(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -222,7 +222,7 @@ mod entity_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge2.user_id, user.id);
         assert_eq!(inner_charge2.wallet_card_id, card.id);
@@ -242,7 +242,7 @@ mod entity_tests {
     async fn test_inner_charge_fails_dupe_success() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -252,12 +252,12 @@ mod entity_tests {
                     mcc: TEST_MCC,
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
 
         let card = create_wallet(&user).await;
 
-        let inner_charge1 = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge1 = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let reference = ExpectedWalletChargeReference::insert(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -284,7 +284,7 @@ mod entity_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
@@ -293,7 +293,7 @@ mod entity_tests {
         assert_eq!(inner_charge1.is_success, Some(true));
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
-        let charge_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let charge_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let reference = ExpectedWalletChargeReference::insert(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -320,7 +320,7 @@ mod entity_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect_err("should be an error");
+        })).await.expect_err("should be an error");
 
 
         assert_eq!(DataError::Conflict("test".into()), charge_error);
@@ -334,7 +334,7 @@ mod entity_tests {
         let user = create_user().await;
         let card = create_wallet(&user).await;
 
-        let charge_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let charge_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             WalletCardCharge::insert(
                 conn,
                 &InsertableWalletCardCharge {
@@ -351,7 +351,7 @@ mod entity_tests {
                     expected_wallet_charge_reference_id: 0
                 }
             ).await
-        }).await.expect_err("should create error");
+        })).await.expect_err("should create error");
         assert_eq!(DataError::Unexpected("test".into()), charge_error);
     }
 
@@ -359,7 +359,7 @@ mod entity_tests {
     async fn test_outer_charge_success() {
         crate::test_helper::general::init();
         let user = create_user().await;
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -369,14 +369,14 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
         let error = PassthroughCardCharge::get_outer_charge_by_registered_transaction(rtx.id).await.expect_err("should find");
         assert_eq!(DataError::NotFound("test".into()), error);
 
         let card = create_passthrough_card(&user).await;
 
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             PassthroughCardCharge::insert(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -388,7 +388,7 @@ mod entity_tests {
                     is_success: None
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
@@ -408,7 +408,7 @@ mod entity_tests {
         let user = create_user().await;
         let card = create_passthrough_card(&user).await;
 
-        let charge_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let charge_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             PassthroughCardCharge::insert(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -420,7 +420,7 @@ mod entity_tests {
                     is_success: None
                 }
             ).await
-        }).await.expect_err("should be error");
+        })).await.expect_err("should be error");
         assert_eq!(DataError::Unexpected("test".into()), charge_error);
     }
 
@@ -431,7 +431,7 @@ mod entity_tests {
         let user = create_user().await;
         let card = create_passthrough_card(&user).await;
 
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -441,9 +441,9 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             PassthroughCardCharge::insert(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -456,7 +456,7 @@ mod entity_tests {
 
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
@@ -465,7 +465,7 @@ mod entity_tests {
         assert_eq!(outer_charge.is_success, Some(true));
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
-        let dupe_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let dupe_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             PassthroughCardCharge::insert(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -478,7 +478,7 @@ mod entity_tests {
 
                 }
             ).await
-        }).await.expect_err("Should be err");
+        })).await.expect_err("Should be err");
         assert_eq!(DataError::Conflict("test".into()), dupe_error);
     }
 
@@ -489,7 +489,7 @@ mod entity_tests {
         let wallet_card = create_wallet(&user).await;
         let outer_card = create_passthrough_card(&user).await;
 
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -499,9 +499,9 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
-        let inner_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = ExpectedWalletChargeReference::insert(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -528,7 +528,7 @@ mod entity_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, wallet_card.id);
@@ -537,7 +537,7 @@ mod entity_tests {
         assert_eq!(inner_charge.is_success, Some(true));
         assert_eq!(inner_charge.registered_transaction_id, rtx.id);
 
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             PassthroughCardCharge::insert(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -550,7 +550,7 @@ mod entity_tests {
 
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, outer_card.id);
@@ -559,7 +559,7 @@ mod entity_tests {
         assert_eq!(outer_charge.is_success, Some(true));
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
-        let final_tx = transactional::<_, _, _, DataError>(|conn| async move {
+        let final_tx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             SuccessfulEndToEndCharge::insert(
                 conn,
                 &InsertableSuccessfulEndToEndCharge {
@@ -568,7 +568,7 @@ mod entity_tests {
                     passthrough_card_charge_id: outer_charge.id,
                 }
             ).await
-        }).await.expect("should create txn");
+        })).await.expect("should create txn");
 
         assert_eq!(final_tx.registered_transaction_id, rtx.id);
         assert_eq!(final_tx.wallet_card_charge_id, inner_charge.id);
@@ -589,7 +589,7 @@ mod entity_tests {
         let wallet_card = create_wallet(&user).await;
         let outer_card = create_passthrough_card(&user).await;
 
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             RegisteredTransaction::insert(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -599,9 +599,9 @@ mod entity_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
-        let inner_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = ExpectedWalletChargeReference::insert(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -628,7 +628,7 @@ mod entity_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, wallet_card.id);
@@ -637,7 +637,7 @@ mod entity_tests {
         assert_eq!(inner_charge.is_success, Some(true));
         assert_eq!(inner_charge.registered_transaction_id, rtx.id);
 
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             PassthroughCardCharge::insert(
                 conn,
 
@@ -651,7 +651,7 @@ mod entity_tests {
 
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, outer_card.id);
@@ -660,7 +660,7 @@ mod entity_tests {
         assert_eq!(outer_charge.is_success, Some(true));
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
-        let final_tx = transactional::<_, _, _, DataError>(|conn| async move {
+        let final_tx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             SuccessfulEndToEndCharge::insert(
                 conn,
                 &InsertableSuccessfulEndToEndCharge {
@@ -669,7 +669,7 @@ mod entity_tests {
                     passthrough_card_charge_id: outer_charge.id,
                 }
             ).await
-        }).await.expect("should create txn");
+        })).await.expect("should create txn");
 
         assert_eq!(final_tx.registered_transaction_id, rtx.id);
         assert_eq!(final_tx.wallet_card_charge_id, inner_charge.id);
@@ -680,7 +680,7 @@ mod entity_tests {
         assert_eq!(final_tx.registered_transaction_id, tx_by_id.registered_transaction_id);
         assert_eq!(final_tx.id, tx_by_rtx.id);
         assert_eq!(final_tx.registered_transaction_id, tx_by_rtx.registered_transaction_id);
-        let error = transactional::<_, _, _, DataError>(|conn| async move {
+        let error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             SuccessfulEndToEndCharge::insert(
                 conn,
                 &InsertableSuccessfulEndToEndCharge {
@@ -689,7 +689,7 @@ mod entity_tests {
                     passthrough_card_charge_id: outer_charge.id,
                 }
             ).await
-        }).await.expect_err("should throw");
+        })).await.expect_err("should throw");
         assert_eq!(DataError::Conflict("test".into()), error);
     }
 }

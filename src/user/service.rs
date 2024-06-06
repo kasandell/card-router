@@ -1,7 +1,5 @@
 use std::sync::Arc;
 use async_trait::async_trait;
-#[cfg(test)]
-use mockall::automock;
 use crate::error::data_error::DataError;
 use crate::footprint::service::{FootprintService, FootprintServiceTrait};
 use crate::user::dao::{UserDao, UserDaoTrait};
@@ -9,7 +7,6 @@ use crate::user::entity::{User, UserMessage};
 use crate::user::model::UserModel;
 use super::error::UserError;
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait UserServiceTrait {
     async fn get_or_create(self: Arc<Self>, auth0_user_id: &str, email: &str) -> Result<UserModel, UserError>;

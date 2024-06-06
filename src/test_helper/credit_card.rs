@@ -1,10 +1,9 @@
+use std::sync::Arc;
 use chrono::Utc;
 use uuid::Uuid;
-use crate::credit_card_type::model::{
-    CreditCardModel as CreditCard,
-    CreditCardIssuerModel as CreditCardIssuer,
-    CreditCardTypeModel as CreditCardType
-};
+use crate::credit_card_type::model::{CreditCardModel as CreditCard, CreditCardIssuerModel as CreditCardIssuer, CreditCardTypeModel as CreditCardType, CreditCardModel, CreditCardDetailModel};
+use crate::credit_card_type::service::{CreditCardService, CreditCardServiceTrait};
+
 pub fn create_mock_credit_card(
     name: &str,
 ) -> CreditCard {
@@ -67,4 +66,9 @@ pub fn create_mock_credit_card_type_with_args(id: i32, name: &str) -> CreditCard
         public_id: Uuid::new_v4(),
         name: name.to_string(),
     }
+}
+
+
+pub async fn get_card_from_database() -> CreditCardDetailModel {
+    Arc::new(CreditCardService::new()).list_all_card_types().await.unwrap().get(0).unwrap().clone()
 }

@@ -3,7 +3,7 @@ use chrono::Utc;
 use footprint::models::CreateClientTokenResponse;
 use mockall::predicate::eq;
 use uuid::Uuid;
-use crate::credit_card_type::service::MockCreditCardServiceTrait;
+use crate::credit_card_type::service::{CreditCardService, CreditCardServiceTrait};
 use crate::footprint::service::MockFootprintServiceTrait;
 use crate::test_helper::credit_card::create_mock_credit_card;
 use crate::user::model::UserModel;
@@ -28,7 +28,7 @@ pub fn create_mock_wallet() -> Wallet {
 
 pub fn create_mock_wallet_with_rule() -> WalletModelWithRule {
     WalletModelWithRule {
-        id: 1,
+        id: -1,
         public_id: Default::default(),
         user_id: 1,
         payment_method_id: "".to_string(),
@@ -71,18 +71,9 @@ pub fn create_mock_wallet_attempt() -> WalletCardAttempt {
 
 pub async fn create_wallet(user: &UserModel) -> Wallet {
     let mut footprint_service = MockFootprintServiceTrait::new();
-    let mut credit_card_service = MockCreditCardServiceTrait::new();
-    let cc_name = "Chase Sapphire";
-    let cc_id = Uuid::new_v4();
-
-    let cc = create_mock_credit_card(cc_name);
-    let cc_cloned = cc.clone();
-    credit_card_service.expect_find_by_public_id()
-        .times(1)
-        .with(eq(cc_id))
-        .return_once(
-            move |_| Ok(cc_cloned)
-        );
+    let mut credit_card_service = Arc::new(CreditCardService::new());
+    let card = credit_card_service.clone().list_all_card_types()
+        .await.expect("cards").get(0).expect("gets card").clone();
 
     footprint_service.expect_create_client_token()
         .once()
@@ -94,13 +85,13 @@ pub async fn create_wallet(user: &UserModel) -> Wallet {
         );
 
     let svc = Arc::new(WalletService::new_with_services(
-        Arc::new(credit_card_service),
+        credit_card_service.clone(),
         Arc::new(footprint_service),
     ));
     let att = svc.clone().register_new_attempt(
         &user,
         &RegisterAttemptRequest {
-            credit_card_type_public_id: cc_id.into(),
+            credit_card_type_public_id: card.public_id
         }
     ).await.expect("should create attempt");
     
@@ -112,4 +103,9 @@ pub async fn create_wallet(user: &UserModel) -> Wallet {
     ).await.expect("should create card");
 
     card
+}
+
+pub async fn create_wallet_with_rule(user: &UserModel) -> WalletModelWithRule {
+    let card = create_wallet(user).await;
+    card.into()
 }

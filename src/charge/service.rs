@@ -4,7 +4,6 @@ use std::sync::Arc;
 use adyen_checkout::models::payment_response::ResultCode;
 use async_trait::async_trait;
 use lazy_static::lazy_static;
-use mockall::automock;
 use uuid::Uuid;
 use crate::asa::request::AsaRequest;
 use crate::asa::response::AsaResponseResult;
@@ -28,7 +27,6 @@ use crate::user::service::UserServiceTrait;
 use crate::util::error::UtilityError::DateError;
 use crate::util::transaction::{Transaction, transactional};
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 // TODO: do not group ledger calls in with payment calls in txn. need ledger data to go in always?
 pub trait ChargeServiceTrait {
@@ -313,6 +311,7 @@ impl ChargeService {
             })
         }).await.map_err(|e: DataError| ChargeError::Unexpected(e.into()))
     }
+
 
 
     pub async fn register_successful_passthrough_card_charge(
@@ -612,6 +611,34 @@ impl ChargeService {
                 ).await.map_err(|e| DataError::Unexpected(e.into()))?;
 
                 Ok(wallet_success)
+            })
+        }).await.map_err(|e: DataError| ChargeError::Unexpected(e.into()))
+    }
+
+
+    #[cfg(test)]
+    pub async fn register_transaction_only(
+        self: Arc<Self>,
+        user: &User,
+        metadata: &TransactionMetadata,
+    ) -> Result<RegisteredTransactionModel, ChargeError> {
+        let ledger_service = self.ledger_service.clone();
+        let dao = self.dao.clone();
+        let metadata = metadata.clone();
+        let user = user.clone();
+        transactional(move |conn| {
+            Box::pin(async move {
+                let rtx = dao.clone().insert_registered_transaction(
+                    conn,
+                    &InsertableRegisteredTransaction {
+                        user_id: user.id,
+                        memo: &metadata.memo,
+                        amount_cents: metadata.amount_cents,
+                        mcc: &metadata.mcc,
+                    }
+                ).await?.into();
+
+                Ok(rtx)
             })
         }).await.map_err(|e: DataError| ChargeError::Unexpected(e.into()))
     }

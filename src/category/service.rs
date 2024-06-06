@@ -2,14 +2,11 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use super::entity::{Category, MccMapping};
 use super::error::CategoryError;
-#[cfg(test)]
-use mockall::automock;
 use crate::category::dao::{CategoryDao, CategoryDaoTrait, MccMappingDao, MccMappingDaoTrait};
 use crate::category::model::{CategoryModel, MccMappingModel};
 
 
 // TODO: all future services should return only objects exposed in request / response
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait CategoryServiceTrait {
     async fn get_category_by_name(self: Arc<Self>, name: &str) -> Result<CategoryModel, CategoryError>;

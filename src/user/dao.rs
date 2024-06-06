@@ -16,10 +16,7 @@ use crate::redis::helper::try_redis_fallback_db;
 #[cfg(not(feature = "no-redis"))]
 use crate::redis::key::Key;
 
-#[cfg(test)]
-use mockall::{automock, predicate::*};
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait UserDaoTrait {
     async fn find(&self, id: &Uuid) -> Result<User, DataError>;

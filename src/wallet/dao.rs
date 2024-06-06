@@ -4,8 +4,6 @@ use crate::user::model::UserModel as User;
 use crate::wallet::entity::{InsertableCardAttempt, Wallet, WalletCardAttempt, UpdateCardAttempt, WalletDetail, InsertableCard, WalletWithExtraInfo, UpdateWalletStatus, WalletStatusHistory, InsertableWalletStatusHistory};
 use async_trait::async_trait;
 use tracing;
-#[cfg(test)]
-use mockall::{automock, predicate::*};
 use parking_lot::Mutex;
 use uuid::Uuid;
 #[cfg(not(feature = "no-redis"))]
@@ -19,7 +17,6 @@ use crate::redis::services::{
 };
 use crate::util::transaction::Transaction;
 
-#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait WalletDaoTrait {
     async fn find_all_for_user(self: Arc<Self>, user: &User) -> Result<Vec<Wallet>, DataError>;
@@ -30,7 +27,6 @@ pub trait WalletDaoTrait {
 }
 
 
-#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait WalletCardAttemtDaoTrait {
     async fn insert<'a>(self: Arc<Self>, card_attempt: &InsertableCardAttempt<'a>) -> Result<WalletCardAttempt, DataError>;
@@ -38,7 +34,6 @@ pub trait WalletCardAttemtDaoTrait {
     async fn update_card<'a>(self: Arc<Self>, transaction: &mut Transaction<'_, '_>, id: i32, card: &UpdateCardAttempt) -> Result<WalletCardAttempt, DataError>;
 }
 
-#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait WalletStatusHistoryDaoTrait {
     async fn insert<'a>(self: Arc<Self>, transaction: &mut Transaction<'_, '_>, status_update: &InsertableWalletStatusHistory) -> Result<WalletStatusHistory, DataError>;

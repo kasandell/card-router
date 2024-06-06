@@ -6,7 +6,6 @@ use crate::error::data_error::DataError;
 use mockall::{automock, predicate::*};
 use crate::user_transaction::entity::{InnerCardChargeWithDetail, TransactionWithDetail};
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait UserTransactionDaoTrait {
     async fn get_all_successful_transactions_by_user_id_with_detail(self: Arc<Self>, user_id: i32) -> Result<Vec<TransactionWithDetail>, DataError>;

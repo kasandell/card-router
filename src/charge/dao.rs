@@ -8,7 +8,6 @@ use async_trait::async_trait;
 use mockall::{automock, predicate::*};
 use crate::util::transaction::Transaction;
 
-#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ChargeDaoTrait {
     async fn insert_registered_transaction<'a>(self: Arc<Self>, database_transaction: &mut Transaction<'_, '_>, registered_transaction: &InsertableRegisteredTransaction<'a>) -> Result<RegisteredTransaction, DataError>;

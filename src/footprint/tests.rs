@@ -60,12 +60,12 @@ mod tests {
         let configuration = get_configuration_sync().expect("should config");
         let svc = Arc::new(FootprintService::new(&configuration));
         let mut user = create_mock_user();
-        user.footprint_vault_id = "fp_id_test_f9yiM0ApjGAmzV8omL0VyV".to_string();//"fp_id_test_bbuDykRYNy0fltERAR79RP".to_string();
+        user.footprint_vault_id = "fp_id_test_f9yiM0ApjGAmzV8omL0VyV".to_string();
         let res = svc.clone().proxy_adyen_payment_request(
             &ChargeThroughProxyRequest {
                 amount_cents: 100,
                 mcc: "7184",
-                payment_method_id: "cb93d028-2a9f-4a57-9118-8a8933aa14f7",//"test_card_id",
+                payment_method_id: "cb93d028-2a9f-4a57-9118-8a8933aa14f7",
                 customer_public_id: &Uuid::new_v4().to_string(),
                 footprint_vault_id: &user.footprint_vault_id,
                 idempotency_key: &Uuid::new_v4(),

@@ -1,7 +1,5 @@
 use std::sync::Arc;
 use async_trait::async_trait;
-#[cfg(test)]
-use mockall::automock;
 use crate::charge::model::RegisteredTransactionModel;
 use crate::ledger::constant::{MoneyMovementDirection, MoneyMovementType};
 use crate::ledger::dao::{LedgerDao, LedgerDaoTrait};
@@ -12,7 +10,6 @@ use crate::passthrough_card::model::PassthroughCardModel;
 use crate::util::transaction::Transaction;
 use crate::wallet::model::WalletModel;
 
-#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait LedgerServiceTrait {
     async fn reserve_passthrough_card_amount<'a>(
@@ -224,7 +221,7 @@ impl LedgerServiceTrait for LedgerService {
                 user_id: registered_transaction.user_id,
                 wallet_id: card_id,
                 money_movement_direction: MoneyMovementDirection::Credit,
-                money_movement_type: MoneyMovementType::WalletRelease,
+                money_movement_type: MoneyMovementType::WalletSettle,
                 amount_cents,
             }
         ).await?;

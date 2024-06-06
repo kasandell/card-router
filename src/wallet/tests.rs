@@ -10,13 +10,14 @@ mod tests {
     use mockall::Sequence;
     use uuid::Uuid;
     use crate::footprint::service::MockFootprintServiceTrait;
-    use crate::credit_card_type::service::MockCreditCardServiceTrait;
+    use crate::credit_card_type::service::{CreditCardService, CreditCardServiceTrait};
     use crate::error::data_error::DataError;
     use crate::footprint::error::FootprintError;
     use crate::test_helper::{
         credit_card::create_mock_credit_card,
         user::create_mock_user
     };
+    use crate::test_helper::credit_card::get_card_from_database;
     use crate::test_helper::user::create_user;
     use crate::test_helper::wallet::create_mock_wallet_attempt;
     use crate::util::db;
@@ -39,11 +40,9 @@ mod tests {
     async fn test_register_attempt() {
         crate::test_helper::general::init();
         let mut footprint_service = MockFootprintServiceTrait::new();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-
-        let mut wca = create_mock_wallet_attempt();
+        let mut credit_card_service = Arc::new(CreditCardService::new());
+        let card = credit_card_service.clone().list_all_card_types()
+            .await.expect("cards").get(0).expect("gets card").clone();
 
         let user = create_user().await;
 
@@ -57,21 +56,18 @@ mod tests {
                 })
             );
 
-        let cloned_card = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(move |_| Ok(cloned_card));
+        let cloned_card = card.clone();
+
 
         let wallet_engine = Arc::new(WalletService::new_with_services(
-            Arc::new(credit_card_service),
+            credit_card_service.clone(),
             Arc::new(footprint_service)
         ));
 
         let wca_ret = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("no error");
 
@@ -85,20 +81,16 @@ mod tests {
     async fn test_register_attempt_fails() {
         crate::test_helper::general::init();
         let mut footprint_service = MockFootprintServiceTrait::new();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
+        let card = get_card_from_database().await;
 
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
+        let user = create_user().await;
         // note that we create a mock user here, but not actually one in the database
-        let user = create_mock_user();
 
         footprint_service.expect_create_client_token()
             .times(0);
 
 
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(move |_| Ok(cc.clone()));
         let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(credit_card_service),
             Arc::new(footprint_service)
@@ -107,7 +99,7 @@ mod tests {
         let err: WalletError = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect_err("should return error");
 
@@ -120,19 +112,13 @@ mod tests {
     async fn test_register_attempt_fails_create_token() {
         crate::test_helper::general::init();
         let mut footprint_service = MockFootprintServiceTrait::new();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
 
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
         let user = create_user().await;
 
         footprint_service.expect_create_client_token()
             .times(1)
             .return_once(move |_, _| Err(FootprintError::Unexpected("test".into())));
-
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(move |_| Ok(cc.clone()));
 
         let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(credit_card_service),
@@ -142,7 +128,7 @@ mod tests {
         let err: WalletError = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: get_card_from_database().await.public_id,
             }
         ).await.expect_err("should return error");
 
@@ -153,10 +139,8 @@ mod tests {
     async fn test_register_attempt_several() {
         crate::test_helper::general::init();
         let mut footprint_service = MockFootprintServiceTrait::new();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
+        let mut credit_card_service = CreditCardService::new();
+        let card = get_card_from_database().await;
 
         let user = create_user().await;
 
@@ -183,24 +167,6 @@ mod tests {
                 })
             );
 
-        let mut seq_2 = Sequence::new();
-
-        credit_card_service.expect_find_by_public_id()
-            .once()
-            .in_sequence(&mut seq_2)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(move |_|
-                Ok(cc)
-            );
-
-        credit_card_service.expect_find_by_public_id()
-            .once()
-            .in_sequence(&mut seq_2)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(move |_|
-                Ok(cc_cloned)
-            );
-
         let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(credit_card_service),
             Arc::new(footprint_service)
@@ -209,7 +175,7 @@ mod tests {
         let wca_ret = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id.clone(),
             }
         ).await.expect("no error");
 
@@ -218,7 +184,7 @@ mod tests {
         let wca_ret2 = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id.clone(),
             }
         ).await.expect("no error");
         assert_eq!(wca_ret2.token, token_2);
@@ -230,17 +196,8 @@ mod tests {
     #[test]
     async fn test_match_find() {
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(
-                move |_| Ok(cc_cloned)
-            );
 
         footprint_service.expect_create_client_token()
             .once()
@@ -252,6 +209,7 @@ mod tests {
             );
 
         let user = create_user().await;
+        let card = get_card_from_database().await;
 
         let wallet_engine = Arc::new(WalletService::new_with_services(
             Arc::new(credit_card_service),
@@ -261,7 +219,7 @@ mod tests {
         let attempt = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("creates ok");
 
@@ -272,7 +230,7 @@ mod tests {
             }
         ).await.expect("should be ok");
 
-        assert_eq!(created_card.credit_card_id, cc.id);
+        assert_eq!(created_card.credit_card_id, card.id);
         assert_eq!(created_card.user_id, user.id);
         let attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
@@ -293,17 +251,9 @@ mod tests {
     async fn test_match_fails_already_matched() {
 
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(
-                move |_| Ok(cc_cloned)
-            );
+        let card = get_card_from_database().await;
 
         footprint_service.expect_create_client_token()
             .once()
@@ -324,7 +274,7 @@ mod tests {
         let attempt = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("creates ok");
 
@@ -335,7 +285,7 @@ mod tests {
             }
         ).await.expect("should be ok");
 
-        assert_eq!(created_card.credit_card_id, cc.id);
+        assert_eq!(created_card.credit_card_id, card.id);
         assert_eq!(created_card.user_id, user.id);
         let mut attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
@@ -394,17 +344,9 @@ mod tests {
     #[test]
     async fn test_match_fails_unauthorized() {
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(
-                move |_| Ok(cc_cloned)
-            );
+        let card = get_card_from_database().await;
 
         footprint_service.expect_create_client_token()
             .once()
@@ -426,7 +368,7 @@ mod tests {
         let attempt = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("creates ok");
 
@@ -451,7 +393,7 @@ mod tests {
     #[test]
     async fn test_match_fails_to_find() {
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
 
         let user = create_user().await;
@@ -480,17 +422,9 @@ mod tests {
     #[test]
     async fn test_cannot_match_when_wca_already_attached_to_card() {
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(
-                move |_| Ok(cc_cloned)
-            );
+        let card = get_card_from_database().await;
 
         footprint_service.expect_create_client_token()
             .once()
@@ -511,7 +445,7 @@ mod tests {
         let attempt = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("creates ok");
 
@@ -522,7 +456,7 @@ mod tests {
             }
         ).await.expect("should be ok");
 
-        assert_eq!(created_card.credit_card_id, cc.id);
+        assert_eq!(created_card.credit_card_id, card.id);
         assert_eq!(created_card.user_id, user.id);
         let mut attempt_in_db = WalletCardAttempt::find_by_reference_id(
             attempt.reference_id.as_str()
@@ -541,16 +475,17 @@ mod tests {
         assert_eq!(card.payment_method_id, attempt_in_db.expected_reference_id);
         let created_at = card.created_at;
         let updated_at = card.updated_at;
-        
-        let attempt_in_db_pending = transactional(|txn| async move {
+
+        let id_to_update = attempt_in_db.id;
+        let attempt_in_db_pending = transactional::<_, DataError, _>(move |txn| Box::pin(async move {
             WalletCardAttempt::update_card(
-                txn.clone(),
-                attempt_in_db.id,
+                txn,
+                id_to_update,
                 &UpdateCardAttempt {
                     status: WalletCardAttemptStatus::Pending,
                 }
             ).await
-        }).await.map_err(|e: DataError| WalletError::Unexpected(e.into())).expect("should update");
+        })).await.map_err(|e: DataError| WalletError::Unexpected(e.into())).expect("should update");
         assert_eq!(attempt_in_db_pending.status, WalletCardAttemptStatus::Pending);
 
         let error = wallet_engine.clone().match_card(
@@ -588,17 +523,9 @@ mod tests {
     #[test]
     async fn test_update_status() {
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(
-                move |_| Ok(cc_cloned)
-            );
+        let card = get_card_from_database().await;
 
         footprint_service.expect_create_client_token()
             .once()
@@ -619,7 +546,7 @@ mod tests {
         let attempt = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("creates ok");
 
@@ -653,17 +580,9 @@ mod tests {
     #[test]
     async fn test_update_status_several() {
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(
-                move |_| Ok(cc_cloned)
-            );
+        let card = get_card_from_database().await;
 
         footprint_service.expect_create_client_token()
             .once()
@@ -684,7 +603,7 @@ mod tests {
         let attempt = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("creates ok");
 
@@ -731,17 +650,9 @@ mod tests {
     #[test]
     async fn test_update_status_close_cant_reopen() {
         crate::test_helper::general::init();
-        let mut credit_card_service = MockCreditCardServiceTrait::new();
+        let mut credit_card_service = CreditCardService::new();
         let mut footprint_service = MockFootprintServiceTrait::new();
-
-        let cc = create_mock_credit_card(CREDIT_CARD_NAME);
-        let cc_cloned = cc.clone();
-        credit_card_service.expect_find_by_public_id()
-            .times(1)
-            .with(eq(CREDIT_CARD_PUBLIC_ID))
-            .return_once(
-                move |_| Ok(cc_cloned)
-            );
+        let card = get_card_from_database().await;
 
         footprint_service.expect_create_client_token()
             .once()
@@ -762,7 +673,7 @@ mod tests {
         let attempt = wallet_engine.clone().register_new_attempt(
             &user,
             &RegisterAttemptRequest {
-                credit_card_type_public_id: CREDIT_CARD_PUBLIC_ID,
+                credit_card_type_public_id: card.public_id,
             }
         ).await.expect("creates ok");
 

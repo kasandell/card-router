@@ -7,7 +7,6 @@ use crate::credit_card_type::dao::{CreditCardDao, CreditCardDaoTrait};
 use crate::credit_card_type::error::CreditCardTypeError;
 use crate::credit_card_type::model::{CreditCardDetailModel, CreditCardModel};
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait CreditCardServiceTrait {
     async fn list_all_card_types(self: Arc<Self>) -> Result<Vec<CreditCardDetailModel>, CreditCardTypeError>;

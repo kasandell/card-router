@@ -14,7 +14,6 @@ use crate::wallet::service::{WalletService, WalletServiceTrait};
 use super::entity::Rule;
 
 
-#[mockall::automock]
 #[async_trait(?Send)]
 pub trait RuleServiceTrait {
     async fn order_user_cards_for_request(self: Arc<Self>, request: &AsaRequest, user: &User) -> Result<Vec<Wallet>, RuleError>;

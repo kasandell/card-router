@@ -25,16 +25,17 @@ mod entity_tests {
         ).await;
         let attempt = attempt.expect("attempt should exist");
 
-        let card = transactional(|txn| async move {
+        let card = transactional(move |txn|
+            Box::pin(async move {
             Wallet::insert_card(
-                txn.clone(),
+                txn,
                 &InsertableCard {
                     user_id: user.id,
                     payment_method_id: stripe_pmt_id,
                     credit_card_id: CreditCardTypeEnum::ChaseSapphirePreferred.into(),
                     wallet_card_attempt_id: attempt.id
                 }).await
-        }).await.map_err(|e: DataError| WalletError::Unexpected(e.into()));
+        })).await.map_err(|e: DataError| WalletError::Unexpected(e.into()));
         assert!(card.is_ok());
         let card = card.expect("Card should be ok");
         assert_eq!(stripe_pmt_id, card.payment_method_id);

@@ -7,7 +7,6 @@ use async_trait::async_trait;
 use mockall::{automock, predicate::*};
 use uuid::Uuid;
 
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait CreditCardDaoTrait {
     async fn list_all_card_types(self: Arc<Self>) -> Result<Vec<(CreditCard, CreditCardType, CreditCardIssuer)>, DataError>;

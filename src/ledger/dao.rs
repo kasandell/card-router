@@ -1,8 +1,6 @@
 use std::sync::Arc;
 use async_trait::async_trait;
 
-#[cfg(test)]
-use mockall::{automock, predicate::*};
 use crate::error::data_error::DataError;
 use crate::ledger::entity::{
     PendingWalletTransactionLedger,
@@ -21,7 +19,6 @@ use crate::passthrough_card::model::PassthroughCardModel;
 use crate::util::transaction::Transaction;
 use crate::wallet::model::WalletModel;
 
-#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait LedgerDaoTrait {
     async fn insert_settled_wallet_transaction<'a>(self: Arc<Self>, transaction: &mut Transaction<'_, '_>, record: &InsertableSettledWalletTransactionLedger) -> Result<SettledWalletTransactionLedger, DataError>;

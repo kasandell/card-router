@@ -10,10 +10,6 @@ use crate::redis::key::Key;
 #[cfg(not(feature = "no-redis"))]
 use crate::redis::services::{RedisService, RedisServiceTrait};
 
-#[cfg(test)]
-use mockall::{automock, predicate::*};
-
-#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait RuleDaoTrait {
     async fn create(self: Arc<Self>, new_rule: &CreateRuleRequest) -> Result<Rule, DataError>;

@@ -25,7 +25,7 @@ mod dao_tests {
         let user = create_user().await;
         let dao = Arc::new(ChargeDao::new());
         let dc = dao.clone();
-        let txn_res: Result<RegisteredTransaction, DataError> = transactional::<_, _, _, DataError>(|conn| async move {
+        let txn_res: Result<RegisteredTransaction, DataError> = transactional(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -35,7 +35,7 @@ mod dao_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await;
+        })).await;
 
         let txn = txn_res.expect("ledger should be ok");
         assert_eq!(txn.user_id, user.id);
@@ -54,7 +54,7 @@ mod dao_tests {
         let user = create_user().await;
         let dao = Arc::new(ChargeDao::new());
         let mut dc = dao.clone();
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -64,7 +64,7 @@ mod dao_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
 
         let card = create_wallet(
@@ -73,7 +73,7 @@ mod dao_tests {
 
 
         dc = dao.clone();
-        let inner_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = dc.clone().insert_expected_wallet_charge_reference(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -99,7 +99,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, card.id);
@@ -120,7 +120,7 @@ mod dao_tests {
         let dao = Arc::new(ChargeDao::new());
         let user = create_user().await;
         let mut dc = dao.clone();
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -130,13 +130,13 @@ mod dao_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("creates");
+        })).await.expect("creates");
 
 
         let card = create_wallet(&user).await;
 
         dc = dao.clone();
-        let inner_charge1 = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge1 = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = dc.clone().insert_expected_wallet_charge_reference(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -162,7 +162,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
@@ -172,7 +172,7 @@ mod dao_tests {
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
         dc = dao.clone();
-        let inner_charge2 = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge2 = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = dc.clone().insert_expected_wallet_charge_reference(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -199,7 +199,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge2.user_id, user.id);
         assert_eq!(inner_charge2.wallet_card_id, card.id);
@@ -221,7 +221,7 @@ mod dao_tests {
         let user = create_user().await;
         let dao = Arc::new(ChargeDao::new());
         let mut dc = dao.clone();
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -231,13 +231,13 @@ mod dao_tests {
                     mcc: TEST_MCC,
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
 
         let card = create_wallet(&user).await;
 
         dc = dao.clone();
-        let inner_charge1 = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge1 = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = dc.clone().insert_expected_wallet_charge_reference(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -263,7 +263,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge1.user_id, user.id);
         assert_eq!(inner_charge1.wallet_card_id, card.id);
@@ -273,7 +273,7 @@ mod dao_tests {
         assert_eq!(inner_charge1.registered_transaction_id, rtx.id);
 
         dc = dao.clone();
-        let charge_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let charge_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = dc.clone().insert_expected_wallet_charge_reference(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -300,7 +300,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect_err("should create error");
+        })).await.expect_err("should create error");
         assert_eq!(DataError::Conflict("test".into()), charge_error);
         //let get_by_success = dao.clone().get_successful_wallet_charge_by_registered_transaction(rtx.id).await.expect("should find");
         //assert_eq!(get_by_success.id, inner_charge1.id);
@@ -314,7 +314,7 @@ mod dao_tests {
         let card = create_wallet(&user).await;
 
         let dc = dao.clone();
-        let charge_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let charge_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_wallet_charge(
                 conn,
                 &InsertableWalletCardCharge {
@@ -331,7 +331,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect_err("should create error");
+        })).await.expect_err("should create error");
         assert_eq!(DataError::Unexpected("test".into()), charge_error);
     }
 
@@ -341,7 +341,7 @@ mod dao_tests {
         let user = create_user().await;
         let dao = Arc::new(ChargeDao::new());
         let mut dc = dao.clone();
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -351,7 +351,7 @@ mod dao_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
         let error = dao.clone().get_passthrough_card_charge_by_registered_transaction(rtx.id).await.expect_err("should find");
         assert_eq!(DataError::NotFound("test".into()), error);
@@ -359,7 +359,7 @@ mod dao_tests {
         let card = create_passthrough_card(&user).await;
 
         dc = dao.clone();
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_passthrough_card_charge(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -371,7 +371,7 @@ mod dao_tests {
                     is_success: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
@@ -392,7 +392,7 @@ mod dao_tests {
         let dao = Arc::new(ChargeDao::new());
         let card = create_passthrough_card(&user).await;
 
-        let charge_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let charge_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dao.clone().insert_passthrough_card_charge(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -404,7 +404,7 @@ mod dao_tests {
                     is_success: None,
                 }
             ).await
-        }).await.expect_err("should be error");
+        })).await.expect_err("should be error");
         assert_eq!(DataError::Unexpected("test".into()), charge_error);
     }
 
@@ -417,7 +417,7 @@ mod dao_tests {
         let card = create_passthrough_card(&user).await;
 
         let mut dc = dao.clone();
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -427,10 +427,10 @@ mod dao_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
         dc = dao.clone();
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_passthrough_card_charge(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -443,7 +443,7 @@ mod dao_tests {
 
                 }
             ).await
-        }).await.expect("ok");
+        })).await.expect("ok");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, card.id);
@@ -453,7 +453,7 @@ mod dao_tests {
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
         dc = dao.clone();
-        let dupe_error = transactional::<_, _, _, DataError>(|conn| async move {
+        let dupe_error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_passthrough_card_charge(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -466,7 +466,7 @@ mod dao_tests {
 
                 }
             ).await
-        }).await.expect_err("Should be err");
+        })).await.expect_err("Should be err");
         assert_eq!(DataError::Conflict("test".into()), dupe_error);
     }
 
@@ -481,7 +481,7 @@ mod dao_tests {
         let outer_card = create_passthrough_card(&user).await;
 
         let mut dc = dao.clone();
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -491,10 +491,10 @@ mod dao_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("ledger should be ok");
+        })).await.expect("ledger should be ok");
 
         dc = dao.clone();
-        let inner_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = dc.clone().insert_expected_wallet_charge_reference(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -521,7 +521,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, wallet_card.id);
@@ -531,7 +531,7 @@ mod dao_tests {
         assert_eq!(inner_charge.registered_transaction_id, rtx.id);
 
         dc = dao.clone();
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_passthrough_card_charge(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -544,7 +544,7 @@ mod dao_tests {
 
                 }
             ).await
-        }).await.expect("ok");
+        })).await.expect("ok");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, outer_card.id);
@@ -554,7 +554,7 @@ mod dao_tests {
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
         dc = dao.clone();
-        let final_tx = transactional::<_, _, _, DataError>(|conn| async move {
+        let final_tx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_successful_end_to_end_charge(
                 conn,
                 &InsertableSuccessfulEndToEndCharge {
@@ -563,7 +563,7 @@ mod dao_tests {
                     passthrough_card_charge_id: outer_charge.id,
                 }
             ).await
-        }).await.expect("ok");
+        })).await.expect("ok");
 
         assert_eq!(final_tx.registered_transaction_id, rtx.id);
         assert_eq!(final_tx.wallet_card_charge_id, inner_charge.id);
@@ -585,7 +585,7 @@ mod dao_tests {
         let outer_card = create_passthrough_card(&user).await;
 
         let mut dc = dao.clone();
-        let rtx = transactional::<_, _, _, DataError>(|conn| async move {
+        let rtx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -595,10 +595,10 @@ mod dao_tests {
                     mcc: TEST_MCC
                 }
             ).await
-        }).await.expect("creates");
+        })).await.expect("creates");
 
         dc = dao.clone();
-        let inner_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let inner_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let expected = dc.clone().insert_expected_wallet_charge_reference(
                 conn,
                 &InsertableExpectedWalletChargeReference {
@@ -625,7 +625,7 @@ mod dao_tests {
                     returned_charge_status: None,
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(inner_charge.user_id, user.id);
         assert_eq!(inner_charge.wallet_card_id, wallet_card.id);
@@ -635,7 +635,7 @@ mod dao_tests {
         assert_eq!(inner_charge.registered_transaction_id, rtx.id);
 
         dc = dao.clone();
-        let outer_charge = transactional::<_, _, _, DataError>(|conn| async move {
+        let outer_charge = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_passthrough_card_charge(
                 conn,
                 &InsertablePassthroughCardCharge {
@@ -648,7 +648,7 @@ mod dao_tests {
 
                 }
             ).await
-        }).await.expect("should create");
+        })).await.expect("should create");
 
         assert_eq!(outer_charge.user_id, user.id);
         assert_eq!(outer_charge.passthrough_card_id, outer_card.id);
@@ -658,7 +658,7 @@ mod dao_tests {
         assert_eq!(outer_charge.registered_transaction_id, rtx.id);
 
         dc = dao.clone();
-        let final_tx = transactional::<_, _, _, DataError>(|conn| async move {
+        let final_tx = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_successful_end_to_end_charge(
                 conn,
                 &InsertableSuccessfulEndToEndCharge {
@@ -667,7 +667,7 @@ mod dao_tests {
                     passthrough_card_charge_id: outer_charge.id,
                 }
             ).await
-        }).await.expect("should create txn");
+        })).await.expect("should create txn");
 
         assert_eq!(final_tx.registered_transaction_id, rtx.id);
         assert_eq!(final_tx.wallet_card_charge_id, inner_charge.id);
@@ -680,7 +680,7 @@ mod dao_tests {
         assert_eq!(final_tx.registered_transaction_id, tx_by_rtx.registered_transaction_id);
 
         dc = dao.clone();
-        let error = transactional::<_, _, _, DataError>(|conn| async move {
+        let error = transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             dc.clone().insert_successful_end_to_end_charge(
                 conn,
                 &InsertableSuccessfulEndToEndCharge {
@@ -689,7 +689,7 @@ mod dao_tests {
                     passthrough_card_charge_id: outer_charge.id,
                 }
             ).await
-        }).await.expect_err("should error");
+        })).await.expect_err("should error");
         assert_eq!(DataError::Conflict("test".into()), error);
     }
 
@@ -703,7 +703,7 @@ mod dao_tests {
         let outer_card = create_passthrough_card(&user).await;
 
         let mut dc = dao.clone();
-        transactional::<_, _, (), DataError>(|conn| async move {
+        transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let rtx = dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -793,7 +793,7 @@ mod dao_tests {
             ).await.expect_err("should create conflict");
             assert_eq!(DataError::Conflict("test".into()), error);
             Ok(())
-        }).await.expect("ok");
+        })).await.expect_err("should cause rollback");
     }
 
 
@@ -805,7 +805,7 @@ mod dao_tests {
         let wallet_card = create_wallet(&user).await;
         let outer_card = create_passthrough_card(&user).await;
         let mut dc = dao.clone();
-        transactional::<_, _, (), DataError>(|conn| async move {
+        transactional::<_, DataError, _>(move |conn| Box::pin(async move {
             let rtx = dc.clone().insert_registered_transaction(
                 conn,
                 &InsertableRegisteredTransaction {
@@ -913,6 +913,6 @@ mod dao_tests {
             ).await.expect_err("should create conflict");
             assert_eq!(DataError::Conflict("test".into()), error);
             Ok(())
-        }).await.expect("Ok");
+        })).await.expect_err("should trigger rollback");
     }
 }

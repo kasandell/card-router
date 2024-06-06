@@ -2,6 +2,7 @@ use chrono::NaiveDateTime;
 use crate::ledger::constant::{MoneyMovementDirection, MoneyMovementType};
 use crate::ledger::entity::{PendingPassthroughCardTransactionLedger, PendingWalletTransactionLedger, SettledPassthroughCardTransactionLedger, SettledWalletTransactionLedger};
 
+#[derive(Debug, Clone)]
 pub struct PendingPassthroughCardTransactionLedgerModel {
     pub id: i32,
     pub registered_transaction_id: i32,
@@ -12,6 +13,7 @@ pub struct PendingPassthroughCardTransactionLedgerModel {
     pub amount_cents: i32,
 }
 
+#[derive(Debug, Clone)]
 pub struct SettledPassthroughCardTransactionLedgerModel {
     pub id: i32,
     pub registered_transaction_id: i32,
@@ -22,6 +24,7 @@ pub struct SettledPassthroughCardTransactionLedgerModel {
     pub amount_cents: i32,
 }
 
+#[derive(Debug, Clone)]
 pub struct PendingWalletTransactionLedgerModel {
     pub id: i32,
     pub registered_transaction_id: i32,
@@ -32,6 +35,7 @@ pub struct PendingWalletTransactionLedgerModel {
     pub amount_cents: i32,
 }
 
+#[derive(Debug, Clone)]
 pub struct SettledWalletTransactionLedgerModel {
     pub id: i32,
     pub registered_transaction_id: i32,
