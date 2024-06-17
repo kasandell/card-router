@@ -29,10 +29,8 @@ static SYNC_POOL: OnceCell<r2d2::Pool<ConnectionManager<PgConnection>>> = OnceCe
 
 pub async fn init_db() -> Pool<AsyncPgConnection>{
     let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(get_database_url().await);
-    let pool_size = match cfg!(test) {
-        true => 1,
-        false => 50,
-    };
+    let config = &get_global_configuration().await.database;
+    let pool_size = config.pool_size;
     let mut builder = Pool::builder();
      if cfg!(test) {
          tracing::warn!("Running test pool");

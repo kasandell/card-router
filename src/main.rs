@@ -64,6 +64,7 @@ mod redis;
 mod configuration;
 mod otel;
 mod user_transaction;
+mod pagination;
 
 
 async fn health_check() -> impl Responder {

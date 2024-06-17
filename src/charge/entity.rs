@@ -134,6 +134,7 @@ pub struct WalletCardCharge {
     pub is_success: Option<bool>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub public_id: Uuid
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize)]
@@ -165,7 +166,8 @@ pub struct SuccessfulEndToEndCharge {
     pub id: i32,
     pub registered_transaction_id: i32,
     pub wallet_card_charge_id: i32,
-    pub passthrough_card_charge_id: i32
+    pub passthrough_card_charge_id: i32,
+    pub public_id: Uuid
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize, Queryable, Selectable)]

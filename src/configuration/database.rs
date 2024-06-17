@@ -10,4 +10,6 @@ pub struct DatabaseConfiguration {
     pub port: u16,
     pub host: String,
     pub database_name: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub pool_size: u32
 }

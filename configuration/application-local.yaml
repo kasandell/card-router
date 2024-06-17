@@ -15,6 +15,7 @@ database:
   port: 5432
   host: localhost
   database_name: router
+  pool_size: 100
   #username: $APP_DATABASE__USERNAME
   #password: $APP_DATABASE__USERNAME
 

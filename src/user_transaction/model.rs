@@ -1,18 +1,19 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use crate::category::constant::Category;
 use crate::user_transaction::entity::{InnerCardChargeWithDetail, TransactionWithDetail};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InnerCardChargeWithDetailModel {
-    pub id: i32,
     pub memo: String,
     pub amount_cents: i32,
     pub created_at: NaiveDateTime,
+    pub public_id: Uuid
+    // add public id
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TransactionWithDetailModel {
-    pub id: i32,
     pub memo: String,
     pub amount_cents: i32,
     pub category: Option<String>,
@@ -22,15 +23,16 @@ pub struct TransactionWithDetailModel {
     pub points_multiplier: Option<i32>,
     pub cashback_percentage_bips: Option<i32>,
     pub created_at: NaiveDateTime,
+    pub public_id: Uuid
 }
 
 impl From<InnerCardChargeWithDetail> for InnerCardChargeWithDetailModel {
     fn from(value: InnerCardChargeWithDetail) -> Self {
         InnerCardChargeWithDetailModel {
-            id: value.wallet_card_charge_registered_transaction_id,
             memo: value.registered_transaction_memo,
             amount_cents: value.wallet_card_charge_amount_cents,
-            created_at: value.wallet_card_charge_created_at
+            created_at: value.wallet_card_charge_created_at,
+            public_id: value.public_id
         }
     }
 }
@@ -38,7 +40,6 @@ impl From<InnerCardChargeWithDetail> for InnerCardChargeWithDetailModel {
 impl From<TransactionWithDetail> for TransactionWithDetailModel {
     fn from(value: TransactionWithDetail) -> Self {
         TransactionWithDetailModel {
-            id: value.successful_end_to_end_charge_id,
             memo: value.registered_transaction_memo,
             amount_cents: value.registered_transaction_amount_cents,
             category: value.category_name,
@@ -48,6 +49,7 @@ impl From<TransactionWithDetail> for TransactionWithDetailModel {
             points_multiplier: value.rule_points_multiplier,
             cashback_percentage_bips: value.rule_cashback_percentage_bips,
             created_at: value.wallet_card_charge_created_at,
+            public_id: value.public_id
         }
     }
 }

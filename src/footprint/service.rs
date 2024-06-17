@@ -300,13 +300,20 @@ impl FootprintServiceTrait for FakeFootprintService {
         }
         #[cfg(not(feature = "fake-footprint-internally"))]
         {
-            let res = reqwest::get("http://127.0.0.1:8082/footprint/mock/").await
+            // let client = reqwest::Client::new();
+            // client.get().timeout(Duration::from_secs(4)).send()
+            let res = reqwest::get("http://127.0.0.1:8082/footprint/mock/")
+                .await
                 .map_err(|e| {
-                    FootprintError::Unexpected("not working".into())
+                    tracing::error!("Client call failed {:?}", e);
+                    println!("Client call failed {:?}", e);
+                    FootprintError::Unexpected("client call failed".into())
                 })?;
             let payment_response: PaymentResponse = res.json().await
                 .map_err(|e| {
-                    FootprintError::Unexpected("not working".into())
+                    tracing::error!("Response deserialization failed {:?}", e);
+                    println!("Response deserialization failed {:?}", e);
+                    FootprintError::Unexpected("deserialization failed".into())
                 })?;
             Ok(payment_response)
         }

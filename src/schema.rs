@@ -221,6 +221,7 @@ diesel::table! {
         registered_transaction_id -> Int4,
         wallet_card_charge_id -> Int4,
         passthrough_card_charge_id -> Int4,
+        public_id -> Uuid,
     }
 }
 
@@ -288,6 +289,7 @@ diesel::table! {
         is_success -> Nullable<Bool>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+        public_id -> Uuid,
     }
 }
 

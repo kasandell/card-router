@@ -9,7 +9,7 @@ pub enum UserTransactionError {
     #[error("Not found")]
     Unauthorized(#[source] Box<dyn std::error::Error + Send + Sync>),
     // should add one for registering a transaction without a child
-    #[error("Unexpected ledger error")]
+    #[error("Unexpected transaction error")]
     UnexpectedError(#[source] Box<dyn std::error::Error + Send + Sync>)
 }
 

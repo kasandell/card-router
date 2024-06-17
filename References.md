@@ -1,3 +1,7 @@
+# Local
+If running locally, make sure to `ulimit -n 2048` for parallel requests to backend.
+might need to also consider running all requests to external services through a sort of request thread pool too.
+
 # Random thoughts
 How am i going to do corrections if ledger needs to be tied to a registered transaction?
 https://users.rust-lang.org/t/lifetime-may-not-live-long-enough-for-an-async-closure/62489
