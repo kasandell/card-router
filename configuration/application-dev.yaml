@@ -27,7 +27,7 @@ lithic:
   #api_key: $APP_LITHIC__API_KEY
 
 otel:
-  otlp_headers: "x-honeycomb-team=***REMOVED***"
+  #otlp_headers: $APP_OTEL__HONEYCOMB_TEAM
   otlp_endpoint: "https://api.honeycomb.io:443"
   service_name: "test"
 
